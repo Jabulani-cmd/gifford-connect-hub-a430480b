@@ -20,12 +20,12 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain" />
+      <div className="container flex h-24 items-center justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <img src={schoolLogo} alt="Gifford High School crest" className="h-20 w-20 object-contain" />
           <div className="leading-tight">
-            <span className="block font-heading text-lg font-bold text-primary">Gifford High</span>
-            <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Bulawayo</span>
+            <span className="block font-heading text-xl font-bold text-primary">Gifford High School</span>
+            <span className="block text-xs italic text-muted-foreground">Hinc Orior — From Here I Arise</span>
           </div>
         </Link>
 

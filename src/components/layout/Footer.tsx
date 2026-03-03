@@ -8,9 +8,9 @@ export default function Footer() {
       <div className="container py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="mb-4 flex items-center gap-2">
-              <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain" />
-              <span className="font-heading text-xl font-bold">Gifford High</span>
+            <div className="mb-4 flex items-center gap-3">
+              <img src={schoolLogo} alt="Gifford High School crest" className="h-16 w-16 object-contain" />
+              <span className="font-heading text-xl font-bold">Gifford High School</span>
             </div>
             <p className="text-xs italic text-primary-foreground/70">Hinc Orior — From Here I Arise</p>
             <p className="mt-1 text-sm text-primary-foreground/80">
