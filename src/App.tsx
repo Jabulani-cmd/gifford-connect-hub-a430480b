@@ -15,6 +15,7 @@ import Register from "./pages/Register";
 import StudentDashboard from "./pages/portal/StudentDashboard";
 import ParentTeacherDashboard from "./pages/portal/ParentTeacherDashboard";
 import AdminDashboard from "./pages/portal/AdminDashboard";
+import Downloads from "./pages/Downloads";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/academics" element={<Academics />} />
             <Route path="/admissions" element={<Admissions />} />
             <Route path="/school-life" element={<SchoolLife />} />
+            <Route path="/downloads" element={<Downloads />} />
             <Route path="/news" element={<News />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

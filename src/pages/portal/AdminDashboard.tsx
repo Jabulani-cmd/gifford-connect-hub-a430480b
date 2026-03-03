@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
+const downloadCategories = ["fees", "forms", "policies", "general"];
+const meetingTypes = ["sgb", "parent-teacher", "general"];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -24,18 +26,33 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   // Announcements
-  const [announcements, setAnnouncements] = useState<{ id: string; title: string; created_at: string; content: string | null }[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newText, setNewText] = useState("");
 
   // Carousel images
-  const [carouselImages, setCarouselImages] = useState<{ id: string; image_url: string; display_order: number }[]>([]);
+  const [carouselImages, setCarouselImages] = useState<any[]>([]);
   const carouselFileRef = useRef<HTMLInputElement>(null);
 
   // Gallery images
-  const [galleryImages, setGalleryImages] = useState<{ id: string; image_url: string; caption: string | null }[]>([]);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const galleryFileRef = useRef<HTMLInputElement>(null);
   const [galleryCaption, setGalleryCaption] = useState("");
+
+  // Downloads
+  const [downloads, setDownloads] = useState<any[]>([]);
+  const downloadFileRef = useRef<HTMLInputElement>(null);
+  const [downloadTitle, setDownloadTitle] = useState("");
+  const [downloadDesc, setDownloadDesc] = useState("");
+  const [downloadCategory, setDownloadCategory] = useState("general");
+
+  // Meetings
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [meetingTitle, setMeetingTitle] = useState("");
+  const [meetingDesc, setMeetingDesc] = useState("");
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingType, setMeetingType] = useState("general");
+  const [meetingLocation, setMeetingLocation] = useState("");
 
   const [uploading, setUploading] = useState(false);
 
@@ -50,21 +67,29 @@ export default function AdminDashboard() {
     fetchAnnouncements();
     fetchCarouselImages();
     fetchGalleryImages();
+    fetchDownloads();
+    fetchMeetings();
   }, []);
 
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
     if (data) setAnnouncements(data);
   };
-
   const fetchCarouselImages = async () => {
     const { data } = await supabase.from("carousel_images").select("*").order("display_order");
     if (data) setCarouselImages(data);
   };
-
   const fetchGalleryImages = async () => {
     const { data } = await supabase.from("gallery_images").select("*").order("created_at", { ascending: false });
     if (data) setGalleryImages(data);
+  };
+  const fetchDownloads = async () => {
+    const { data } = await supabase.from("downloads").select("*").order("created_at", { ascending: false });
+    if (data) setDownloads(data);
+  };
+  const fetchMeetings = async () => {
+    const { data } = await supabase.from("meetings").select("*").order("meeting_date", { ascending: true });
+    if (data) setMeetings(data);
   };
 
   const addAnnouncement = async () => {
@@ -82,10 +107,10 @@ export default function AdminDashboard() {
     fetchAnnouncements();
   };
 
-  const uploadImage = async (file: File, folder: string) => {
+  const uploadFile = async (file: File, folder: string) => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("school-media").upload(path, file);
+    const { error } = await supabase.storage.from("school-media").upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("school-media").getPublicUrl(path);
     return urlData.publicUrl;
@@ -96,8 +121,9 @@ export default function AdminDashboard() {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "carousel");
-      await supabase.from("carousel_images").insert({ image_url: url, display_order: carouselImages.length });
+      const url = await uploadFile(file, "carousel");
+      const { error } = await supabase.from("carousel_images").insert({ image_url: url, display_order: carouselImages.length });
+      if (error) throw error;
       toast({ title: "Carousel image added!" });
       fetchCarouselImages();
     } catch (err: any) {
@@ -118,8 +144,9 @@ export default function AdminDashboard() {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "gallery");
-      await supabase.from("gallery_images").insert({ image_url: url, caption: galleryCaption || null });
+      const url = await uploadFile(file, "gallery");
+      const { error } = await supabase.from("gallery_images").insert({ image_url: url, caption: galleryCaption || null });
+      if (error) throw error;
       toast({ title: "Gallery image added!" });
       setGalleryCaption("");
       fetchGalleryImages();
@@ -136,6 +163,48 @@ export default function AdminDashboard() {
     fetchGalleryImages();
   };
 
+  const handleDownloadUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !downloadTitle) {
+      toast({ title: "Please enter a title first", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadFile(file, "downloads");
+      const { error } = await supabase.from("downloads").insert({ title: downloadTitle, description: downloadDesc || null, file_url: url, category: downloadCategory });
+      if (error) throw error;
+      toast({ title: "Document uploaded!" });
+      setDownloadTitle(""); setDownloadDesc(""); setDownloadCategory("general");
+      fetchDownloads();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+    if (downloadFileRef.current) downloadFileRef.current.value = "";
+  };
+
+  const deleteDownload = async (id: string) => {
+    await supabase.from("downloads").delete().eq("id", id);
+    toast({ title: "Document removed" });
+    fetchDownloads();
+  };
+
+  const addMeeting = async () => {
+    if (!meetingTitle || !meetingDate) { toast({ title: "Title and date required", variant: "destructive" }); return; }
+    const { error } = await supabase.from("meetings").insert({ title: meetingTitle, description: meetingDesc || null, meeting_date: meetingDate, meeting_type: meetingType, location: meetingLocation || null });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setMeetingTitle(""); setMeetingDesc(""); setMeetingDate(""); setMeetingLocation("");
+    toast({ title: "Meeting scheduled!" });
+    fetchMeetings();
+  };
+
+  const deleteMeeting = async (id: string) => {
+    await supabase.from("meetings").delete().eq("id", id);
+    toast({ title: "Meeting removed" });
+    fetchMeetings();
+  };
+
   const registerStudent = async () => {
     const { full_name, email, password, grade, class_name, phone } = studentForm;
     if (!full_name || !email || !password || !grade) {
@@ -146,14 +215,9 @@ export default function AdminDashboard() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ action: "register-student", full_name, email, password, grade, class_name: `${grade}${class_name}`, phone }),
       });
       const data = await res.json();
@@ -176,14 +240,9 @@ export default function AdminDashboard() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ action: "register-teacher", full_name, email, password, department, phone }),
       });
       const data = await res.json();
@@ -200,6 +259,8 @@ export default function AdminDashboard() {
     await signOut();
     navigate("/login");
   };
+
+  const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
   return (
     <div className="min-h-screen bg-background">
@@ -225,8 +286,8 @@ export default function AdminDashboard() {
           {[
             { label: "Announcements", value: String(announcements.length), icon: Bell },
             { label: "Carousel Slides", value: String(carouselImages.length), icon: Layers },
-            { label: "Gallery Photos", value: String(galleryImages.length), icon: Image },
-            { label: "Classes", value: "24", icon: Calendar },
+            { label: "Downloads", value: String(downloads.length), icon: Download },
+            { label: "Meetings", value: String(meetings.length), icon: HandshakeIcon },
           ].map((s, i) => (
             <Card key={i} className="border-none shadow-maroon">
               <CardContent className="flex items-center gap-4 p-5">
@@ -247,6 +308,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="carousel"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
             <TabsTrigger value="gallery"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
+            <TabsTrigger value="downloads"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
+            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB / Meetings</TabsTrigger>
             <TabsTrigger value="register-student"><GraduationCap className="mr-1 h-4 w-4" /> Register Student</TabsTrigger>
             <TabsTrigger value="register-teacher"><UserPlus className="mr-1 h-4 w-4" /> Register Teacher</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
@@ -272,9 +335,7 @@ export default function AdminDashboard() {
                         <h3 className="font-semibold">{a.title}</h3>
                         <p className="text-sm text-muted-foreground">{a.content}</p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -340,6 +401,92 @@ export default function AdminDashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Downloads Tab */}
+          <TabsContent value="downloads">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader><CardTitle className="font-heading">Upload Document</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2"><Label>Title *</Label><Input value={downloadTitle} onChange={e => setDownloadTitle(e.target.value)} placeholder="e.g. Fee Structure 2026" /></div>
+                  <div className="space-y-2"><Label>Description</Label><Input value={downloadDesc} onChange={e => setDownloadDesc(e.target.value)} placeholder="Brief description" /></div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={downloadCategory} onValueChange={setDownloadCategory}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {downloadCategories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <input type="file" ref={downloadFileRef} onChange={handleDownloadUpload} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" />
+                  <Button onClick={() => { if (!downloadTitle) { toast({ title: "Enter a title first", variant: "destructive" }); return; } downloadFileRef.current?.click(); }} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Choose File"}
+                  </Button>
+                </CardContent>
+              </Card>
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">Documents ({downloads.length})</h3>
+                {downloads.map(d => (
+                  <Card key={d.id}>
+                    <CardContent className="flex items-start justify-between p-4">
+                      <div className="flex items-start gap-3">
+                        <FileText className="mt-1 h-5 w-5 text-primary shrink-0" />
+                        <div>
+                          <h3 className="font-semibold">{d.title}</h3>
+                          {d.description && <p className="text-sm text-muted-foreground">{d.description}</p>}
+                          <span className="text-xs text-accent">{d.category}</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => deleteDownload(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* SGB / Meetings Tab */}
+          <TabsContent value="meetings">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader><CardTitle className="font-heading">Schedule Meeting</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2"><Label>Title *</Label><Input value={meetingTitle} onChange={e => setMeetingTitle(e.target.value)} placeholder="e.g. SGB Quarter 1 Meeting" /></div>
+                  <div className="space-y-2">
+                    <Label>Type</Label>
+                    <Select value={meetingType} onValueChange={setMeetingType}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {meetingTypes.map(t => <SelectItem key={t} value={t}>{meetingTypeLabels[t]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label>Date & Time *</Label><Input type="datetime-local" value={meetingDate} onChange={e => setMeetingDate(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Location</Label><Input value={meetingLocation} onChange={e => setMeetingLocation(e.target.value)} placeholder="e.g. School Hall" /></div>
+                  <div className="space-y-2"><Label>Description</Label><Textarea value={meetingDesc} onChange={e => setMeetingDesc(e.target.value)} rows={2} /></div>
+                  <Button onClick={addMeeting} disabled={!meetingTitle || !meetingDate}><Plus className="mr-1 h-4 w-4" /> Schedule Meeting</Button>
+                </CardContent>
+              </Card>
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">Scheduled Meetings ({meetings.length})</h3>
+                {meetings.map(m => (
+                  <Card key={m.id}>
+                    <CardContent className="flex items-start justify-between p-4">
+                      <div>
+                        <span className="inline-block rounded-full bg-maroon-light px-2 py-0.5 text-xs font-semibold text-primary">{meetingTypeLabels[m.meeting_type] || m.meeting_type}</span>
+                        <h3 className="mt-1 font-semibold">{m.title}</h3>
+                        <p className="text-sm text-muted-foreground">{new Date(m.meeting_date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
+                        {m.location && <p className="text-xs text-accent">📍 {m.location}</p>}
+                        {m.description && <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>}
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMeeting(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </TabsContent>
