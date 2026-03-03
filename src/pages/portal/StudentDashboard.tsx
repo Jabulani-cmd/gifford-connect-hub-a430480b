@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, BookOpen, BarChart3, Bell, LogOut } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 const timetable = [
   { time: "07:30", mon: "Mathematics", tue: "English", wed: "Physics", thu: "Chemistry", fri: "Mathematics" },
@@ -36,6 +37,16 @@ const announcements = [
 ];
 
 export default function StudentDashboard() {
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  const displayName = user?.user_metadata?.full_name || "Student";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
@@ -46,10 +57,8 @@ export default function StudentDashboard() {
             <span className="font-heading text-lg font-bold text-primary">Student Portal</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Welcome, Tafadzwa</span>
-            <Link to="/login">
-              <Button variant="ghost" size="sm"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
-            </Link>
+            <span className="text-sm text-muted-foreground">Welcome, {displayName}</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
           </div>
         </div>
       </header>
@@ -69,16 +78,14 @@ export default function StudentDashboard() {
 
           <TabsContent value="timetable">
             <Card>
-              <CardHeader><CardTitle className="font-heading">Weekly Timetable — Form 4B</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-heading">Weekly Timetable</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-3 py-2 text-left">Time</th>
-                      <th className="px-3 py-2">Mon</th>
-                      <th className="px-3 py-2">Tue</th>
-                      <th className="px-3 py-2">Wed</th>
-                      <th className="px-3 py-2">Thu</th>
+                      <th className="px-3 py-2">Mon</th><th className="px-3 py-2">Tue</th>
+                      <th className="px-3 py-2">Wed</th><th className="px-3 py-2">Thu</th>
                       <th className="px-3 py-2">Fri</th>
                     </tr>
                   </thead>
@@ -126,10 +133,8 @@ export default function StudentDashboard() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-4 py-2 text-left">Subject</th>
-                      <th className="px-4 py-2">Test 1</th>
-                      <th className="px-4 py-2">Test 2</th>
-                      <th className="px-4 py-2">Exam</th>
-                      <th className="px-4 py-2">Average</th>
+                      <th className="px-4 py-2">Test 1</th><th className="px-4 py-2">Test 2</th>
+                      <th className="px-4 py-2">Exam</th><th className="px-4 py-2">Average</th>
                     </tr>
                   </thead>
                   <tbody>

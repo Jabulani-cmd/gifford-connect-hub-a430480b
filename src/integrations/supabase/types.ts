@@ -256,27 +256,57 @@ export type Database = {
           },
         ]
       }
+      parent_students: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          class_name: string | null
           created_at: string
           email: string | null
           full_name: string
+          grade: string | null
           id: string
+          phone: string | null
         }
         Insert: {
           avatar_url?: string | null
+          class_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
+          grade?: string | null
           id: string
+          phone?: string | null
         }
         Update: {
           avatar_url?: string | null
+          class_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
+          grade?: string | null
           id?: string
+          phone?: string | null
         }
         Relationships: []
       }

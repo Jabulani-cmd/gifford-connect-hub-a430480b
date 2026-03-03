@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, BarChart3, BookOpen, Bell, LogOut } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const existingMarks = [
   { student: "Tafadzwa Moyo", subject: "Mathematics", mark: 85, term: "Term 1" },
@@ -25,8 +26,17 @@ const existingHomework = [
 
 export default function ParentTeacherDashboard() {
   const { toast } = useToast();
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
   const [marksSubmitted, setMarksSubmitted] = useState(false);
   const [hwSubmitted, setHwSubmitted] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  const displayName = user?.user_metadata?.full_name || "User";
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,10 +47,8 @@ export default function ParentTeacherDashboard() {
             <span className="font-heading text-lg font-bold text-primary">Parent / Teacher Portal</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Mr. Sibanda</span>
-            <Link to="/login">
-              <Button variant="ghost" size="sm"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
-            </Link>
+            <span className="text-sm text-muted-foreground">{displayName}</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
           </div>
         </div>
       </header>
@@ -90,14 +98,8 @@ export default function ParentTeacherDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Mark (%)</Label>
-                      <Input type="number" min="0" max="100" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Comments</Label>
-                      <Textarea rows={2} />
-                    </div>
+                    <div className="space-y-2"><Label>Mark (%)</Label><Input type="number" min="0" max="100" required /></div>
+                    <div className="space-y-2"><Label>Comments</Label><Textarea rows={2} /></div>
                     <Button type="submit" className="w-full">Submit Marks</Button>
                   </form>
                 )}
@@ -136,18 +138,9 @@ export default function ParentTeacherDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Assignment Title</Label>
-                      <Input required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Due Date</Label>
-                      <Input type="date" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Details</Label>
-                      <Textarea rows={3} />
-                    </div>
+                    <div className="space-y-2"><Label>Assignment Title</Label><Input required /></div>
+                    <div className="space-y-2"><Label>Due Date</Label><Input type="date" required /></div>
+                    <div className="space-y-2"><Label>Details</Label><Textarea rows={3} /></div>
                     <Button type="submit" className="w-full">Post Homework</Button>
                   </form>
                 )}
@@ -163,8 +156,7 @@ export default function ParentTeacherDashboard() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-4 py-2 text-left">Student</th>
-                      <th className="px-4 py-2">Subject</th>
-                      <th className="px-4 py-2">Mark</th>
+                      <th className="px-4 py-2">Subject</th><th className="px-4 py-2">Mark</th>
                       <th className="px-4 py-2">Term</th>
                     </tr>
                   </thead>
