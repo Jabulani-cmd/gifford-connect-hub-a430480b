@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import sportsImg from "@/assets/sports.png";
@@ -6,7 +7,8 @@ import achievementsImg from "@/assets/achievements.png";
 import heroImg from "@/assets/hero-school.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Music, BookOpen, Palette, Users, Volleyball } from "lucide-react";
+import { Trophy, Music, BookOpen, Palette, Users, Volleyball, HandshakeIcon, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const sports = [
   { name: "Rugby", desc: "Provincial champions 2024. U-16 and 1st XV teams." },
@@ -28,7 +30,22 @@ const clubs = [
 
 const galleryImages = [heroImg, classroomImg, sportsImg, achievementsImg];
 
+const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+
 export default function SchoolLife() {
+  const [meetings, setMeetings] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      const { data } = await supabase.from("meetings").select("*").order("meeting_date", { ascending: true });
+      if (data) setMeetings(data);
+    };
+    fetchMeetings();
+  }, []);
+
+  const sgbMeetings = meetings.filter(m => m.meeting_type === "sgb");
+  const ptMeetings = meetings.filter(m => m.meeting_type === "parent-teacher");
+
   return (
     <Layout>
       {/* Hero */}
@@ -45,9 +62,11 @@ export default function SchoolLife() {
       <section className="py-16">
         <div className="container">
           <Tabs defaultValue="sports">
-            <TabsList className="mb-8">
+            <TabsList className="mb-8 flex-wrap">
               <TabsTrigger value="sports">Sports</TabsTrigger>
               <TabsTrigger value="clubs">Clubs & Activities</TabsTrigger>
+              <TabsTrigger value="sgb"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB</TabsTrigger>
+              <TabsTrigger value="pt-meetings"><Calendar className="mr-1 h-4 w-4" /> Parent-Teacher</TabsTrigger>
               <TabsTrigger value="gallery">Gallery</TabsTrigger>
             </TabsList>
 
@@ -84,6 +103,60 @@ export default function SchoolLife() {
                   </motion.div>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* SGB Tab */}
+            <TabsContent value="sgb">
+              <div className="mb-6">
+                <h2 className="font-heading text-2xl font-bold text-primary mb-2">Student Governing Body (SGB)</h2>
+                <p className="text-muted-foreground">The SGB represents the interests of students and works alongside the school administration to ensure a thriving learning environment.</p>
+              </div>
+              {sgbMeetings.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {sgbMeetings.map((m, i) => (
+                    <motion.div key={m.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
+                      <Card className="h-full transition-shadow hover:shadow-maroon">
+                        <CardContent className="p-5">
+                          <span className="inline-block rounded-full bg-maroon-light px-2 py-0.5 text-xs font-semibold text-primary mb-2">SGB Meeting</span>
+                          <h3 className="font-heading font-semibold">{m.title}</h3>
+                          <p className="text-sm text-accent font-medium">{new Date(m.meeting_date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
+                          {m.location && <p className="text-xs text-muted-foreground mt-1">📍 {m.location}</p>}
+                          {m.description && <p className="mt-2 text-sm text-muted-foreground">{m.description}</p>}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground italic py-8">No SGB meetings scheduled at this time.</p>
+              )}
+            </TabsContent>
+
+            {/* Parent-Teacher Tab */}
+            <TabsContent value="pt-meetings">
+              <div className="mb-6">
+                <h2 className="font-heading text-2xl font-bold text-primary mb-2">Parent-Teacher Meetings</h2>
+                <p className="text-muted-foreground">Regular meetings between parents and teachers to discuss student progress and development.</p>
+              </div>
+              {ptMeetings.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {ptMeetings.map((m, i) => (
+                    <motion.div key={m.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
+                      <Card className="h-full transition-shadow hover:shadow-maroon">
+                        <CardContent className="p-5">
+                          <span className="inline-block rounded-full bg-maroon-light px-2 py-0.5 text-xs font-semibold text-primary mb-2">Parent-Teacher</span>
+                          <h3 className="font-heading font-semibold">{m.title}</h3>
+                          <p className="text-sm text-accent font-medium">{new Date(m.meeting_date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
+                          {m.location && <p className="text-xs text-muted-foreground mt-1">📍 {m.location}</p>}
+                          {m.description && <p className="mt-2 text-sm text-muted-foreground">{m.description}</p>}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground italic py-8">No parent-teacher meetings scheduled at this time.</p>
+              )}
             </TabsContent>
 
             <TabsContent value="gallery">

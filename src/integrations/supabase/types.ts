@@ -110,6 +110,33 @@ export type Database = {
         }
         Relationships: []
       }
+      downloads: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -255,6 +282,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_type: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_type?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_type?: string
+          title?: string
+        }
+        Relationships: []
       }
       parent_students: {
         Row: {

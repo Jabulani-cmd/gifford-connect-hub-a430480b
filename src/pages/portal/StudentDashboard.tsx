@@ -1,55 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, BookOpen, BarChart3, Bell, LogOut } from "lucide-react";
+import { Calendar, BookOpen, BarChart3, Bell, LogOut, User } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-const timetable = [
-  { time: "07:30", mon: "Mathematics", tue: "English", wed: "Physics", thu: "Chemistry", fri: "Mathematics" },
-  { time: "08:30", mon: "English", tue: "Shona", wed: "Mathematics", thu: "Biology", fri: "Geography" },
-  { time: "09:30", mon: "Break", tue: "Break", wed: "Break", thu: "Break", fri: "Break" },
-  { time: "10:00", mon: "Physics", tue: "Chemistry", wed: "Biology", thu: "English", fri: "History" },
-  { time: "11:00", mon: "Geography", tue: "History", wed: "Shona", thu: "Mathematics", fri: "Physics" },
-  { time: "12:00", mon: "Lunch", tue: "Lunch", wed: "Lunch", thu: "Lunch", fri: "Lunch" },
-  { time: "13:00", mon: "Computer Sc", tue: "Art", wed: "PE", thu: "Computer Sc", fri: "PE" },
-];
-
-const homework = [
-  { subject: "Mathematics", title: "Chapter 7 Exercises", due: "Mar 7", status: "Pending" },
-  { subject: "English", title: "Essay: My Hero", due: "Mar 5", status: "Submitted" },
-  { subject: "Physics", title: "Lab Report: Optics", due: "Mar 10", status: "Pending" },
-];
-
-const marks = [
-  { subject: "Mathematics", test1: 85, test2: 92, exam: 88 },
-  { subject: "English", test1: 78, test2: 82, exam: 80 },
-  { subject: "Physics", test1: 90, test2: 88, exam: 91 },
-  { subject: "Chemistry", test1: 76, test2: 80, exam: 79 },
-];
-
-const announcements = [
-  { title: "Term 1 Results Published", date: "Feb 28", text: "Check your marks under the Marks tab." },
-  { title: "Athletics Day — Mar 15", date: "Feb 25", text: "All Form 4 students to report at 7:00 AM." },
-];
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const timeSlots = ["07:30", "08:30", "10:00", "11:00", "13:00"];
 
 export default function StudentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+
+  const [profile, setProfile] = useState<any>(null);
+  const [timetableData, setTimetableData] = useState<any[]>([]);
+  const [homeworkData, setHomeworkData] = useState<any[]>([]);
+  const [marksData, setMarksData] = useState<any[]>([]);
+  const [announcementsData, setAnnouncementsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchAll = async () => {
+      setLoading(true);
+
+      // Fetch profile
+      const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      setProfile(prof);
+
+      // Fetch timetable based on student's class
+      if (prof?.class_name) {
+        // Find the class in classes table
+        const { data: classRow } = await supabase.from("classes").select("id").eq("name", prof.class_name).single();
+        if (classRow) {
+          const { data: tt } = await supabase
+            .from("timetable")
+            .select("*, subjects(name)")
+            .eq("class_id", classRow.id);
+          if (tt) setTimetableData(tt);
+        }
+      }
+
+      // Fetch homework for student's class
+      if (prof?.class_name) {
+        const { data: classRow } = await supabase.from("classes").select("id").eq("name", prof.class_name).single();
+        if (classRow) {
+          const { data: hw } = await supabase
+            .from("homework")
+            .select("*, subjects(name)")
+            .eq("class_id", classRow.id)
+            .order("due_date", { ascending: true });
+          if (hw) setHomeworkData(hw);
+        }
+      }
+
+      // Fetch marks
+      const { data: marks } = await supabase
+        .from("marks")
+        .select("*, subjects(name)")
+        .eq("student_id", user.id)
+        .order("created_at", { ascending: false });
+      if (marks) setMarksData(marks);
+
+      // Fetch announcements
+      const { data: ann } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (ann) setAnnouncementsData(ann);
+
+      setLoading(false);
+    };
+    fetchAll();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const displayName = user?.user_metadata?.full_name || "Student";
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || "Student";
+
+  // Build timetable grid from DB data
+  const getTimetableCell = (timeSlot: string, dayIndex: number) => {
+    const entry = timetableData.find(t => t.time_slot === timeSlot && t.day_of_week === dayIndex);
+    return entry?.subjects?.name || "—";
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -64,9 +109,24 @@ export default function StudentDashboard() {
       </header>
 
       <div className="container py-8">
-        <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 font-heading text-2xl font-bold text-primary">
-          Dashboard
-        </motion.h1>
+        {/* Profile Card */}
+        {profile && (
+          <Card className="mb-6 border-none shadow-maroon">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-maroon-light">
+                <User className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-heading text-xl font-bold text-primary">{displayName}</h2>
+                <div className="flex gap-4 text-sm text-muted-foreground">
+                  {profile.grade && <span>Grade: {profile.grade}</span>}
+                  {profile.class_name && <span>Class: {profile.class_name}</span>}
+                  {profile.email && <span>{profile.email}</span>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="timetable" className="space-y-6">
           <TabsList>
@@ -78,95 +138,102 @@ export default function StudentDashboard() {
 
           <TabsContent value="timetable">
             <Card>
-              <CardHeader><CardTitle className="font-heading">Weekly Timetable</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-heading">My Weekly Timetable</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Time</th>
-                      <th className="px-3 py-2">Mon</th><th className="px-3 py-2">Tue</th>
-                      <th className="px-3 py-2">Wed</th><th className="px-3 py-2">Thu</th>
-                      <th className="px-3 py-2">Fri</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {timetable.map((row, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="px-3 py-2 font-medium">{row.time}</td>
-                        <td className="px-3 py-2 text-center">{row.mon}</td>
-                        <td className="px-3 py-2 text-center">{row.tue}</td>
-                        <td className="px-3 py-2 text-center">{row.wed}</td>
-                        <td className="px-3 py-2 text-center">{row.thu}</td>
-                        <td className="px-3 py-2 text-center">{row.fri}</td>
+                {timetableData.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Time</th>
+                        {days.map(d => <th key={d} className="px-3 py-2">{d}</th>)}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {timeSlots.map(time => (
+                        <tr key={time} className="border-t">
+                          <td className="px-3 py-2 font-medium">{time}</td>
+                          {[1, 2, 3, 4, 5].map(d => (
+                            <td key={d} className="px-3 py-2 text-center">{getTimetableCell(time, d)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-muted-foreground italic py-8">
+                    {loading ? "Loading timetable..." : "No timetable has been set for your class yet."}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="homework">
             <div className="space-y-3">
-              {homework.map((hw, i) => (
-                <Card key={i}>
+              {homeworkData.length > 0 ? homeworkData.map((hw) => (
+                <Card key={hw.id}>
                   <CardContent className="flex items-center justify-between p-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-accent">{hw.subject}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-accent">{hw.subjects?.name || "Subject"}</p>
                       <h3 className="font-semibold">{hw.title}</h3>
-                      <p className="text-sm text-muted-foreground">Due: {hw.due}</p>
+                      <p className="text-sm text-muted-foreground">Due: {new Date(hw.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
+                      {hw.description && <p className="mt-1 text-sm text-muted-foreground">{hw.description}</p>}
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hw.status === "Submitted" ? "bg-green-100 text-green-700" : "bg-gold-light text-accent-foreground"}`}>
-                      {hw.status}
-                    </span>
                   </CardContent>
                 </Card>
-              ))}
+              )) : (
+                <p className="text-center text-muted-foreground italic py-8">No homework assigned yet.</p>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="marks">
             <Card>
-              <CardHeader><CardTitle className="font-heading">Term 1 Marks</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-heading">My Marks</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Subject</th>
-                      <th className="px-4 py-2">Test 1</th><th className="px-4 py-2">Test 2</th>
-                      <th className="px-4 py-2">Exam</th><th className="px-4 py-2">Average</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {marks.map((m, i) => {
-                      const avg = Math.round((m.test1 + m.test2 + m.exam) / 3);
-                      return (
-                        <tr key={i} className="border-t">
-                          <td className="px-4 py-2 font-medium">{m.subject}</td>
-                          <td className="px-4 py-2 text-center">{m.test1}</td>
-                          <td className="px-4 py-2 text-center">{m.test2}</td>
-                          <td className="px-4 py-2 text-center">{m.exam}</td>
-                          <td className="px-4 py-2 text-center font-bold text-primary">{avg}</td>
+                {marksData.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Subject</th>
+                        <th className="px-4 py-2">Type</th>
+                        <th className="px-4 py-2">Term</th>
+                        <th className="px-4 py-2">Mark</th>
+                        <th className="px-4 py-2 text-left">Comment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {marksData.map(m => (
+                        <tr key={m.id} className="border-t">
+                          <td className="px-4 py-2 font-medium">{m.subjects?.name}</td>
+                          <td className="px-4 py-2 text-center">{m.assessment_type}</td>
+                          <td className="px-4 py-2 text-center">{m.term}</td>
+                          <td className="px-4 py-2 text-center font-bold text-primary">{m.mark}%</td>
+                          <td className="px-4 py-2 text-sm text-muted-foreground">{m.comment || "—"}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-muted-foreground italic py-8">No marks recorded yet.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="announcements">
             <div className="space-y-3">
-              {announcements.map((a, i) => (
-                <Card key={i}>
+              {announcementsData.length > 0 ? announcementsData.map(a => (
+                <Card key={a.id}>
                   <CardContent className="p-4">
-                    <span className="text-xs font-semibold text-accent">{a.date}</span>
+                    <span className="text-xs font-semibold text-accent">{new Date(a.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                     <h3 className="font-heading font-semibold">{a.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{a.text}</p>
+                    {a.content && <p className="mt-1 text-sm text-muted-foreground">{a.content}</p>}
                   </CardContent>
                 </Card>
-              ))}
+              )) : (
+                <p className="text-center text-muted-foreground italic py-8">No announcements.</p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
