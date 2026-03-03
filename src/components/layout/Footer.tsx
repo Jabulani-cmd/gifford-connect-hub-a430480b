@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { GraduationCap, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
+import schoolLogo from "@/assets/school-logo.jpg";
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="mb-4 flex items-center gap-2">
-              <GraduationCap className="h-7 w-7 text-gold" />
+              <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain" />
               <span className="font-heading text-xl font-bold">Gifford High</span>
             </div>
             <p className="text-sm text-primary-foreground/80">
