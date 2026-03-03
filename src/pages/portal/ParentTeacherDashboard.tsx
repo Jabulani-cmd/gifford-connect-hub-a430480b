@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, Upload, BarChart3, BookOpen, Bell, LogOut } from "lucide-react";
+import { Upload, BarChart3, BookOpen, Bell, LogOut } from "lucide-react";
+import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 
 const existingMarks = [
@@ -32,7 +33,7 @@ export default function ParentTeacherDashboard() {
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <img src={schoolLogo} alt="Gifford High School crest" className="h-8 w-8 object-contain" />
             <span className="font-heading text-lg font-bold text-primary">Parent / Teacher Portal</span>
           </div>
           <div className="flex items-center gap-3">

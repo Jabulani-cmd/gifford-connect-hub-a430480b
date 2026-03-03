@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import schoolLogo from "@/assets/school-logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,10 +27,9 @@ export default function Login() {
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md px-4">
           <Card className="shadow-maroon">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-maroon-light">
-                <GraduationCap className="h-7 w-7 text-primary" />
-              </div>
+              <img src={schoolLogo} alt="Gifford High School crest" className="mx-auto mb-2 h-16 w-16 object-contain" />
               <CardTitle className="font-heading text-2xl text-primary">Portal Login</CardTitle>
+              <p className="text-xs italic text-muted-foreground">Hinc Orior — From Here I Arise</p>
               <p className="text-sm text-muted-foreground">Access your Gifford High portal</p>
             </CardHeader>
             <CardContent>
