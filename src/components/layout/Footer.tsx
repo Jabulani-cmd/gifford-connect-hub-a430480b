@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
-import schoolLogo from "@/assets/school-logo.jpg";
+import schoolLogo from "@/assets/school-logo.png";
 
 export default function Footer() {
   return (
@@ -12,7 +12,8 @@ export default function Footer() {
               <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain" />
               <span className="font-heading text-xl font-bold">Gifford High</span>
             </div>
-            <p className="text-sm text-primary-foreground/80">
+            <p className="text-xs italic text-primary-foreground/70">Hinc Orior — From Here I Arise</p>
+            <p className="mt-1 text-sm text-primary-foreground/80">
               Nurturing excellence in education, sports, and character since 1965.
             </p>
           </div>

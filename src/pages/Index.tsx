@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Trophy, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
-import heroImg from "@/assets/hero-school.png";
+import HeroCarousel from "@/components/HeroCarousel";
 import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
 
@@ -29,46 +29,8 @@ const announcements = [
 export default function Home() {
   return (
     <Layout>
-      {/* Hero */}
-      <section className="relative h-[85vh] min-h-[500px] overflow-hidden">
-        <img src={heroImg} alt="Gifford High School campus" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="bg-hero-overlay absolute inset-0" />
-        <div className="container relative z-10 flex h-full flex-col items-center justify-center text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-3xl font-heading text-4xl font-bold leading-tight text-primary-foreground sm:text-5xl lg:text-6xl"
-          >
-            Excellence in Education, Character & Sport
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.7 }}
-            className="mt-4 max-w-xl text-lg text-primary-foreground/85"
-          >
-            Gifford High School, Bulawayo — shaping tomorrow's leaders through a proud tradition of academic rigour and holistic development.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="mt-8 flex flex-wrap justify-center gap-4"
-          >
-            <Link to="/admissions">
-              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-maroon">
-                Apply Now <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10">
-                Portal Login
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+      {/* Hero Carousel */}
+      <HeroCarousel />
 
       {/* Highlights */}
       <section className="bg-section-warm py-20">

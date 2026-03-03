@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, Calendar, BookOpen, BarChart3, Bell, LogOut } from "lucide-react";
+import { Calendar, BookOpen, BarChart3, Bell, LogOut } from "lucide-react";
+import schoolLogo from "@/assets/school-logo.png";
 
 const timetable = [
   { time: "07:30", mon: "Mathematics", tue: "English", wed: "Physics", thu: "Chemistry", fri: "Mathematics" },
@@ -41,7 +42,7 @@ export default function StudentDashboard() {
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <img src={schoolLogo} alt="Gifford High School crest" className="h-8 w-8 object-contain" />
             <span className="font-heading text-lg font-bold text-primary">Student Portal</span>
           </div>
           <div className="flex items-center gap-3">
