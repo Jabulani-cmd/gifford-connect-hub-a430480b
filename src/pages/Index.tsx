@@ -11,6 +11,38 @@ import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
+function PrincipalPhoto() {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("staff")
+      .select("photo_url, full_name")
+      .or("title.ilike.%principal%,title.ilike.%head%master%")
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0 && data[0].photo_url) setPhotoUrl(data[0].photo_url);
+      });
+  }, []);
+
+  return (
+    <div className="flex justify-center">
+      <div className="relative">
+        {photoUrl ? (
+          <img src={photoUrl} alt="The Principal" className="h-80 w-64 rounded-xl object-cover object-top shadow-maroon" />
+        ) : (
+          <div className="flex h-80 w-64 items-center justify-center rounded-xl bg-maroon-light shadow-maroon">
+            <img src={schoolLogo} alt="Gifford High School" className="h-32 w-32 object-contain opacity-60" />
+          </div>
+        )}
+        <div className="absolute -bottom-4 -right-4 rounded-lg bg-primary px-4 py-2 shadow-lg">
+          <span className="text-xs font-bold text-primary-foreground">The Principal</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.15, duration: 0.6 } }),
@@ -91,22 +123,49 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Snapshot */}
+      {/* Principal's Message */}
       <section className="bg-section-warm py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <img src={classroomImg} alt="Students in classroom" className="rounded-xl shadow-maroon" />
+            <PrincipalPhoto />
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <h2 className="font-heading text-3xl font-bold text-primary">A Tradition of Excellence</h2>
+            <span className="text-xs font-semibold uppercase tracking-wider text-accent">Message from the Principal</span>
+            <h2 className="mt-2 font-heading text-3xl font-bold text-primary">Welcome to Gifford High School</h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Founded in 1965, Gifford High School has been a cornerstone of education in Bulawayo. Our students consistently achieve top results in both ZIMSEC and Cambridge examinations, and our alumni hold distinguished positions across the globe.
+              It is with great pride and pleasure that I welcome you to Gifford High School. Our institution has been a beacon of excellence in education since 1965, nurturing young minds to become leaders, innovators, and responsible citizens.
+            </p>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              At Gifford, we believe in holistic education — combining rigorous academics with vibrant sporting and cultural programmes. Our dedicated staff work tirelessly to ensure every student reaches their full potential.
+            </p>
+            <p className="mt-3 font-heading text-sm font-semibold text-primary italic">
+              — The Principal, Gifford High School
             </p>
             <Link to="/about" className="mt-6 inline-block">
               <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 Learn More <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* About Snapshot */}
+      <section className="py-20">
+        <div className="container grid items-center gap-12 lg:grid-cols-2">
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-2 lg:order-1">
+            <h2 className="font-heading text-3xl font-bold text-primary">A Tradition of Excellence</h2>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Founded in 1965, Gifford High School has been a cornerstone of education in Bulawayo. Our students consistently achieve top results in both ZIMSEC and Cambridge examinations, and our alumni hold distinguished positions across the globe.
+            </p>
+            <Link to="/about" className="mt-6 inline-block">
+              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                About Us <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
+            <img src={classroomImg} alt="Students in classroom" className="rounded-xl shadow-maroon" />
           </motion.div>
         </div>
       </section>

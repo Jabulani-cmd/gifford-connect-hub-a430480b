@@ -52,16 +52,18 @@ export default function HeroCarousel() {
     : [{ id: "fallback", src: heroImg }];
 
   return (
-    <section className="relative h-[85vh] min-h-[500px] overflow-hidden">
+    <section className="relative w-full overflow-hidden" style={{ aspectRatio: "16/7" }}>
       <Carousel opts={{ loop: true }} setApi={setApi} className="h-full">
         <CarouselContent className="-ml-0 h-full">
           {slides.map((slide) => (
             <CarouselItem key={slide.id} className="pl-0 h-full">
-              <img
-                src={slide.src}
-                alt="Gifford High School"
-                className="h-full w-full object-cover"
-              />
+              <div className="relative h-full w-full">
+                <img
+                  src={slide.src}
+                  alt="Gifford High School"
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                />
+              </div>
             </CarouselItem>
           ))}
         </CarouselContent>
