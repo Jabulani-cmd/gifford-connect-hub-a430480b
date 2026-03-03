@@ -1,12 +1,15 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, Trophy, Users, Calendar } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
 import HeroCarousel from "@/components/HeroCarousel";
 import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
+import schoolLogo from "@/assets/school-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -14,22 +17,30 @@ const fadeUp = {
 };
 
 const highlights = [
-  { icon: BookOpen, title: "Academic Excellence", desc: "Cambridge & ZIMSEC curriculum with outstanding pass rates." },
-  { icon: Trophy, title: "Sporting Achievements", desc: "Provincial and national champions in rugby, soccer, and athletics." },
-  { icon: Users, title: "Vibrant Community", desc: "Over 20 clubs and societies fostering holistic student development." },
-  { icon: Calendar, title: "Rich Heritage", desc: "Decades of tradition shaping tomorrow's leaders since 1965." },
-];
-
-const announcements = [
-  { title: "Term 1 Exam Results Published", date: "Feb 28, 2026", excerpt: "Form 4 and Upper 6 results are now available on the student portal." },
-  { title: "Inter-house Athletics Day", date: "Mar 15, 2026", excerpt: "Annual athletics day at the school stadium. All parents welcome." },
-  { title: "Open Day for Prospective Students", date: "Apr 5, 2026", excerpt: "Tour our campus and meet our teachers. Register online now." },
+  { title: "Academic Excellence", desc: "Cambridge & ZIMSEC curriculum with outstanding pass rates." },
+  { title: "Sporting Achievements", desc: "Provincial and national champions in rugby, soccer, and athletics." },
+  { title: "Vibrant Community", desc: "Over 20 clubs and societies fostering holistic student development." },
+  { title: "Rich Heritage", desc: "Decades of tradition shaping tomorrow's leaders since 1965." },
 ];
 
 export default function Home() {
+  const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      const { data } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (data) setAnnouncements(data);
+    };
+    fetchAnnouncements();
+  }, []);
+
   return (
     <Layout>
-      {/* Hero Carousel */}
       <HeroCarousel />
 
       {/* Highlights */}
@@ -41,8 +52,8 @@ export default function Home() {
               <motion.div key={h.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <Card className="h-full border-none shadow-maroon transition-transform hover:-translate-y-1">
                   <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-maroon-light">
-                      <h.icon className="h-7 w-7 text-primary" />
+                    <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-maroon-light">
+                      <img src={schoolLogo} alt="Gifford High School" className="h-20 w-20 object-contain" />
                     </div>
                     <h3 className="mb-2 font-heading text-lg font-semibold">{h.title}</h3>
                     <p className="text-sm text-muted-foreground">{h.desc}</p>
@@ -54,8 +65,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Snapshot */}
+      {/* Announcements from DB */}
       <section className="py-20">
+        <div className="container">
+          <h2 className="mb-10 text-center font-heading text-3xl font-bold text-primary">Announcements</h2>
+          {announcements.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              {announcements.map((a, i) => (
+                <motion.div key={a.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <Card className="h-full transition-shadow hover:shadow-maroon">
+                    <CardContent className="p-6">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                        {new Date(a.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                      <h3 className="mt-2 font-heading text-lg font-semibold">{a.title}</h3>
+                      {a.content && <p className="mt-2 text-sm text-muted-foreground">{a.content}</p>}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground italic">No announcements at this time.</p>
+          )}
+        </div>
+      </section>
+
+      {/* About Snapshot */}
+      <section className="bg-section-warm py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <img src={classroomImg} alt="Students in classroom" className="rounded-xl shadow-maroon" />
@@ -75,7 +112,7 @@ export default function Home() {
       </section>
 
       {/* Achievements Snapshot */}
-      <section className="bg-section-warm py-20">
+      <section className="py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-2 lg:order-1">
             <h2 className="font-heading text-3xl font-bold text-primary">Celebrating Achievement</h2>
@@ -91,29 +128,6 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
             <img src={achievementsImg} alt="Students celebrating achievements" className="rounded-xl shadow-maroon" />
           </motion.div>
-        </div>
-      </section>
-
-      {/* Announcements */}
-      <section className="py-20">
-        <div className="container">
-          <h2 className="mb-10 text-center font-heading text-3xl font-bold text-primary">Latest News</h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {announcements.map((a, i) => (
-              <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <Card className="h-full transition-shadow hover:shadow-maroon">
-                  <CardContent className="p-6">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-accent">{a.date}</span>
-                    <h3 className="mt-2 font-heading text-lg font-semibold">{a.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">{a.excerpt}</p>
-                    <Link to="/news" className="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline">
-                      Read more <ArrowRight className="ml-1 h-3 w-3" />
-                    </Link>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 

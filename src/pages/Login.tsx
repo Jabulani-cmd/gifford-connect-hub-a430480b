@@ -1,24 +1,62 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lock } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("");
+  const { signIn, role, user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Seed admin on first visit
+  useEffect(() => {
+    const seedAdmin = async () => {
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+          body: JSON.stringify({ action: "seed-admin" }),
+        });
+      } catch {
+        // Silently fail
+      }
+    };
+    seedAdmin();
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && role) {
+      redirectByRole(role);
+    }
+  }, [authLoading, user, role]);
+
+  const redirectByRole = (r: string) => {
+    if (r === "student") navigate("/portal/student");
+    else if (r === "parent" || r === "teacher") navigate("/portal/parent-teacher");
+    else if (r === "admin") navigate("/portal/admin");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === "student") navigate("/portal/student");
-    else if (role === "parent-teacher") navigate("/portal/parent-teacher");
-    else if (role === "admin") navigate("/portal/admin");
+    setLoading(true);
+    const { error } = await signIn(email, password);
+    if (error) {
+      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+    }
+    setLoading(false);
   };
 
   return (
@@ -35,33 +73,44 @@ export default function Login() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email or Username</Label>
-                  <Input id="email" placeholder="you@giffordhigh.ac.zw" required />
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@giffordhigh.ac.zw"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Input id="password" type="password" placeholder="••••••••" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
                     <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Login As</Label>
-                  <Select value={role} onValueChange={setRole} required>
-                    <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="parent-teacher">Parent / Teacher</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full" size="lg" disabled={!role}>
-                  Sign In
+                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign In"}
                 </Button>
-                <p className="text-center text-xs text-muted-foreground">
-                  Demo: select a role and click Sign In
-                </p>
+                <div className="text-center space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    Parent?{" "}
+                    <Link to="/register" className="text-primary font-medium hover:underline">
+                      Register here
+                    </Link>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Students & teachers: credentials provided by admin
+                  </p>
+                </div>
               </form>
             </CardContent>
           </Card>

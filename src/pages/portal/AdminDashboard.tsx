@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-const classes = ["Form 1A", "Form 1B", "Form 2A", "Form 2B", "Form 3A", "Form 3B", "Form 4A", "Form 4B"];
+const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
+const classOptions = ["A", "B", "C", "D"];
+const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
 
   // Announcements
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; created_at: string; content: string | null }[]>([]);
@@ -34,7 +39,13 @@ export default function AdminDashboard() {
 
   const [uploading, setUploading] = useState(false);
 
-  // Fetch data on mount
+  // Student registration
+  const [studentForm, setStudentForm] = useState({ full_name: "", email: "", password: "", grade: "", class_name: "", phone: "" });
+  const [regLoading, setRegLoading] = useState(false);
+
+  // Teacher registration
+  const [teacherForm, setTeacherForm] = useState({ full_name: "", email: "", password: "", department: "", phone: "" });
+
   useEffect(() => {
     fetchAnnouncements();
     fetchCarouselImages();
@@ -58,7 +69,7 @@ export default function AdminDashboard() {
 
   const addAnnouncement = async () => {
     if (!newTitle) return;
-    const { error } = await supabase.from("announcements").insert({ title: newTitle, content: newText, is_public: true });
+    const { error } = await supabase.from("announcements").insert({ title: newTitle, content: newText, is_public: true, author_id: user?.id });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setNewTitle(""); setNewText("");
     toast({ title: "Announcement posted!" });
@@ -71,12 +82,12 @@ export default function AdminDashboard() {
     fetchAnnouncements();
   };
 
-  const uploadImage = async (file: File, bucket: string, folder: string) => {
+  const uploadImage = async (file: File, folder: string) => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(path, file);
+    const { error } = await supabase.storage.from("school-media").upload(path, file);
     if (error) throw error;
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("school-media").getPublicUrl(path);
     return urlData.publicUrl;
   };
 
@@ -85,9 +96,8 @@ export default function AdminDashboard() {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "school-media", "carousel");
-      const order = carouselImages.length;
-      await supabase.from("carousel_images").insert({ image_url: url, display_order: order });
+      const url = await uploadImage(file, "carousel");
+      await supabase.from("carousel_images").insert({ image_url: url, display_order: carouselImages.length });
       toast({ title: "Carousel image added!" });
       fetchCarouselImages();
     } catch (err: any) {
@@ -108,7 +118,7 @@ export default function AdminDashboard() {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "school-media", "gallery");
+      const url = await uploadImage(file, "gallery");
       await supabase.from("gallery_images").insert({ image_url: url, caption: galleryCaption || null });
       toast({ title: "Gallery image added!" });
       setGalleryCaption("");
@@ -126,6 +136,71 @@ export default function AdminDashboard() {
     fetchGalleryImages();
   };
 
+  const registerStudent = async () => {
+    const { full_name, email, password, grade, class_name, phone } = studentForm;
+    if (!full_name || !email || !password || !grade) {
+      toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    setRegLoading(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ action: "register-student", full_name, email, password, grade, class_name: `${grade}${class_name}`, phone }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast({ title: "Student registered successfully!" });
+      setStudentForm({ full_name: "", email: "", password: "", grade: "", class_name: "", phone: "" });
+    } catch (err: any) {
+      toast({ title: "Registration failed", description: err.message, variant: "destructive" });
+    }
+    setRegLoading(false);
+  };
+
+  const registerTeacher = async () => {
+    const { full_name, email, password, department, phone } = teacherForm;
+    if (!full_name || !email || !password) {
+      toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    setRegLoading(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ action: "register-teacher", full_name, email, password, department, phone }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast({ title: "Teacher registered successfully!" });
+      setTeacherForm({ full_name: "", email: "", password: "", department: "", phone: "" });
+    } catch (err: any) {
+      toast({ title: "Registration failed", description: err.message, variant: "destructive" });
+    }
+    setRegLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
@@ -136,9 +211,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Admin</span>
-            <Link to="/login">
-              <Button variant="ghost" size="sm"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
-            </Link>
+            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
           </div>
         </div>
       </header>
@@ -148,7 +221,6 @@ export default function AdminDashboard() {
           Admin Dashboard
         </motion.h1>
 
-        {/* Quick stats */}
         <div className="mb-8 grid gap-4 sm:grid-cols-4">
           {[
             { label: "Announcements", value: String(announcements.length), icon: Bell },
@@ -175,7 +247,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="carousel"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
             <TabsTrigger value="gallery"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
-            <TabsTrigger value="register"><Users className="mr-1 h-4 w-4" /> Register Students</TabsTrigger>
+            <TabsTrigger value="register-student"><GraduationCap className="mr-1 h-4 w-4" /> Register Student</TabsTrigger>
+            <TabsTrigger value="register-teacher"><UserPlus className="mr-1 h-4 w-4" /> Register Teacher</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
           </TabsList>
 
@@ -215,7 +288,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader><CardTitle className="font-heading">Upload Carousel Image</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">These images appear on the homepage carousel. Recommended size: 1920×1080px.</p>
+                  <p className="text-sm text-muted-foreground">Recommended: 1920×1080px.</p>
                   <input type="file" accept="image/*" ref={carouselFileRef} onChange={handleCarouselUpload} className="hidden" />
                   <Button onClick={() => carouselFileRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Choose Image"}
@@ -228,20 +301,12 @@ export default function AdminDashboard() {
                   {carouselImages.map((img) => (
                     <div key={img.id} className="group relative overflow-hidden rounded-lg border">
                       <img src={img.image_url} alt="Carousel slide" className="h-32 w-full object-cover" />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute right-2 top-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deleteCarouselImage(img.id)}
-                      >
+                      <Button variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteCarouselImage(img.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
                 </div>
-                {carouselImages.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">No carousel images yet. Upload one to get started.</p>
-                )}
               </div>
             </div>
           </TabsContent>
@@ -269,39 +334,93 @@ export default function AdminDashboard() {
                     <div key={img.id} className="group relative overflow-hidden rounded-lg border">
                       <img src={img.image_url} alt={img.caption || "Gallery"} className="h-28 w-full object-cover" />
                       {img.caption && <p className="px-2 py-1 text-xs text-muted-foreground truncate">{img.caption}</p>}
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute right-1 top-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deleteGalleryImage(img.id)}
-                      >
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteGalleryImage(img.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
                 </div>
-                {galleryImages.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">No gallery images yet.</p>
-                )}
               </div>
             </div>
           </TabsContent>
 
-          {/* Register Tab */}
-          <TabsContent value="register">
+          {/* Register Student Tab */}
+          <TabsContent value="register-student">
             <Card className="max-w-lg">
-              <CardHeader><CardTitle className="font-heading">Register Student to Class</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={e => { e.preventDefault(); toast({ title: "Student registered!" }); }} className="space-y-4">
-                  <div className="space-y-2"><Label>Student Name</Label><Input required /></div>
+              <CardHeader><CardTitle className="font-heading">Register New Student</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Full Name *</Label>
+                  <Input value={studentForm.full_name} onChange={e => setStudentForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. Tafadzwa Moyo" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <Input type="email" value={studentForm.email} onChange={e => setStudentForm(p => ({ ...p, email: e.target.value }))} placeholder="student@giffordhigh.ac.zw" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password *</Label>
+                  <Input type="password" value={studentForm.password} onChange={e => setStudentForm(p => ({ ...p, password: e.target.value }))} placeholder="Initial password" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Assign to Class</Label>
-                    <Select required><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                      <SelectContent>{classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <Label>Grade *</Label>
+                    <Select value={studentForm.grade} onValueChange={v => setStudentForm(p => ({ ...p, grade: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger>
+                      <SelectContent>{gradeOptions.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full">Register Student</Button>
-                </form>
+                  <div className="space-y-2">
+                    <Label>Class</Label>
+                    <Select value={studentForm.class_name} onValueChange={v => setStudentForm(p => ({ ...p, class_name: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone (Parent/Guardian)</Label>
+                  <Input value={studentForm.phone} onChange={e => setStudentForm(p => ({ ...p, phone: e.target.value }))} placeholder="+263 7X XXX XXXX" />
+                </div>
+                <Button onClick={registerStudent} disabled={regLoading} className="w-full">
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  {regLoading ? "Registering..." : "Register Student"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Register Teacher Tab */}
+          <TabsContent value="register-teacher">
+            <Card className="max-w-lg">
+              <CardHeader><CardTitle className="font-heading">Register New Teacher</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Full Name *</Label>
+                  <Input value={teacherForm.full_name} onChange={e => setTeacherForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. Mr. Sibanda" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <Input type="email" value={teacherForm.email} onChange={e => setTeacherForm(p => ({ ...p, email: e.target.value }))} placeholder="teacher@giffordhigh.ac.zw" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password *</Label>
+                  <Input type="password" value={teacherForm.password} onChange={e => setTeacherForm(p => ({ ...p, password: e.target.value }))} placeholder="Initial password" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Select value={teacherForm.department} onValueChange={v => setTeacherForm(p => ({ ...p, department: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                    <SelectContent>{departmentOptions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input value={teacherForm.phone} onChange={e => setTeacherForm(p => ({ ...p, phone: e.target.value }))} placeholder="+263 7X XXX XXXX" />
+                </div>
+                <Button onClick={registerTeacher} disabled={regLoading} className="w-full">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  {regLoading ? "Registering..." : "Register Teacher"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -313,8 +432,13 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="mb-4 flex items-center gap-4">
                   <Label>Class:</Label>
-                  <Select><SelectTrigger className="w-40"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>{classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <Select>
+                    <SelectTrigger className="w-40"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {gradeOptions.flatMap(g => classOptions.map(c => (
+                        <SelectItem key={`${g}${c}`} value={`${g}${c}`}>{g}{c}</SelectItem>
+                      )))}
+                    </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={() => toast({ title: "Timetable saved!" })}>Save Timetable</Button>
                 </div>
