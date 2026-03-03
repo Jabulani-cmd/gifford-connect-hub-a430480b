@@ -75,8 +75,41 @@ export default function Home() {
     <Layout>
       <HeroCarousel />
 
-      {/* Highlights */}
-      <section className="bg-section-warm py-20">
+      {/* Welcome Statement */}
+      <section className="bg-section-warm py-16">
+        <div className="container text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="font-heading text-4xl font-bold text-primary md:text-5xl"
+          >
+            Welcome to Gifford High School
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground"
+          >
+            A beacon of excellence in education since 1965 — nurturing young minds to become leaders, innovators, and responsible citizens.
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-2 font-heading text-sm italic text-accent"
+          >
+            Hinc Orior — From Here I Arise
+          </motion.p>
+        </div>
+      </section>
+
+      {/* Why Gifford High */}
+      <section className="py-20">
         <div className="container">
           <h2 className="mb-12 text-center font-heading text-3xl font-bold text-primary">Why Gifford High?</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -97,8 +130,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Announcements from DB */}
-      <section className="py-20">
+      {/* Announcements */}
+      <section className="bg-section-warm py-20">
         <div className="container">
           <h2 className="mb-10 text-center font-heading text-3xl font-bold text-primary">Announcements</h2>
           {announcements.length > 0 ? (
@@ -124,14 +157,14 @@ export default function Home() {
       </section>
 
       {/* Principal's Message */}
-      <section className="bg-section-warm py-20">
+      <section className="py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <PrincipalPhoto />
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <span className="text-xs font-semibold uppercase tracking-wider text-accent">Message from the Principal</span>
-            <h2 className="mt-2 font-heading text-3xl font-bold text-primary">Welcome to Gifford High School</h2>
+            <h2 className="mt-2 font-heading text-3xl font-bold text-primary">From the Principal's Desk</h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
               It is with great pride and pleasure that I welcome you to Gifford High School. Our institution has been a beacon of excellence in education since 1965, nurturing young minds to become leaders, innovators, and responsible citizens.
             </p>
@@ -150,8 +183,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Snapshot */}
-      <section className="py-20">
+      {/* A Tradition of Excellence */}
+      <section className="bg-section-warm py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-2 lg:order-1">
             <h2 className="font-heading text-3xl font-bold text-primary">A Tradition of Excellence</h2>
@@ -170,7 +203,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Achievements Snapshot */}
+      {/* Celebrating Achievement */}
       <section className="py-20">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-2 lg:order-1">
