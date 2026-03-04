@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +56,10 @@ export default function AdminDashboard() {
 
   const [uploading, setUploading] = useState(false);
 
+  // Site images (achievements etc.)
+  const [achievementsImageUrl, setAchievementsImageUrl] = useState<string | null>(null);
+  const achievementsFileRef = useRef<HTMLInputElement>(null);
+
   // Student registration
   const [studentForm, setStudentForm] = useState({ full_name: "", email: "", password: "", grade: "", class_name: "", phone: "" });
   const [regLoading, setRegLoading] = useState(false);
@@ -69,7 +73,34 @@ export default function AdminDashboard() {
     fetchGalleryImages();
     fetchDownloads();
     fetchMeetings();
+    fetchSiteSettings();
   }, []);
+
+  const fetchSiteSettings = async () => {
+    const { data } = await supabase.from("site_settings").select("*").eq("setting_key", "achievements_image");
+    if (data && data.length > 0) setAchievementsImageUrl(data[0].setting_value);
+  };
+
+  const handleAchievementsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadFile(file, "site-images");
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "achievements_image");
+      if (existing && existing.length > 0) {
+        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "achievements_image");
+      } else {
+        await supabase.from("site_settings").insert({ setting_key: "achievements_image", setting_value: url });
+      }
+      setAchievementsImageUrl(url);
+      toast({ title: "Achievements image updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+    if (achievementsFileRef.current) achievementsFileRef.current.value = "";
+  };
 
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
@@ -313,6 +344,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="register-student"><GraduationCap className="mr-1 h-4 w-4" /> Register Student</TabsTrigger>
             <TabsTrigger value="register-teacher"><UserPlus className="mr-1 h-4 w-4" /> Register Teacher</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
+            <TabsTrigger value="site-images"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -613,6 +645,30 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Site Images Tab */}
+          <TabsContent value="site-images">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader><CardTitle className="font-heading">Achievements Section Image</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">This image appears on the homepage next to the "Celebrating Achievement" section.</p>
+                  <input type="file" accept="image/*" ref={achievementsFileRef} onChange={handleAchievementsUpload} className="hidden" />
+                  <Button onClick={() => achievementsFileRef.current?.click()} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
+                  </Button>
+                </CardContent>
+              </Card>
+              <div>
+                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Current Image</h3>
+                {achievementsImageUrl ? (
+                  <img src={achievementsImageUrl} alt="Achievements section" className="rounded-lg border max-h-64 w-full object-cover" />
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No image uploaded yet. The default static image will be used.</p>
+                )}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
