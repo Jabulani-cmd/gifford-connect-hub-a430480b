@@ -111,7 +111,8 @@ export default function AdminDashboard() {
   const handlePrincipalCropComplete = async (blob: Blob) => {
     setUploading(true);
     try {
-      const url = await uploadFile(blob as any, "site-images");
+      const file = new File([blob], `principal_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const url = await uploadFile(file, "site-images");
       const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "principal_photo");
       if (existing && existing.length > 0) {
         await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "principal_photo");
