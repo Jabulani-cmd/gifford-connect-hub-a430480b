@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
 import { motion } from "framer-motion";
@@ -62,6 +63,12 @@ export default function AdminDashboard() {
   const [achievementsImageUrl, setAchievementsImageUrl] = useState<string | null>(null);
   const achievementsFileRef = useRef<HTMLInputElement>(null);
 
+  // Principal photo
+  const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string | null>(null);
+  const principalFileRef = useRef<HTMLInputElement>(null);
+  const [principalCropSrc, setPrincipalCropSrc] = useState<string | null>(null);
+  const [principalCropOpen, setPrincipalCropOpen] = useState(false);
+
   // Student registration
   const [studentForm, setStudentForm] = useState({ full_name: "", email: "", password: "", grade: "", class_name: "", phone: "" });
   const [regLoading, setRegLoading] = useState(false);
@@ -79,8 +86,43 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchSiteSettings = async () => {
-    const { data } = await supabase.from("site_settings").select("*").eq("setting_key", "achievements_image");
-    if (data && data.length > 0) setAchievementsImageUrl(data[0].setting_value);
+    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo"]);
+    if (data) {
+      data.forEach((s) => {
+        if (s.setting_key === "achievements_image") setAchievementsImageUrl(s.setting_value);
+        if (s.setting_key === "principal_photo") setPrincipalPhotoUrl(s.setting_value);
+      });
+    }
+  };
+
+  const handlePrincipalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPrincipalCropSrc(reader.result as string);
+      setPrincipalCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (principalFileRef.current) principalFileRef.current.value = "";
+  };
+
+  const handlePrincipalCropComplete = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const url = await uploadFile(blob as any, "site-images");
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "principal_photo");
+      if (existing && existing.length > 0) {
+        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "principal_photo");
+      } else {
+        await supabase.from("site_settings").insert({ setting_key: "principal_photo", setting_value: url });
+      }
+      setPrincipalPhotoUrl(url);
+      toast({ title: "Principal photo updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
   };
 
   const handleAchievementsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -653,7 +695,35 @@ export default function AdminDashboard() {
 
           {/* Site Images Tab */}
           <TabsContent value="site-images">
+            {/* Principal Photo Cropper */}
+            {principalCropSrc && (
+              <ImageCropper
+                imageSrc={principalCropSrc}
+                open={principalCropOpen}
+                onClose={() => { setPrincipalCropOpen(false); setPrincipalCropSrc(null); }}
+                onCropComplete={handlePrincipalCropComplete}
+                aspectRatio={3 / 4}
+                cropShape="rect"
+                title="Crop Principal Photo"
+              />
+            )}
             <div className="grid gap-6 lg:grid-cols-2">
+              {/* Principal Photo */}
+              <Card>
+                <CardHeader><CardTitle className="font-heading">Principal Photo</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">This photo appears on the homepage in the "From the Principal's Desk" section.</p>
+                  <input type="file" accept="image/*" ref={principalFileRef} onChange={handlePrincipalFileSelect} className="hidden" />
+                  <Button onClick={() => principalFileRef.current?.click()} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Principal Photo"}
+                  </Button>
+                  {principalPhotoUrl && (
+                    <img src={principalPhotoUrl} alt="Principal" className="mt-2 h-48 w-36 rounded-lg border object-cover object-top" />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Achievements Image */}
               <Card>
                 <CardHeader><CardTitle className="font-heading">Achievements Section Image</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -662,16 +732,11 @@ export default function AdminDashboard() {
                   <Button onClick={() => achievementsFileRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
+                  {achievementsImageUrl && (
+                    <img src={achievementsImageUrl} alt="Achievements section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                  )}
                 </CardContent>
               </Card>
-              <div>
-                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Current Image</h3>
-                {achievementsImageUrl ? (
-                  <img src={achievementsImageUrl} alt="Achievements section" className="rounded-lg border max-h-64 w-full object-cover" />
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No image uploaded yet. The default static image will be used.</p>
-                )}
-              </div>
             </div>
           </TabsContent>
 

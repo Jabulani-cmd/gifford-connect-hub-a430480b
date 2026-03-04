@@ -15,13 +15,28 @@ function PrincipalPhoto() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // First try site_settings (admin-uploaded principal photo)
     supabase
-      .from("staff")
-      .select("photo_url, full_name")
-      .or("title.ilike.%principal%,title.ilike.%head%master%")
+      .from("site_settings")
+      .select("setting_value")
+      .eq("setting_key", "principal_photo")
       .limit(1)
       .then(({ data }) => {
-        if (data && data.length > 0 && data[0].photo_url) setPhotoUrl(data[0].photo_url);
+        if (data && data.length > 0 && data[0].setting_value) {
+          setPhotoUrl(data[0].setting_value);
+        } else {
+          // Fallback: look for a staff member with "principal" in title
+          supabase
+            .from("staff")
+            .select("photo_url")
+            .or("title.ilike.%principal%,title.ilike.%head%master%")
+            .limit(1)
+            .then(({ data: staffData }) => {
+              if (staffData && staffData.length > 0 && staffData[0].photo_url) {
+                setPhotoUrl(staffData[0].photo_url);
+              }
+            });
+        }
       });
   }, []);
 
