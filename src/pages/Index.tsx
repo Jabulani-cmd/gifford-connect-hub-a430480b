@@ -57,6 +57,7 @@ const highlights = [
 
 export default function Home() {
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
+  const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -68,7 +69,12 @@ export default function Home() {
         .limit(4);
       if (data) setAnnouncements(data);
     };
+    const fetchAchievementsImage = async () => {
+      const { data } = await supabase.from("site_settings").select("setting_value").eq("setting_key", "achievements_image").limit(1);
+      if (data && data.length > 0) setAchievementsImage(data[0].setting_value);
+    };
     fetchAnnouncements();
+    fetchAchievementsImage();
   }, []);
 
   return (
@@ -218,7 +224,7 @@ export default function Home() {
             </Link>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
-            <img src={achievementsImg} alt="Students celebrating achievements" className="rounded-xl shadow-maroon" />
+            <img src={achievementsImage || achievementsImg} alt="Students celebrating achievements" className="rounded-xl shadow-maroon" />
           </motion.div>
         </div>
       </section>
