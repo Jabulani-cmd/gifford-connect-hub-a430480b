@@ -391,6 +391,7 @@ export type Database = {
       staff: {
         Row: {
           bio: string | null
+          category: string
           created_at: string
           department: string | null
           email: string | null
@@ -403,6 +404,7 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          category?: string
           created_at?: string
           department?: string | null
           email?: string | null
@@ -415,6 +417,7 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          category?: string
           created_at?: string
           department?: string | null
           email?: string | null
