@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
+import ProjectsManagement from "@/components/admin/ProjectsManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -391,6 +392,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="site-images"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
             <TabsTrigger value="staff-mgmt"><UserCheck className="mr-1 h-4 w-4" /> Staff</TabsTrigger>
             <TabsTrigger value="facilities"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
+            <TabsTrigger value="projects"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -748,6 +750,11 @@ export default function AdminDashboard() {
           {/* Facilities Tab */}
           <TabsContent value="facilities">
             <FacilitiesManagement />
+          </TabsContent>
+
+          {/* Projects Tab */}
+          <TabsContent value="projects">
+            <ProjectsManagement />
           </TabsContent>
         </Tabs>
       </div>
