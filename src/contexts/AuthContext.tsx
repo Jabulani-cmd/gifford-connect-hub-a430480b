@@ -23,31 +23,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
-    const { data } = await supabase.rpc("get_user_role", { _user_id: userId });
-    setRole((data as AppRole) || null);
+    try {
+      const { data, error } = await supabase.rpc("get_user_role", { _user_id: userId });
+      if (error) {
+        console.error("fetchRole error:", error);
+        setRole(null);
+      } else {
+        setRole((data as AppRole) || null);
+      }
+    } catch (err) {
+      console.error("fetchRole exception:", err);
+      setRole(null);
+    }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchRole(session.user.id);
+          // Use setTimeout to avoid blocking the auth state change callback
+          // which can cause signInWithPassword to hang
+          setTimeout(() => {
+            fetchRole(session.user.id).then(() => setLoading(false));
+          }, 0);
         } else {
           setRole(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchRole(session.user.id);
+        fetchRole(session.user.id).then(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
