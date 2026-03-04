@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock } from "lucide-react";
+import { Lock, Home } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -115,6 +115,11 @@ export default function Login() {
                   <p className="text-xs text-muted-foreground">
                     Students & teachers: credentials provided by admin
                   </p>
+                  <Link to="/">
+                    <Button variant="outline" size="sm" className="mt-2 gap-2">
+                      <Home className="h-4 w-4" /> Back to Home
+                    </Button>
+                  </Link>
                 </div>
               </form>
             </CardContent>
