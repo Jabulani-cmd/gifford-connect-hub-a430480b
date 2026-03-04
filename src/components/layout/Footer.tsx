@@ -25,6 +25,8 @@ export default function Footer() {
               <li><Link to="/academics" className="hover:text-secondary transition-colors">Academics</Link></li>
               <li><Link to="/admissions" className="hover:text-secondary transition-colors">Admissions</Link></li>
               <li><Link to="/school-life" className="hover:text-secondary transition-colors">School Life</Link></li>
+              <li><Link to="/fees" className="hover:text-secondary transition-colors">Fees</Link></li>
+              <li><Link to="/vacancies" className="hover:text-secondary transition-colors">Vacancies</Link></li>
             </ul>
           </div>
 

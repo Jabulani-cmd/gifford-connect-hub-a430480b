@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
-const downloadCategories = ["fees", "forms", "policies", "general"];
+const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
 const meetingTypes = ["sgb", "parent-teacher", "general"];
 
 export default function AdminDashboard() {
