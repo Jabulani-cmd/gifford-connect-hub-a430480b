@@ -67,7 +67,7 @@ const highlights = [
   { title: "Academic Excellence", desc: "Cambridge & ZIMSEC curriculum with outstanding pass rates." },
   { title: "Sporting Achievements", desc: "Provincial and national champions in rugby, soccer, and athletics." },
   { title: "Vibrant Community", desc: "Over 20 clubs and societies fostering holistic student development." },
-  { title: "Rich Heritage", desc: "Decades of tradition shaping tomorrow's leaders since 1965." },
+  { title: "Rich Heritage", desc: "Decades of tradition shaping tomorrow's leaders since 1927." },
 ];
 
 export default function Home() {
@@ -117,7 +117,7 @@ export default function Home() {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground"
           >
-            A beacon of excellence in education since 1965 — nurturing young minds to become leaders, innovators, and responsible citizens.
+            A beacon of excellence in education since 1927 — nurturing young minds to become leaders, innovators, and responsible citizens.
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -141,7 +141,7 @@ export default function Home() {
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Message from the Principal</span>
             <h2 className="mt-2 font-heading text-3xl font-bold text-foreground">From the Principal's Desk</h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              It is with great pride and pleasure that I welcome you to Gifford High School. Our institution has been a beacon of excellence in education since 1965, nurturing young minds to become leaders, innovators, and responsible citizens.
+              It is with great pride and pleasure that I welcome you to Gifford High School. Our institution has been a beacon of excellence in education since 1927, nurturing young minds to become leaders, innovators, and responsible citizens.
             </p>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               At Gifford, we believe in holistic education — combining rigorous academics with vibrant sporting and cultural programmes. Our dedicated staff work tirelessly to ensure every student reaches their full potential.
@@ -212,7 +212,7 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-2 lg:order-1">
             <h2 className="font-heading text-3xl font-bold text-foreground">A Tradition of Excellence</h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Founded in 1965, Gifford High School has been a cornerstone of education in Bulawayo. Our students consistently achieve top results in both ZIMSEC and Cambridge examinations, and our alumni hold distinguished positions across the globe.
+              Founded in 1927, Gifford High School has been a cornerstone of education in Bulawayo. Our students consistently achieve top results in both ZIMSEC and Cambridge examinations, and our alumni hold distinguished positions across the globe.
             </p>
             <Link to="/about" className="mt-6 inline-block">
               <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
