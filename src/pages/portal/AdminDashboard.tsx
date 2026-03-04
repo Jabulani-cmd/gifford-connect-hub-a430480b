@@ -184,8 +184,10 @@ export default function AdminDashboard() {
     fetchAnnouncements();
   };
 
-  const uploadFile = async (file: File, folder: string) => {
-    const ext = file.name.split(".").pop();
+  const uploadFile = async (file: File | Blob, folder: string) => {
+    const fileExtFromName = file instanceof File ? file.name.split(".").pop() : undefined;
+    const mimeExt = file.type?.split("/")?.[1];
+    const ext = fileExtFromName || mimeExt || "jpg";
     const path = `${folder}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("school-media").upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) throw error;
