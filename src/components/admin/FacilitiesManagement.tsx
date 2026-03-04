@@ -14,6 +14,10 @@ const facilityTypes = [
   { value: "sports", label: "Sports Facilities" },
   { value: "labs", label: "Laboratories" },
   { value: "library", label: "Library" },
+  { value: "clubs", label: "Clubs & Societies" },
+  { value: "ict", label: "ICT & Computer Labs" },
+  { value: "dining", label: "Dining Hall" },
+  { value: "assembly", label: "Assembly & Chapel" },
   { value: "general", label: "General" },
 ];
 

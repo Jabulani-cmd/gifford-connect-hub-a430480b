@@ -18,6 +18,10 @@ const facilityTypes = [
   { value: "sports", label: "Sports Facilities" },
   { value: "labs", label: "Laboratories" },
   { value: "library", label: "Library" },
+  { value: "clubs", label: "Clubs & Societies" },
+  { value: "ict", label: "ICT & Computer Labs" },
+  { value: "dining", label: "Dining Hall" },
+  { value: "assembly", label: "Assembly & Chapel" },
   { value: "general", label: "General" },
 ];
 
@@ -60,9 +64,10 @@ export default function Facilities() {
             viewport={{ once: true }}
             className="text-lg leading-relaxed text-muted-foreground"
           >
-            Gifford High School provides excellent facilities to support both academic and residential life.
-            Our boarding facilities offer a safe, supportive home-away-from-home environment for students,
-            complemented by modern classrooms, well-equipped laboratories, sports grounds, and a comprehensive library.
+            Gifford High School is a boys-only boarding school providing excellent facilities to support
+            academic excellence, sporting achievement, and holistic development. Our campus features modern
+            classrooms, well-equipped laboratories, expansive sports grounds, a comprehensive library,
+            ICT facilities, and comfortable boarding accommodation.
           </motion.p>
         </div>
       </section>
@@ -97,12 +102,17 @@ export default function Facilities() {
       {/* Boarding Info */}
       <section className="py-16">
         <div className="container max-w-4xl">
-          <h2 className="mb-8 text-center font-heading text-3xl font-bold text-primary">Boarding at Gifford</h2>
-          <div className="grid gap-6 md:grid-cols-2">
+          <h2 className="mb-8 text-center font-heading text-3xl font-bold text-primary">Life at Gifford</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
               { title: "Boys' Hostel", desc: "Well-maintained dormitories with supervised study sessions, recreational areas, and 24-hour security." },
-              { title: "Girls' Hostel", desc: "Safe, comfortable accommodation with dedicated house mothers, common rooms, and private study spaces." },
               { title: "Dining Hall", desc: "Nutritious meals prepared daily by our kitchen staff, catering for various dietary requirements." },
+              { title: "Sports Grounds", desc: "Cricket, rugby, soccer, and athletics facilities including a swimming pool and gymnasium." },
+              { title: "Science Laboratories", desc: "Fully equipped Physics, Chemistry, and Biology labs for hands-on practical learning." },
+              { title: "ICT & Computer Labs", desc: "Modern computer laboratories with internet access supporting digital literacy and research." },
+              { title: "Library & Resource Centre", desc: "Extensive collection of textbooks, reference materials, and digital resources for independent study." },
+              { title: "Clubs & Societies", desc: "Debate, chess, drama, music, environmental club, and many more co-curricular activities." },
+              { title: "Assembly Hall & Chapel", desc: "Multi-purpose hall for assemblies, prize-giving ceremonies, and spiritual guidance." },
               { title: "Study & Recreation", desc: "Evening prep sessions, weekend activities, and pastoral care to ensure a balanced boarding experience." },
             ].map((item, i) => (
               <motion.div key={item.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
