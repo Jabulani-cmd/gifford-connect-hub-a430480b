@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,35 +8,236 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, BarChart3, BookOpen, Bell, LogOut } from "lucide-react";
+import { Upload, BarChart3, BookOpen, Bell, LogOut, Calendar } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-const existingMarks = [
-  { student: "Tafadzwa Moyo", subject: "Mathematics", mark: 85, term: "Term 1" },
-  { student: "Rudo Ncube", subject: "Mathematics", mark: 72, term: "Term 1" },
-  { student: "Blessing Dube", subject: "Mathematics", mark: 91, term: "Term 1" },
-];
-
-const existingHomework = [
-  { className: "Form 4B", subject: "Mathematics", title: "Chapter 7 Exercises", due: "Mar 7, 2026" },
-  { className: "Form 3A", subject: "Mathematics", title: "Algebra Worksheet", due: "Mar 4, 2026" },
-];
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const timeSlots = ["07:30", "08:30", "10:00", "11:00", "13:00"];
+const termOptions = ["Term 1", "Term 2", "Term 3"];
+const assessmentTypes = ["test", "exam", "assignment", "project"];
 
 export default function ParentTeacherDashboard() {
   const { toast } = useToast();
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
   const navigate = useNavigate();
-  const [marksSubmitted, setMarksSubmitted] = useState(false);
-  const [hwSubmitted, setHwSubmitted] = useState(false);
+
+  // Data from DB
+  const [students, setStudents] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [marks, setMarks] = useState<any[]>([]);
+  const [homework, setHomework] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [timetableData, setTimetableData] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+
+  // Mark form
+  const [markForm, setMarkForm] = useState({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", comment: "" });
+  const [markLoading, setMarkLoading] = useState(false);
+
+  // Homework form
+  const [hwForm, setHwForm] = useState({ class_id: "", subject_id: "", title: "", due_date: "", description: "" });
+  const [hwLoading, setHwLoading] = useState(false);
+
+  // Timetable class selection
+  const [selectedTTClass, setSelectedTTClass] = useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  const isTeacher = role === "teacher";
+  const isParent = role === "parent";
+
+  useEffect(() => {
+    if (!user) return;
+    fetchAll();
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedTTClass) fetchTimetable(selectedTTClass);
+  }, [selectedTTClass]);
+
+  const fetchAll = async () => {
+    setLoading(true);
+
+    // Fetch profile
+    const { data: prof } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
+    setProfile(prof);
+
+    // Fetch subjects & classes
+    const [subRes, classRes] = await Promise.all([
+      supabase.from("subjects").select("*").order("name"),
+      supabase.from("classes").select("*").order("name"),
+    ]);
+    if (subRes.data) setSubjects(subRes.data);
+    if (classRes.data) {
+      setClasses(classRes.data);
+      if (classRes.data.length > 0) setSelectedTTClass(classRes.data[0].id);
+    }
+
+    if (isTeacher) {
+      // Fetch students (via edge function)
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+          body: JSON.stringify({ action: "get-students" }),
+        });
+        const data = await res.json();
+        if (data.students) setStudents(data.students);
+      } catch {}
+
+      // Fetch marks uploaded by this teacher
+      const { data: marksData } = await supabase
+        .from("marks")
+        .select("*, subjects(name), profiles:student_id(full_name)")
+        .eq("teacher_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (marksData) setMarks(marksData);
+
+      // Fetch homework by this teacher
+      const { data: hwData } = await supabase
+        .from("homework")
+        .select("*, subjects(name), classes:class_id(name)")
+        .eq("teacher_id", user!.id)
+        .order("due_date", { ascending: false })
+        .limit(50);
+      if (hwData) setHomework(hwData);
+    }
+
+    if (isParent) {
+      // Fetch linked students
+      const { data: links } = await supabase.from("parent_students").select("student_id").eq("parent_id", user!.id);
+      if (links && links.length > 0) {
+        const studentIds = links.map(l => l.student_id);
+        const { data: studentProfiles } = await supabase.from("profiles").select("*").in("id", studentIds);
+        if (studentProfiles) setStudents(studentProfiles);
+
+        // Fetch marks for children
+        const { data: marksData } = await supabase
+          .from("marks")
+          .select("*, subjects(name)")
+          .in("student_id", studentIds)
+          .order("created_at", { ascending: false });
+        if (marksData) setMarks(marksData);
+
+        // Fetch homework for children's classes
+        const classNames = studentProfiles?.map(s => s.class_name).filter(Boolean) || [];
+        if (classNames.length > 0) {
+          const { data: classRows } = await supabase.from("classes").select("id").in("name", classNames);
+          if (classRows && classRows.length > 0) {
+            const classIds = classRows.map(c => c.id);
+            const { data: hwData } = await supabase
+              .from("homework")
+              .select("*, subjects(name), classes:class_id(name)")
+              .in("class_id", classIds)
+              .order("due_date", { ascending: false });
+            if (hwData) setHomework(hwData);
+          }
+        }
+      }
+    }
+
+    // Announcements
+    const { data: ann } = await supabase
+      .from("announcements")
+      .select("*")
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (ann) setAnnouncements(ann);
+
+    setLoading(false);
+  };
+
+  const fetchTimetable = async (classId: string) => {
+    const { data } = await supabase
+      .from("timetable")
+      .select("*, subjects(name)")
+      .eq("class_id", classId);
+    if (data) setTimetableData(data);
+  };
+
+  const submitMark = async () => {
+    const { student_id, subject_id, mark, term, assessment_type, comment } = markForm;
+    if (!student_id || !subject_id || !mark) {
+      toast({ title: "Fill all required fields", variant: "destructive" });
+      return;
+    }
+    setMarkLoading(true);
+    const { error } = await supabase.from("marks").insert({
+      student_id,
+      subject_id,
+      mark: parseInt(mark),
+      term,
+      assessment_type,
+      comment: comment || null,
+      teacher_id: user!.id,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Mark submitted successfully!" });
+      setMarkForm({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", comment: "" });
+      // Refresh marks
+      const { data: marksData } = await supabase
+        .from("marks")
+        .select("*, subjects(name), profiles:student_id(full_name)")
+        .eq("teacher_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (marksData) setMarks(marksData);
+    }
+    setMarkLoading(false);
+  };
+
+  const submitHomework = async () => {
+    const { class_id, subject_id, title, due_date, description } = hwForm;
+    if (!class_id || !subject_id || !title || !due_date) {
+      toast({ title: "Fill all required fields", variant: "destructive" });
+      return;
+    }
+    setHwLoading(true);
+    const { error } = await supabase.from("homework").insert({
+      class_id,
+      subject_id,
+      title,
+      due_date,
+      description: description || null,
+      teacher_id: user!.id,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Homework posted!" });
+      setHwForm({ class_id: "", subject_id: "", title: "", due_date: "", description: "" });
+      const { data: hwData } = await supabase
+        .from("homework")
+        .select("*, subjects(name), classes:class_id(name)")
+        .eq("teacher_id", user!.id)
+        .order("due_date", { ascending: false })
+        .limit(50);
+      if (hwData) setHomework(hwData);
+    }
+    setHwLoading(false);
+  };
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const displayName = user?.user_metadata?.full_name || "User";
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || "User";
+
+  const getTimetableCell = (timeSlot: string, dayIndex: number) => {
+    const entry = timetableData.find(t => t.time_slot === timeSlot && t.day_of_week === dayIndex);
+    return entry?.subjects?.name || "—";
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +245,9 @@ export default function ParentTeacherDashboard() {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={schoolLogo} alt="Gifford High School crest" className="h-8 w-8 object-contain" />
-            <span className="font-heading text-lg font-bold text-primary">Parent / Teacher Portal</span>
+            <span className="font-heading text-lg font-bold text-primary">
+              {isTeacher ? "Teacher Portal" : "Parent Portal"}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{displayName}</span>
@@ -55,148 +258,248 @@ export default function ParentTeacherDashboard() {
 
       <div className="container py-8">
         <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 font-heading text-2xl font-bold text-primary">
-          Dashboard
+          {isTeacher ? "Teacher Dashboard" : "Parent Dashboard"}
         </motion.h1>
 
-        <Tabs defaultValue="upload-marks" className="space-y-6">
+        <Tabs defaultValue={isTeacher ? "upload-marks" : "view-marks"} className="space-y-6">
           <TabsList className="flex-wrap">
-            <TabsTrigger value="upload-marks"><Upload className="mr-1 h-4 w-4" /> Upload Marks</TabsTrigger>
-            <TabsTrigger value="upload-hw"><BookOpen className="mr-1 h-4 w-4" /> Upload Homework</TabsTrigger>
+            {isTeacher && (
+              <>
+                <TabsTrigger value="upload-marks"><Upload className="mr-1 h-4 w-4" /> Upload Marks</TabsTrigger>
+                <TabsTrigger value="upload-hw"><BookOpen className="mr-1 h-4 w-4" /> Upload Homework</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="view-marks"><BarChart3 className="mr-1 h-4 w-4" /> View Marks</TabsTrigger>
-            <TabsTrigger value="view-hw"><BookOpen className="mr-1 h-4 w-4" /> View Homework</TabsTrigger>
+            <TabsTrigger value="view-hw"><BookOpen className="mr-1 h-4 w-4" /> Homework</TabsTrigger>
+            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload-marks">
-            <Card className="max-w-lg">
-              <CardHeader><CardTitle className="font-heading">Upload Student Marks</CardTitle></CardHeader>
-              <CardContent>
-                {marksSubmitted ? (
-                  <div className="py-8 text-center">
-                    <p className="font-semibold text-primary">Marks uploaded successfully!</p>
-                    <Button variant="outline" className="mt-4" onClick={() => setMarksSubmitted(false)}>Upload More</Button>
+          {/* Upload Marks (Teachers only) */}
+          {isTeacher && (
+            <TabsContent value="upload-marks">
+              <Card className="max-w-lg">
+                <CardHeader><CardTitle className="font-heading">Upload Student Marks</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Student *</Label>
+                    <Select value={markForm.student_id} onValueChange={v => setMarkForm(p => ({ ...p, student_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
+                      <SelectContent>
+                        {students.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.full_name} {s.class_name ? `(${s.class_name})` : ""}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  <form onSubmit={(e) => { e.preventDefault(); setMarksSubmitted(true); toast({ title: "Marks saved!" }); }} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Student</Label>
-                      <Select required><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="tafadzwa">Tafadzwa Moyo</SelectItem>
-                          <SelectItem value="rudo">Rudo Ncube</SelectItem>
-                          <SelectItem value="blessing">Blessing Dube</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Subject</Label>
-                      <Select required><SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="math">Mathematics</SelectItem>
-                          <SelectItem value="english">English</SelectItem>
-                          <SelectItem value="physics">Physics</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2"><Label>Mark (%)</Label><Input type="number" min="0" max="100" required /></div>
-                    <div className="space-y-2"><Label>Comments</Label><Textarea rows={2} /></div>
-                    <Button type="submit" className="w-full">Submit Marks</Button>
-                  </form>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="upload-hw">
-            <Card className="max-w-lg">
-              <CardHeader><CardTitle className="font-heading">Upload Homework</CardTitle></CardHeader>
-              <CardContent>
-                {hwSubmitted ? (
-                  <div className="py-8 text-center">
-                    <p className="font-semibold text-primary">Homework uploaded!</p>
-                    <Button variant="outline" className="mt-4" onClick={() => setHwSubmitted(false)}>Upload More</Button>
+                  <div className="space-y-2">
+                    <Label>Subject *</Label>
+                    <Select value={markForm.subject_id} onValueChange={v => setMarkForm(p => ({ ...p, subject_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                      <SelectContent>
+                        {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  <form onSubmit={(e) => { e.preventDefault(); setHwSubmitted(true); toast({ title: "Homework posted!" }); }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Class</Label>
-                      <Select required><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <Label>Term</Label>
+                      <Select value={markForm.term} onValueChange={v => setMarkForm(p => ({ ...p, term: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="f4b">Form 4B</SelectItem>
-                          <SelectItem value="f3a">Form 3A</SelectItem>
-                          <SelectItem value="f2c">Form 2C</SelectItem>
+                          {termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Subject</Label>
-                      <Select required><SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                      <Label>Type</Label>
+                      <Select value={markForm.assessment_type} onValueChange={v => setMarkForm(p => ({ ...p, assessment_type: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="math">Mathematics</SelectItem>
-                          <SelectItem value="english">English</SelectItem>
-                          <SelectItem value="physics">Physics</SelectItem>
+                          {assessmentTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2"><Label>Assignment Title</Label><Input required /></div>
-                    <div className="space-y-2"><Label>Due Date</Label><Input type="date" required /></div>
-                    <div className="space-y-2"><Label>Details</Label><Textarea rows={3} /></div>
-                    <Button type="submit" className="w-full">Post Homework</Button>
-                  </form>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Mark (%) *</Label>
+                    <Input type="number" min="0" max="100" value={markForm.mark} onChange={e => setMarkForm(p => ({ ...p, mark: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Comments</Label>
+                    <Textarea rows={2} value={markForm.comment} onChange={e => setMarkForm(p => ({ ...p, comment: e.target.value }))} />
+                  </div>
+                  <Button onClick={submitMark} disabled={markLoading} className="w-full">
+                    {markLoading ? "Submitting..." : "Submit Mark"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
+          {/* Upload Homework (Teachers only) */}
+          {isTeacher && (
+            <TabsContent value="upload-hw">
+              <Card className="max-w-lg">
+                <CardHeader><CardTitle className="font-heading">Post Homework</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Class *</Label>
+                    <Select value={hwForm.class_id} onValueChange={v => setHwForm(p => ({ ...p, class_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <SelectContent>
+                        {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Subject *</Label>
+                    <Select value={hwForm.subject_id} onValueChange={v => setHwForm(p => ({ ...p, subject_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                      <SelectContent>
+                        {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Title *</Label>
+                    <Input value={hwForm.title} onChange={e => setHwForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Chapter 7 Exercises" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Due Date *</Label>
+                    <Input type="date" value={hwForm.due_date} onChange={e => setHwForm(p => ({ ...p, due_date: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea rows={3} value={hwForm.description} onChange={e => setHwForm(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <Button onClick={submitHomework} disabled={hwLoading} className="w-full">
+                    {hwLoading ? "Posting..." : "Post Homework"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* View Marks */}
           <TabsContent value="view-marks">
             <Card>
-              <CardHeader><CardTitle className="font-heading">Student Marks</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="font-heading">{isTeacher ? "Marks You've Submitted" : "Your Children's Marks"}</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Student</th>
-                      <th className="px-4 py-2">Subject</th><th className="px-4 py-2">Mark</th>
-                      <th className="px-4 py-2">Term</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {existingMarks.map((m, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="px-4 py-2">{m.student}</td>
-                        <td className="px-4 py-2 text-center">{m.subject}</td>
-                        <td className="px-4 py-2 text-center font-bold text-primary">{m.mark}%</td>
-                        <td className="px-4 py-2 text-center">{m.term}</td>
+                {marks.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Student</th>
+                        <th className="px-4 py-2">Subject</th>
+                        <th className="px-4 py-2">Type</th>
+                        <th className="px-4 py-2">Term</th>
+                        <th className="px-4 py-2">Mark</th>
+                        <th className="px-4 py-2 text-left">Comment</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {marks.map((m) => (
+                        <tr key={m.id} className="border-t">
+                          <td className="px-4 py-2">{(m as any).profiles?.full_name || "—"}</td>
+                          <td className="px-4 py-2 text-center">{m.subjects?.name}</td>
+                          <td className="px-4 py-2 text-center">{m.assessment_type}</td>
+                          <td className="px-4 py-2 text-center">{m.term}</td>
+                          <td className="px-4 py-2 text-center font-bold text-primary">{m.mark}%</td>
+                          <td className="px-4 py-2 text-sm text-muted-foreground">{m.comment || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-muted-foreground italic py-8">
+                    {loading ? "Loading..." : "No marks recorded yet."}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* View Homework */}
           <TabsContent value="view-hw">
             <div className="space-y-3">
-              {existingHomework.map((hw, i) => (
-                <Card key={i}>
+              {homework.length > 0 ? homework.map((hw) => (
+                <Card key={hw.id}>
                   <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-accent">{hw.className} · {hw.subject}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                      {(hw as any).classes?.name || "Class"} · {hw.subjects?.name || "Subject"}
+                    </p>
                     <h3 className="font-semibold">{hw.title}</h3>
-                    <p className="text-sm text-muted-foreground">Due: {hw.due}</p>
+                    <p className="text-sm text-muted-foreground">Due: {new Date(hw.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    {hw.description && <p className="mt-1 text-sm text-muted-foreground">{hw.description}</p>}
                   </CardContent>
                 </Card>
-              ))}
+              )) : (
+                <p className="text-center text-muted-foreground italic py-8">
+                  {loading ? "Loading..." : "No homework assigned yet."}
+                </p>
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="announcements">
+          {/* Timetable */}
+          <TabsContent value="timetable">
             <Card>
-              <CardContent className="p-6">
-                <span className="text-xs font-semibold text-accent">Feb 28</span>
-                <h3 className="font-heading font-semibold">Staff Meeting — Friday 3 PM</h3>
-                <p className="mt-1 text-sm text-muted-foreground">All teaching staff to attend the end-of-month review meeting in the staff room.</p>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <CardTitle className="font-heading">Class Timetable</CardTitle>
+                  <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {timetableData.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Time</th>
+                        {days.map(d => <th key={d} className="px-3 py-2">{d}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timeSlots.map(time => (
+                        <tr key={time} className="border-t">
+                          <td className="px-3 py-2 font-medium">{time}</td>
+                          {[1, 2, 3, 4, 5].map(d => (
+                            <td key={d} className="px-3 py-2 text-center">{getTimetableCell(time, d)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center text-muted-foreground italic py-8">
+                    {loading ? "Loading..." : "No timetable set for this class yet."}
+                  </p>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Announcements */}
+          <TabsContent value="announcements">
+            <div className="space-y-3">
+              {announcements.length > 0 ? announcements.map(a => (
+                <Card key={a.id}>
+                  <CardContent className="p-4">
+                    <span className="text-xs font-semibold text-accent">{new Date(a.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    <h3 className="font-heading font-semibold">{a.title}</h3>
+                    {a.content && <p className="mt-1 text-sm text-muted-foreground">{a.content}</p>}
+                  </CardContent>
+                </Card>
+              )) : (
+                <p className="text-center text-muted-foreground italic py-8">No announcements.</p>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
