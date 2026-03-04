@@ -191,7 +191,7 @@ export default function Home() {
               <motion.div key={h.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <Card className="h-full border-none shadow-maroon transition-transform hover:-translate-y-1">
                   <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-maroon-light">
+                    <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-full">
                       <img src={schoolLogo} alt="Gifford High School" className="h-20 w-20 object-contain" />
                     </div>
                     <h3 className="mb-2 font-heading text-lg font-semibold">{h.title}</h3>
