@@ -361,6 +361,45 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_timetables: {
+        Row: {
+          activity: string
+          activity_type: string
+          created_at: string
+          day_of_week: number
+          description: string | null
+          end_time: string | null
+          id: string
+          location: string | null
+          time_slot: string
+          user_id: string
+        }
+        Insert: {
+          activity: string
+          activity_type?: string
+          created_at?: string
+          day_of_week: number
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          time_slot: string
+          user_id: string
+        }
+        Update: {
+          activity?: string
+          activity_type?: string
+          created_at?: string
+          day_of_week?: number
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          time_slot?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

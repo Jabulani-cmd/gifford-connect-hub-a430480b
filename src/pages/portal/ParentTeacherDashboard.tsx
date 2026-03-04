@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, BarChart3, BookOpen, Bell, LogOut, Calendar } from "lucide-react";
+import { Upload, BarChart3, BookOpen, Bell, LogOut, Calendar, ClipboardList } from "lucide-react";
+import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -271,7 +272,8 @@ export default function ParentTeacherDashboard() {
             )}
             <TabsTrigger value="view-marks"><BarChart3 className="mr-1 h-4 w-4" /> View Marks</TabsTrigger>
             <TabsTrigger value="view-hw"><BookOpen className="mr-1 h-4 w-4" /> Homework</TabsTrigger>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
+            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Class Timetable</TabsTrigger>
+            {isTeacher && <TabsTrigger value="my-schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>}
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
           </TabsList>
 
@@ -442,7 +444,14 @@ export default function ParentTeacherDashboard() {
             </div>
           </TabsContent>
 
-          {/* Timetable */}
+          {/* My Schedule (Teachers only) */}
+          {isTeacher && (
+            <TabsContent value="my-schedule">
+              <PersonalTimetableEditor title="My Teaching Schedule" />
+            </TabsContent>
+          )}
+
+          {/* Class Timetable */}
           <TabsContent value="timetable">
             <Card>
               <CardHeader>
