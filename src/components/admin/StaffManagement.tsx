@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Edit2, X, Check } from "lucide-react";
+import { Plus, Trash2, Upload, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import schoolLogo from "@/assets/school-logo.png";
+import ImageCropper from "@/components/ImageCropper";
 
 const categoryOptions = [
   { value: "leadership", label: "Leadership" },
@@ -36,7 +36,6 @@ export default function StaffManagement() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [groupPhotoUrl, setGroupPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   // New staff form
   const [form, setForm] = useState({
@@ -44,10 +43,16 @@ export default function StaffManagement() {
   });
   const photoFileRef = useRef<HTMLInputElement>(null);
   const groupPhotoRef = useRef<HTMLInputElement>(null);
-  const editPhotoRef = useRef<HTMLInputElement>(null);
 
   // Filter
   const [filterCategory, setFilterCategory] = useState("all");
+
+  // Cropper state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropTarget, setCropTarget] = useState<{ type: "new" | "existing" | "group"; staffId?: string }>({ type: "new" });
+  const [cropAspect, setCropAspect] = useState(1);
+  const [cropShape, setCropShape] = useState<"round" | "rect">("round");
 
   useEffect(() => {
     fetchStaff();
@@ -64,8 +69,8 @@ export default function StaffManagement() {
     if (data && data.length > 0) setGroupPhotoUrl(data[0].setting_value);
   };
 
-  const uploadFile = async (file: File, folder: string) => {
-    const ext = file.name.split(".").pop();
+  const uploadFile = async (file: File | Blob, folder: string) => {
+    const ext = file instanceof File ? file.name.split(".").pop() : "jpg";
     const path = `${folder}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("school-media").upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) throw error;
@@ -73,39 +78,76 @@ export default function StaffManagement() {
     return urlData.publicUrl;
   };
 
-  const handleGroupPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Open cropper from file input
+  const openCropperFromFile = (file: File, target: typeof cropTarget, aspect = 1, shape: "round" | "rect" = "round") => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(reader.result as string);
+      setCropTarget(target);
+      setCropAspect(aspect);
+      setCropShape(shape);
+      setCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle cropped blob upload
+  const handleCroppedUpload = async (blob: Blob) => {
     setUploading(true);
     try {
-      const url = await uploadFile(file, "staff");
-      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "staff_group_photo");
-      if (existing && existing.length > 0) {
-        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "staff_group_photo");
-      } else {
-        await supabase.from("site_settings").insert({ setting_key: "staff_group_photo", setting_value: url });
+      const url = await uploadFile(blob, "staff");
+
+      if (cropTarget.type === "group") {
+        const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "staff_group_photo");
+        if (existing && existing.length > 0) {
+          await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "staff_group_photo");
+        } else {
+          await supabase.from("site_settings").insert({ setting_key: "staff_group_photo", setting_value: url });
+        }
+        setGroupPhotoUrl(url);
+        toast({ title: "Group photo updated!" });
+      } else if (cropTarget.type === "existing" && cropTarget.staffId) {
+        await supabase.from("staff").update({ photo_url: url }).eq("id", cropTarget.staffId);
+        toast({ title: "Photo updated!" });
+        fetchStaff();
+      } else if (cropTarget.type === "new") {
+        // Store temporarily — will be used when adding the staff member
+        setPendingPhotoUrl(url);
+        toast({ title: "Photo cropped! Click 'Add Staff Member' to save." });
       }
-      setGroupPhotoUrl(url);
-      toast({ title: "Group photo updated!" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
     setUploading(false);
+  };
+
+  const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string | null>(null);
+
+  const handleNewStaffPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    openCropperFromFile(file, { type: "new" }, 1, "round");
+    if (photoFileRef.current) photoFileRef.current.value = "";
+  };
+
+  const handleGroupPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    openCropperFromFile(file, { type: "group" }, 16 / 9, "rect");
     if (groupPhotoRef.current) groupPhotoRef.current.value = "";
+  };
+
+  const handleExistingStaffPhoto = (staffId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    openCropperFromFile(file, { type: "existing", staffId }, 1, "round");
   };
 
   const addStaffMember = async () => {
     if (!form.full_name) { toast({ title: "Name is required", variant: "destructive" }); return; }
 
-    // Check if a photo was selected
-    const photoFile = photoFileRef.current?.files?.[0];
-    let photo_url: string | null = null;
-
     setUploading(true);
     try {
-      if (photoFile) {
-        photo_url = await uploadFile(photoFile, "staff");
-      }
       const { error } = await supabase.from("staff").insert({
         full_name: form.full_name,
         title: form.title || null,
@@ -114,12 +156,12 @@ export default function StaffManagement() {
         email: form.email || null,
         phone: form.phone || null,
         category: form.category,
-        photo_url,
+        photo_url: pendingPhotoUrl,
       });
       if (error) throw error;
       toast({ title: "Staff member added!" });
       setForm({ full_name: "", title: "", department: "", bio: "", email: "", phone: "", category: "teaching" });
-      if (photoFileRef.current) photoFileRef.current.value = "";
+      setPendingPhotoUrl(null);
       fetchStaff();
     } catch (err: any) {
       toast({ title: "Failed to add staff", description: err.message, variant: "destructive" });
@@ -133,21 +175,6 @@ export default function StaffManagement() {
     fetchStaff();
   };
 
-  const updateStaffPhoto = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadFile(file, "staff");
-      await supabase.from("staff").update({ photo_url: url }).eq("id", id);
-      toast({ title: "Photo updated!" });
-      fetchStaff();
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
-    }
-    setUploading(false);
-  };
-
   const updateStaffCategory = async (id: string, category: string) => {
     await supabase.from("staff").update({ category }).eq("id", id);
     toast({ title: "Category updated" });
@@ -159,6 +186,19 @@ export default function StaffManagement() {
 
   return (
     <div className="space-y-8">
+      {/* Crop Dialog */}
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          open={cropOpen}
+          onClose={() => { setCropOpen(false); setCropSrc(null); }}
+          onCropComplete={handleCroppedUpload}
+          aspectRatio={cropAspect}
+          cropShape={cropShape}
+          title={cropTarget.type === "group" ? "Crop Group Photo" : "Crop Staff Photo"}
+        />
+      )}
+
       {/* Group Photo Section */}
       <Card>
         <CardHeader><CardTitle className="font-heading">Staff Group Photo</CardTitle></CardHeader>
@@ -166,7 +206,7 @@ export default function StaffManagement() {
           <p className="text-sm text-muted-foreground">This photo appears at the top of the Staff page.</p>
           <div className="flex items-start gap-6">
             <div>
-              <input type="file" accept="image/*" ref={groupPhotoRef} onChange={handleGroupPhotoUpload} className="hidden" />
+              <input type="file" accept="image/*" ref={groupPhotoRef} onChange={handleGroupPhoto} className="hidden" />
               <Button onClick={() => groupPhotoRef.current?.click()} disabled={uploading}>
                 <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Group Photo"}
               </Button>
@@ -222,8 +262,11 @@ export default function StaffManagement() {
               <Textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={3} placeholder="Brief description of qualifications, subjects taught, responsibilities..." />
             </div>
             <div className="space-y-2">
-              <Label>Photo</Label>
-              <input type="file" accept="image/*" ref={photoFileRef} className="block text-sm file:mr-4 file:rounded-md file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-secondary-foreground hover:file:bg-secondary/90" />
+              <Label>Photo (will be cropped)</Label>
+              <input type="file" accept="image/*" ref={photoFileRef} onChange={handleNewStaffPhoto} className="block text-sm file:mr-4 file:rounded-md file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-secondary-foreground hover:file:bg-secondary/90" />
+              {pendingPhotoUrl && (
+                <img src={pendingPhotoUrl} alt="Cropped preview" className="mt-2 h-20 w-20 rounded-full object-cover border" />
+              )}
             </div>
           </div>
           <Button onClick={addStaffMember} disabled={uploading || !form.full_name} className="mt-4">
@@ -263,12 +306,12 @@ export default function StaffManagement() {
                     accept="image/*"
                     className="hidden"
                     id={`photo-${member.id}`}
-                    onChange={(e) => updateStaffPhoto(member.id, e)}
+                    onChange={(e) => handleExistingStaffPhoto(member.id, e)}
                   />
                   <button
                     onClick={() => document.getElementById(`photo-${member.id}`)?.click()}
                     className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90"
-                    title="Change photo"
+                    title="Change photo (crop)"
                   >
                     <Edit2 className="h-3 w-3" />
                   </button>
