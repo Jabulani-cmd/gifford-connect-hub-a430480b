@@ -11,6 +11,7 @@ const navLinks = [
   { label: "Academics", path: "/academics" },
   { label: "Admissions", path: "/admissions" },
   { label: "School Life", path: "/school-life" },
+  { label: "Facilities", path: "/facilities" },
   { label: "Staff", path: "/staff" },
   { label: "Downloads", path: "/downloads" },
   { label: "News", path: "/news" },
