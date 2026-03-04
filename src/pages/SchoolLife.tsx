@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
-import sportsImg from "@/assets/sports.png";
-import classroomImg from "@/assets/classroom.png";
-import achievementsImg from "@/assets/achievements.png";
-import heroImg from "@/assets/hero-school.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Music, BookOpen, Palette, Users, Volleyball, HandshakeIcon, Calendar } from "lucide-react";
@@ -28,19 +24,18 @@ const clubs = [
   { icon: Trophy, name: "Science Club", desc: "Hands-on experiments and science olympiads." },
 ];
 
-const galleryImages = [heroImg, classroomImg, sportsImg, achievementsImg];
-
 const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
 export default function SchoolLife() {
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [galleryImages, setGalleryImages] = useState<{ id: string; image_url: string; caption: string | null }[]>([]);
 
   useEffect(() => {
-    const fetchMeetings = async () => {
-      const { data } = await supabase.from("meetings").select("*").order("meeting_date", { ascending: true });
-      if (data) setMeetings(data);
-    };
-    fetchMeetings();
+    supabase.from("meetings").select("*").order("meeting_date", { ascending: true })
+      .then(({ data }) => { if (data) setMeetings(data); });
+
+    supabase.from("gallery_images").select("id, image_url, caption").eq("is_active", true).order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setGalleryImages(data); });
   }, []);
 
   const sgbMeetings = meetings.filter(m => m.meeting_type === "sgb");
@@ -158,13 +153,18 @@ export default function SchoolLife() {
             </TabsContent>
 
             <TabsContent value="gallery">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                {galleryImages.map((img, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                    <img src={img} alt={`Gallery ${i + 1}`} className="h-64 w-full rounded-xl object-cover shadow-maroon transition-transform hover:scale-[1.02]" />
-                  </motion.div>
-                ))}
-              </div>
+              {galleryImages.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {galleryImages.map((img, i) => (
+                    <motion.div key={img.id} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                      <img src={img.image_url} alt={img.caption || `Gallery ${i + 1}`} className="h-64 w-full rounded-xl object-cover shadow-maroon transition-transform hover:scale-[1.02]" />
+                      {img.caption && <p className="mt-2 text-center text-xs text-muted-foreground">{img.caption}</p>}
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground italic py-8">Gallery images coming soon.</p>
+              )}
             </TabsContent>
           </Tabs>
         </div>
