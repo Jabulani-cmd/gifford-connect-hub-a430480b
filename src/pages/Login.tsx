@@ -52,11 +52,16 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signIn(email, password);
-    if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Login failed", description: err?.message || "An unexpected error occurred", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
