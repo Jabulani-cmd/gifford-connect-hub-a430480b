@@ -18,6 +18,8 @@ import AdminDashboard from "./pages/portal/AdminDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
 import Facilities from "./pages/Facilities";
+import Fees from "./pages/Fees";
+import Vacancies from "./pages/Vacancies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/school-life" element={<SchoolLife />} />
             <Route path="/facilities" element={<Facilities />} />
             <Route path="/downloads" element={<Downloads />} />
+            <Route path="/fees" element={<Fees />} />
+            <Route path="/vacancies" element={<Vacancies />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="/news" element={<News />} />
             <Route path="/login" element={<Login />} />
