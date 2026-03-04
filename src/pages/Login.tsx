@@ -70,7 +70,7 @@ export default function Login() {
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md px-4">
           <Card className="shadow-maroon">
             <CardHeader className="text-center">
-              <img src={schoolLogo} alt="Gifford High School crest" className="mx-auto mb-2 h-16 w-16 object-contain" />
+              <img src={schoolLogo} alt="Gifford High School crest" className="mx-auto mb-2 h-32 w-32 object-contain" />
               <CardTitle className="font-heading text-2xl text-primary">Portal Login</CardTitle>
               <p className="text-xs italic text-muted-foreground">Hinc Orior — From Here I Arise</p>
               <p className="text-sm text-muted-foreground">Access your Gifford High portal</p>
