@@ -16,6 +16,7 @@ const navLinks = [
   { label: "Downloads", path: "/downloads" },
   { label: "Projects", path: "/school-projects" },
   { label: "News", path: "/news" },
+  { label: "Alumni", path: "/alumni" },
 ];
 
 export default function Navbar() {
