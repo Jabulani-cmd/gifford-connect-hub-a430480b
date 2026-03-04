@@ -21,13 +21,13 @@ export default function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <nav className="sticky top-0 z-50 border-b border-primary/10 bg-primary text-primary-foreground backdrop-blur">
       <div className="container flex h-28 items-center justify-between md:h-32">
         <Link to="/" className="flex items-center gap-3">
           <img src={schoolLogo} alt="Gifford High School crest" className="h-20 w-20 object-contain md:h-[140px] md:w-[140px]" />
           <div className="leading-tight">
-            <span className="block font-heading text-2xl font-bold text-primary md:text-3xl">Gifford High School</span>
-            <span className="block text-xs italic text-muted-foreground md:text-sm">Hinc Orior — From Here I Arise</span>
+            <span className="block font-heading text-2xl font-bold text-primary-foreground md:text-3xl">Gifford High School</span>
+            <span className="block text-xs italic text-primary-foreground/70 md:text-sm">Hinc Orior — From Here I Arise</span>
           </div>
         </Link>
 
@@ -37,20 +37,20 @@ export default function Navbar() {
             <Link
               key={l.path}
               to={l.path}
-              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
-                location.pathname === l.path ? "text-primary font-semibold" : "text-muted-foreground"
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
+                location.pathname === l.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
               }`}
             >
               {l.label}
             </Link>
           ))}
           <Link to="/login">
-            <Button size="sm" className="ml-2">Portal Login</Button>
+            <Button size="sm" className="ml-2 bg-secondary text-secondary-foreground hover:bg-secondary/90">Portal Login</Button>
           </Link>
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
+        <button className="text-primary-foreground md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
@@ -62,7 +62,7 @@ export default function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t md:hidden"
+            className="overflow-hidden border-t border-primary-foreground/10 bg-primary md:hidden"
           >
             <div className="container flex flex-col gap-1 py-4">
               {navLinks.map((l) => (
@@ -70,15 +70,15 @@ export default function Navbar() {
                   key={l.path}
                   to={l.path}
                   onClick={() => setOpen(false)}
-                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
-                    location.pathname === l.path ? "text-primary font-semibold" : "text-muted-foreground"
+                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
+                    location.pathname === l.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
                   }`}
                 >
                   {l.label}
                 </Link>
               ))}
               <Link to="/login" onClick={() => setOpen(false)}>
-                <Button size="sm" className="mt-2 w-full">Portal Login</Button>
+                <Button size="sm" className="mt-2 w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">Portal Login</Button>
               </Link>
             </div>
           </motion.div>
