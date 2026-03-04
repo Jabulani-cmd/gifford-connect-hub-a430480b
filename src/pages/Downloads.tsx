@@ -30,9 +30,9 @@ export default function Downloads() {
 
   return (
     <Layout>
-      <section className="relative h-48 overflow-hidden bg-maroon-gradient">
-        <div className="container relative z-10 flex h-full items-center">
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-heading text-4xl font-bold text-primary-foreground">
+      <section className="bg-secondary py-16">
+        <div className="container">
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-heading text-4xl font-bold text-secondary-foreground">
             Downloads
           </motion.h1>
         </div>

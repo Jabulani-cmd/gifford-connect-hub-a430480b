@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
-import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
 import { BookOpen, FlaskConical, Languages, Calculator, Palette, Laptop } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,11 +25,9 @@ export default function Academics() {
   return (
     <Layout>
       {/* Hero */}
-      <section className="relative h-64 overflow-hidden sm:h-80">
-        <img src={classroomImg} alt="Classroom" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="bg-hero-overlay absolute inset-0" />
-        <div className="container relative z-10 flex h-full items-center">
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-heading text-4xl font-bold text-primary-foreground">
+      <section className="bg-secondary py-16">
+        <div className="container">
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-heading text-4xl font-bold text-secondary-foreground">
             Academics
           </motion.h1>
         </div>
