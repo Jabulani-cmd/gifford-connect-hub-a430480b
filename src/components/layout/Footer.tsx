@@ -4,7 +4,7 @@ import schoolLogo from "@/assets/school-logo.png";
 
 export default function Footer() {
   return (
-    <footer className="bg-maroon-gradient text-primary-foreground">
+    <footer className="bg-primary text-primary-foreground">
       <div className="container py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -19,26 +19,26 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-gold">Quick Links</h4>
+            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-secondary">Quick Links</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link to="/about" className="hover:text-gold transition-colors">About Us</Link></li>
-              <li><Link to="/academics" className="hover:text-gold transition-colors">Academics</Link></li>
-              <li><Link to="/admissions" className="hover:text-gold transition-colors">Admissions</Link></li>
-              <li><Link to="/school-life" className="hover:text-gold transition-colors">School Life</Link></li>
+              <li><Link to="/about" className="hover:text-secondary transition-colors">About Us</Link></li>
+              <li><Link to="/academics" className="hover:text-secondary transition-colors">Academics</Link></li>
+              <li><Link to="/admissions" className="hover:text-secondary transition-colors">Admissions</Link></li>
+              <li><Link to="/school-life" className="hover:text-secondary transition-colors">School Life</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-gold">Portals</h4>
+            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-secondary">Portals</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link to="/login" className="hover:text-gold transition-colors">Student Portal</Link></li>
-              <li><Link to="/login" className="hover:text-gold transition-colors">Parent/Teacher Portal</Link></li>
-              <li><Link to="/login" className="hover:text-gold transition-colors">Admin Portal</Link></li>
+              <li><Link to="/login" className="hover:text-secondary transition-colors">Student Portal</Link></li>
+              <li><Link to="/login" className="hover:text-secondary transition-colors">Parent/Teacher Portal</Link></li>
+              <li><Link to="/login" className="hover:text-secondary transition-colors">Admin Portal</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-gold">Contact</h4>
+            <h4 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wider text-secondary">Contact</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
               <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" /> Bulawayo, Zimbabwe</li>
               <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> +263 29 XXXXXXX</li>
