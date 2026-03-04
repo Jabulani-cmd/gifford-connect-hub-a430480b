@@ -37,11 +37,15 @@ export default function AdminDashboard() {
   // Carousel images
   const [carouselImages, setCarouselImages] = useState<any[]>([]);
   const carouselFileRef = useRef<HTMLInputElement>(null);
+  const [carouselCropSrc, setCarouselCropSrc] = useState<string | null>(null);
+  const [carouselCropOpen, setCarouselCropOpen] = useState(false);
 
   // Gallery images
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const galleryFileRef = useRef<HTMLInputElement>(null);
   const [galleryCaption, setGalleryCaption] = useState("");
+  const [galleryCropSrc, setGalleryCropSrc] = useState<string | null>(null);
+  const [galleryCropOpen, setGalleryCropOpen] = useState(false);
 
   // Downloads
   const [downloads, setDownloads] = useState<any[]>([]);
@@ -63,6 +67,8 @@ export default function AdminDashboard() {
   // Site images (achievements etc.)
   const [achievementsImageUrl, setAchievementsImageUrl] = useState<string | null>(null);
   const achievementsFileRef = useRef<HTMLInputElement>(null);
+  const [achievementsCropSrc, setAchievementsCropSrc] = useState<string | null>(null);
+  const [achievementsCropOpen, setAchievementsCropOpen] = useState(false);
 
   // Principal photo
   const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string | null>(null);
@@ -127,11 +133,22 @@ export default function AdminDashboard() {
     setUploading(false);
   };
 
-  const handleAchievementsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAchievementsFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAchievementsCropSrc(reader.result as string);
+      setAchievementsCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (achievementsFileRef.current) achievementsFileRef.current.value = "";
+  };
+
+  const handleAchievementsCropComplete = async (blob: Blob) => {
     setUploading(true);
     try {
+      const file = new File([blob], `achievements_${Date.now()}.jpg`, { type: "image/jpeg" });
       const url = await uploadFile(file, "site-images");
       const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "achievements_image");
       if (existing && existing.length > 0) {
@@ -145,7 +162,6 @@ export default function AdminDashboard() {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
     setUploading(false);
-    if (achievementsFileRef.current) achievementsFileRef.current.value = "";
   };
 
   const fetchAnnouncements = async () => {
@@ -195,11 +211,22 @@ export default function AdminDashboard() {
     return urlData.publicUrl;
   };
 
-  const handleCarouselUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCarouselFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCarouselCropSrc(reader.result as string);
+      setCarouselCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (carouselFileRef.current) carouselFileRef.current.value = "";
+  };
+
+  const handleCarouselCropComplete = async (blob: Blob) => {
     setUploading(true);
     try {
+      const file = new File([blob], `carousel_${Date.now()}.jpg`, { type: "image/jpeg" });
       const url = await uploadFile(file, "carousel");
       const { error } = await supabase.from("carousel_images").insert({ image_url: url, display_order: carouselImages.length });
       if (error) throw error;
@@ -209,7 +236,6 @@ export default function AdminDashboard() {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
     setUploading(false);
-    if (carouselFileRef.current) carouselFileRef.current.value = "";
   };
 
   const deleteCarouselImage = async (id: string) => {
@@ -218,11 +244,22 @@ export default function AdminDashboard() {
     fetchCarouselImages();
   };
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setGalleryCropSrc(reader.result as string);
+      setGalleryCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (galleryFileRef.current) galleryFileRef.current.value = "";
+  };
+
+  const handleGalleryCropComplete = async (blob: Blob) => {
     setUploading(true);
     try {
+      const file = new File([blob], `gallery_${Date.now()}.jpg`, { type: "image/jpeg" });
       const url = await uploadFile(file, "gallery");
       const { error } = await supabase.from("gallery_images").insert({ image_url: url, caption: galleryCaption || null });
       if (error) throw error;
@@ -233,7 +270,6 @@ export default function AdminDashboard() {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
     setUploading(false);
-    if (galleryFileRef.current) galleryFileRef.current.value = "";
   };
 
   const deleteGalleryImage = async (id: string) => {
@@ -428,12 +464,23 @@ export default function AdminDashboard() {
 
           {/* Carousel Tab */}
           <TabsContent value="carousel">
+            {carouselCropSrc && (
+              <ImageCropper
+                imageSrc={carouselCropSrc}
+                open={carouselCropOpen}
+                onClose={() => { setCarouselCropOpen(false); setCarouselCropSrc(null); }}
+                onCropComplete={handleCarouselCropComplete}
+                aspectRatio={16 / 9}
+                cropShape="rect"
+                title="Crop Carousel Image"
+              />
+            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle className="font-heading">Upload Carousel Image</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">Recommended: 1920×1080px.</p>
-                  <input type="file" accept="image/*" ref={carouselFileRef} onChange={handleCarouselUpload} className="hidden" />
+                  <input type="file" accept="image/*" ref={carouselFileRef} onChange={handleCarouselFileSelect} className="hidden" />
                   <Button onClick={() => carouselFileRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Choose Image"}
                   </Button>
@@ -457,6 +504,17 @@ export default function AdminDashboard() {
 
           {/* Gallery Tab */}
           <TabsContent value="gallery">
+            {galleryCropSrc && (
+              <ImageCropper
+                imageSrc={galleryCropSrc}
+                open={galleryCropOpen}
+                onClose={() => { setGalleryCropOpen(false); setGalleryCropSrc(null); }}
+                onCropComplete={handleGalleryCropComplete}
+                aspectRatio={4 / 3}
+                cropShape="rect"
+                title="Crop Gallery Image"
+              />
+            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle className="font-heading">Upload Gallery Image</CardTitle></CardHeader>
@@ -465,7 +523,7 @@ export default function AdminDashboard() {
                     <Label>Caption (optional)</Label>
                     <Input value={galleryCaption} onChange={e => setGalleryCaption(e.target.value)} placeholder="e.g. Inter-house Athletics 2026" />
                   </div>
-                  <input type="file" accept="image/*" ref={galleryFileRef} onChange={handleGalleryUpload} className="hidden" />
+                  <input type="file" accept="image/*" ref={galleryFileRef} onChange={handleGalleryFileSelect} className="hidden" />
                   <Button onClick={() => galleryFileRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Choose Image"}
                   </Button>
@@ -729,11 +787,22 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Achievements Image */}
+              {achievementsCropSrc && (
+                <ImageCropper
+                  imageSrc={achievementsCropSrc}
+                  open={achievementsCropOpen}
+                  onClose={() => { setAchievementsCropOpen(false); setAchievementsCropSrc(null); }}
+                  onCropComplete={handleAchievementsCropComplete}
+                  aspectRatio={16 / 9}
+                  cropShape="rect"
+                  title="Crop Achievements Image"
+                />
+              )}
               <Card>
                 <CardHeader><CardTitle className="font-heading">Achievements Section Image</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">This image appears on the homepage next to the "Celebrating Achievement" section.</p>
-                  <input type="file" accept="image/*" ref={achievementsFileRef} onChange={handleAchievementsUpload} className="hidden" />
+                  <input type="file" accept="image/*" ref={achievementsFileRef} onChange={handleAchievementsFileSelect} className="hidden" />
                   <Button onClick={() => achievementsFileRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
