@@ -25,7 +25,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-primary/10 bg-primary text-primary-foreground backdrop-blur">
       <div className="container flex h-28 items-center justify-between md:h-32">
         <Link to="/" className="flex items-center gap-3">
-          <img src={schoolLogo} alt="Gifford High School crest" className="h-20 w-20 object-contain md:h-[140px] md:w-[140px]" />
+          <img src={schoolLogo} alt="Gifford High School crest" className="h-[104px] w-[104px] object-contain md:h-[182px] md:w-[182px]" />
           <div className="leading-tight">
             <span className="block font-heading text-2xl font-bold text-primary-foreground md:text-3xl">Gifford High School</span>
             <span className="block text-xs italic text-primary-foreground/70 md:text-sm">Hinc Orior — From Here I Arise</span>
