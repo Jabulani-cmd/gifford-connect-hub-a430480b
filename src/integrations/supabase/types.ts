@@ -164,6 +164,33 @@ export type Database = {
         }
         Relationships: []
       }
+      facility_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          facility_type: string
+          id: string
+          image_url: string
+          is_active: boolean
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          facility_type?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          facility_type?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       gallery_images: {
         Row: {
           caption: string | null
