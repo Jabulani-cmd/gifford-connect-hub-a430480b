@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
@@ -73,6 +73,7 @@ const highlights = [
 export default function Home() {
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
+  const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -90,6 +91,7 @@ export default function Home() {
     };
     fetchAnnouncements();
     fetchAchievementsImage();
+    supabase.from("school_projects").select("*").eq("is_active", true).order("created_at", { ascending: false }).limit(3).then(({ data }) => { if (data) setProjects(data); });
   }, []);
 
   return (
@@ -243,6 +245,40 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* School Projects */}
+      {projects.length > 0 && (
+        <section className="bg-section-warm py-20">
+          <div className="container">
+            <h2 className="mb-4 text-center font-heading text-3xl font-bold text-foreground">School Projects</h2>
+            <p className="mx-auto mb-10 max-w-xl text-center text-muted-foreground">See what our students and staff have been working on.</p>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p, i) => (
+                <motion.div key={p.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <Card className="h-full overflow-hidden border-none shadow-maroon transition-transform hover:-translate-y-1">
+                    {p.image_url && (
+                      <div className="aspect-video w-full overflow-hidden">
+                        <img src={p.image_url} alt={p.title} className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <CardContent className="p-6">
+                      <h3 className="font-heading text-lg font-semibold">{p.title}</h3>
+                      {p.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center">
+              <Link to="/school-projects">
+                <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
+                  View All Projects <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="bg-maroon-gradient py-16">
