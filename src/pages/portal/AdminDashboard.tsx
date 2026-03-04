@@ -418,6 +418,52 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* All image croppers rendered outside Tabs so they're always mounted */}
+        {carouselCropSrc && (
+          <ImageCropper
+            imageSrc={carouselCropSrc}
+            open={carouselCropOpen}
+            onClose={() => { setCarouselCropOpen(false); setCarouselCropSrc(null); }}
+            onCropComplete={handleCarouselCropComplete}
+            aspectRatio={16 / 9}
+            cropShape="rect"
+            title="Crop Carousel Image"
+          />
+        )}
+        {galleryCropSrc && (
+          <ImageCropper
+            imageSrc={galleryCropSrc}
+            open={galleryCropOpen}
+            onClose={() => { setGalleryCropOpen(false); setGalleryCropSrc(null); }}
+            onCropComplete={handleGalleryCropComplete}
+            aspectRatio={4 / 3}
+            cropShape="rect"
+            title="Crop Gallery Image"
+          />
+        )}
+        {principalCropSrc && (
+          <ImageCropper
+            imageSrc={principalCropSrc}
+            open={principalCropOpen}
+            onClose={() => { setPrincipalCropOpen(false); setPrincipalCropSrc(null); }}
+            onCropComplete={handlePrincipalCropComplete}
+            aspectRatio={3 / 4}
+            cropShape="rect"
+            title="Crop Principal Photo"
+          />
+        )}
+        {achievementsCropSrc && (
+          <ImageCropper
+            imageSrc={achievementsCropSrc}
+            open={achievementsCropOpen}
+            onClose={() => { setAchievementsCropOpen(false); setAchievementsCropSrc(null); }}
+            onCropComplete={handleAchievementsCropComplete}
+            aspectRatio={16 / 9}
+            cropShape="rect"
+            title="Crop Achievements Image"
+          />
+        )}
+
         <Tabs defaultValue="announcements" className="space-y-6">
           <TabsList className="flex-wrap">
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
@@ -464,17 +510,6 @@ export default function AdminDashboard() {
 
           {/* Carousel Tab */}
           <TabsContent value="carousel">
-            {carouselCropSrc && (
-              <ImageCropper
-                imageSrc={carouselCropSrc}
-                open={carouselCropOpen}
-                onClose={() => { setCarouselCropOpen(false); setCarouselCropSrc(null); }}
-                onCropComplete={handleCarouselCropComplete}
-                aspectRatio={16 / 9}
-                cropShape="rect"
-                title="Crop Carousel Image"
-              />
-            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle className="font-heading">Upload Carousel Image</CardTitle></CardHeader>
@@ -504,17 +539,6 @@ export default function AdminDashboard() {
 
           {/* Gallery Tab */}
           <TabsContent value="gallery">
-            {galleryCropSrc && (
-              <ImageCropper
-                imageSrc={galleryCropSrc}
-                open={galleryCropOpen}
-                onClose={() => { setGalleryCropOpen(false); setGalleryCropSrc(null); }}
-                onCropComplete={handleGalleryCropComplete}
-                aspectRatio={4 / 3}
-                cropShape="rect"
-                title="Crop Gallery Image"
-              />
-            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle className="font-heading">Upload Gallery Image</CardTitle></CardHeader>
@@ -758,18 +782,6 @@ export default function AdminDashboard() {
 
           {/* Site Images Tab */}
           <TabsContent value="site-images">
-            {/* Principal Photo Cropper */}
-            {principalCropSrc && (
-              <ImageCropper
-                imageSrc={principalCropSrc}
-                open={principalCropOpen}
-                onClose={() => { setPrincipalCropOpen(false); setPrincipalCropSrc(null); }}
-                onCropComplete={handlePrincipalCropComplete}
-                aspectRatio={3 / 4}
-                cropShape="rect"
-                title="Crop Principal Photo"
-              />
-            )}
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Principal Photo */}
               <Card>
@@ -787,17 +799,6 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Achievements Image */}
-              {achievementsCropSrc && (
-                <ImageCropper
-                  imageSrc={achievementsCropSrc}
-                  open={achievementsCropOpen}
-                  onClose={() => { setAchievementsCropOpen(false); setAchievementsCropSrc(null); }}
-                  onCropComplete={handleAchievementsCropComplete}
-                  aspectRatio={16 / 9}
-                  cropShape="rect"
-                  title="Crop Achievements Image"
-                />
-              )}
               <Card>
                 <CardHeader><CardTitle className="font-heading">Achievements Section Image</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
