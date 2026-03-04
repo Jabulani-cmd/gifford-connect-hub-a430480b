@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, BookOpen, BarChart3, Bell, LogOut, User } from "lucide-react";
+import { Calendar, BookOpen, BarChart3, Bell, LogOut, User, ClipboardList } from "lucide-react";
+import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,12 +130,18 @@ export default function StudentDashboard() {
         )}
 
         <Tabs defaultValue="timetable" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Class Timetable</TabsTrigger>
+            <TabsTrigger value="my-planner"><ClipboardList className="mr-1 h-4 w-4" /> My Planner</TabsTrigger>
             <TabsTrigger value="homework"><BookOpen className="mr-1 h-4 w-4" /> Homework</TabsTrigger>
             <TabsTrigger value="marks"><BarChart3 className="mr-1 h-4 w-4" /> Marks</TabsTrigger>
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
           </TabsList>
+
+          {/* Personal Planner Tab */}
+          <TabsContent value="my-planner">
+            <PersonalTimetableEditor title="My Personal Planner" />
+          </TabsContent>
 
           <TabsContent value="timetable">
             <Card>
