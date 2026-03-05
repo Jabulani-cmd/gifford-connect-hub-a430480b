@@ -286,6 +286,41 @@ export default function Home() {
         </section>
       )}
 
+      {/* Contact Us */}
+      <section className="py-20">
+        <div className="container text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-heading text-3xl font-bold text-foreground"
+          >
+            Get in Touch
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mx-auto mt-4 max-w-2xl text-muted-foreground"
+          >
+            Have questions or need to meet with our school authorities? We're here to help. Reach out or book an appointment today.
+          </motion.p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link to="/contact">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                Contact Us <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/contact?tab=appointment">
+              <Button size="lg" variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
+                Book an Appointment <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-maroon-gradient py-16">
         <div className="container text-center">

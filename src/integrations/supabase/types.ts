@@ -41,6 +41,51 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          admin_notes: string | null
+          authority: string
+          created_at: string
+          department: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          preferred_date: string
+          preferred_time: string
+          reason: string
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          authority: string
+          created_at?: string
+          department?: string | null
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          preferred_date: string
+          preferred_time: string
+          reason: string
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          authority?: string
+          created_at?: string
+          department?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          preferred_date?: string
+          preferred_time?: string
+          reason?: string
+          status?: string
+        }
+        Relationships: []
+      }
       carousel_images: {
         Row: {
           created_at: string
