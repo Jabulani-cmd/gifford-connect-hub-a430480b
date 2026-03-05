@@ -73,6 +73,7 @@ const highlights = [
 export default function Home() {
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
+  const [traditionImage, setTraditionImage] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -85,12 +86,17 @@ export default function Home() {
         .limit(4);
       if (data) setAnnouncements(data);
     };
-    const fetchAchievementsImage = async () => {
-      const { data } = await supabase.from("site_settings").select("setting_value").eq("setting_key", "achievements_image").limit(1);
-      if (data && data.length > 0) setAchievementsImage(data[0].setting_value);
+    const fetchSiteImages = async () => {
+      const { data } = await supabase.from("site_settings").select("setting_key, setting_value").in("setting_key", ["achievements_image", "tradition_image"]);
+      if (data) {
+        data.forEach((s) => {
+          if (s.setting_key === "achievements_image") setAchievementsImage(s.setting_value);
+          if (s.setting_key === "tradition_image") setTraditionImage(s.setting_value);
+        });
+      }
     };
     fetchAnnouncements();
-    fetchAchievementsImage();
+    fetchSiteImages();
     supabase.from("school_projects").select("*").eq("is_active", true).order("created_at", { ascending: false }).limit(3).then(({ data }) => { if (data) setProjects(data); });
   }, []);
 
@@ -221,7 +227,7 @@ export default function Home() {
             </Link>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
-            <img src={classroomImg} alt="Students in classroom" className="rounded-xl shadow-maroon" />
+            <img src={traditionImage || classroomImg} alt="Students in classroom" className="rounded-xl shadow-maroon" />
           </motion.div>
         </div>
       </section>

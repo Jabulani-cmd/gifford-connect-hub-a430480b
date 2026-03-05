@@ -70,6 +70,12 @@ export default function AdminDashboard() {
   const [achievementsCropSrc, setAchievementsCropSrc] = useState<string | null>(null);
   const [achievementsCropOpen, setAchievementsCropOpen] = useState(false);
 
+  // Tradition image
+  const [traditionImageUrl, setTraditionImageUrl] = useState<string | null>(null);
+  const traditionFileRef = useRef<HTMLInputElement>(null);
+  const [traditionCropSrc, setTraditionCropSrc] = useState<string | null>(null);
+  const [traditionCropOpen, setTraditionCropOpen] = useState(false);
+
   // Principal photo
   const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string | null>(null);
   const principalFileRef = useRef<HTMLInputElement>(null);
@@ -93,11 +99,12 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchSiteSettings = async () => {
-    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo"]);
+    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image"]);
     if (data) {
       data.forEach((s) => {
         if (s.setting_key === "achievements_image") setAchievementsImageUrl(s.setting_value);
         if (s.setting_key === "principal_photo") setPrincipalPhotoUrl(s.setting_value);
+        if (s.setting_key === "tradition_image") setTraditionImageUrl(s.setting_value);
       });
     }
   };
@@ -158,6 +165,37 @@ export default function AdminDashboard() {
       }
       setAchievementsImageUrl(url);
       toast({ title: "Achievements image updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
+  const handleTraditionFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTraditionCropSrc(reader.result as string);
+      setTraditionCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (traditionFileRef.current) traditionFileRef.current.value = "";
+  };
+
+  const handleTraditionCropComplete = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const file = new File([blob], `tradition_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const url = await uploadFile(file, "site-images");
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "tradition_image");
+      if (existing && existing.length > 0) {
+        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "tradition_image");
+      } else {
+        await supabase.from("site_settings").insert({ setting_key: "tradition_image", setting_value: url });
+      }
+      setTraditionImageUrl(url);
+      toast({ title: "Tradition image updated!" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
@@ -461,6 +499,17 @@ export default function AdminDashboard() {
             aspectRatio={16 / 9}
             cropShape="rect"
             title="Crop Achievements Image"
+          />
+        )}
+        {traditionCropSrc && (
+          <ImageCropper
+            imageSrc={traditionCropSrc}
+            open={traditionCropOpen}
+            onClose={() => { setTraditionCropOpen(false); setTraditionCropSrc(null); }}
+            onCropComplete={handleTraditionCropComplete}
+            aspectRatio={16 / 9}
+            cropShape="rect"
+            title="Crop Tradition Image"
           />
         )}
 
@@ -809,6 +858,21 @@ export default function AdminDashboard() {
                   </Button>
                   {achievementsImageUrl && (
                     <img src={achievementsImageUrl} alt="Achievements section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Tradition Image */}
+              <Card>
+                <CardHeader><CardTitle className="font-heading">Tradition of Excellence Image</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">This image appears on the homepage next to the "A Tradition of Excellence" section.</p>
+                  <input type="file" accept="image/*" ref={traditionFileRef} onChange={handleTraditionFileSelect} className="hidden" />
+                  <Button onClick={() => traditionFileRef.current?.click()} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
+                  </Button>
+                  {traditionImageUrl && (
+                    <img src={traditionImageUrl} alt="Tradition section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
                   )}
                 </CardContent>
               </Card>
