@@ -14,7 +14,7 @@ export default function Footer() {
             </div>
             <p className="text-xs italic text-primary-foreground/70">Hinc Orior — From Here I Arise</p>
             <p className="mt-1 text-sm text-primary-foreground/80">
-              Nurturing excellence in education, sports, and character since 1965.
+              Nurturing excellence in education, sports, and character since 1927.
             </p>
           </div>
 
@@ -51,7 +51,13 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-primary-foreground/20 pt-6 text-center text-xs text-primary-foreground/60">
-          © {new Date().getFullYear()} Gifford High School. All rights reserved.
+          <p>© {new Date().getFullYear()} Gifford High School. All rights reserved.</p>
+          <p className="mt-2">
+            This website was designed and is maintained by{" "}
+            <a href="https://mavingtech.com" target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline">
+              MavingTech Business Solutions
+            </a>
+          </p>
         </div>
       </div>
     </footer>

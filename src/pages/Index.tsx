@@ -51,7 +51,7 @@ function PrincipalPhoto() {
           </div>
         )}
         <div className="absolute -bottom-4 -right-4 rounded-lg bg-primary px-4 py-2 shadow-lg">
-          <span className="text-xs font-bold text-primary-foreground">The Principal</span>
+          <span className="text-xs font-bold text-primary-foreground">Mrs. B. Dewa</span>
         </div>
       </div>
     </div>
