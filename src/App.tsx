@@ -24,6 +24,8 @@ import Vacancies from "./pages/Vacancies";
 import SchoolProjects from "./pages/SchoolProjects";
 import Alumni from "./pages/Alumni";
 import Contact from "./pages/Contact";
+import Boarding from "./pages/Boarding";
+import SportsCulture from "./pages/SportsCulture";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/news" element={<News />} />
             <Route path="/alumni" element={<Alumni />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/boarding" element={<Boarding />} />
+            <Route path="/sports-culture" element={<SportsCulture />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/portal/student" element={<StudentDashboard />} />
