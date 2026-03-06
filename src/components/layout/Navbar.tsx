@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
-  { label: "Home", path: "/" },
+  
   { label: "About", path: "/about" },
   { label: "Academics", path: "/academics" },
   { label: "Admissions", path: "/admissions" },
