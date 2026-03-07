@@ -4,6 +4,8 @@ import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
 import ProjectsManagement from "@/components/admin/ProjectsManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
+import StudentManagement from "@/pages/admin/StudentManagement";
+import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -527,6 +529,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="staff-mgmt"><UserCheck className="mr-1 h-4 w-4" /> Staff</TabsTrigger>
             <TabsTrigger value="facilities"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
             <TabsTrigger value="projects"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
+            <TabsTrigger value="student-mgmt"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
+            <TabsTrigger value="staff-full"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -892,6 +896,16 @@ export default function AdminDashboard() {
           {/* Projects Tab */}
           <TabsContent value="projects">
             <ProjectsManagement />
+          </TabsContent>
+
+          {/* Student Management Tab */}
+          <TabsContent value="student-mgmt">
+            <StudentManagement />
+          </TabsContent>
+
+          {/* Staff Directory Tab */}
+          <TabsContent value="staff-full">
+            <StaffManagementFull />
           </TabsContent>
         </Tabs>
       </div>
