@@ -188,7 +188,7 @@ export default function StaffManagementFull() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Staff member updated!" });
     } else {
-      const { error } = await supabase.from("staff").insert(payload);
+      const { error } = await supabase.from("staff").insert(payload as any);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Staff member added!" });
     }

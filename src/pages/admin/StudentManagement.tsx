@@ -160,7 +160,7 @@ export default function StudentManagement() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Student updated!" });
     } else {
-      const { error } = await supabase.from("students").insert(payload);
+      const { error } = await supabase.from("students").insert(payload as any);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Student added!" });
     }
