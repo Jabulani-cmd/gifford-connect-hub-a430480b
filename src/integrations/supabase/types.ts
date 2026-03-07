@@ -155,6 +155,47 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          contract_type: string
+          created_at: string
+          documents: string | null
+          end_date: string | null
+          id: string
+          salary: number | null
+          staff_id: string
+          start_date: string
+        }
+        Insert: {
+          contract_type?: string
+          created_at?: string
+          documents?: string | null
+          end_date?: string | null
+          id?: string
+          salary?: number | null
+          staff_id: string
+          start_date: string
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          documents?: string | null
+          end_date?: string | null
+          id?: string
+          salary?: number | null
+          staff_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       downloads: {
         Row: {
           category: string
@@ -181,6 +222,48 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      enrollments: {
+        Row: {
+          academic_year: string
+          class_id: string | null
+          created_at: string
+          enrollment_date: string | null
+          id: string
+          student_id: string
+        }
+        Insert: {
+          academic_year: string
+          class_id?: string | null
+          created_at?: string
+          enrollment_date?: string | null
+          id?: string
+          student_id: string
+        }
+        Update: {
+          academic_year?: string
+          class_id?: string | null
+          created_at?: string
+          enrollment_date?: string | null
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -263,6 +346,47 @@ export type Database = {
         }
         Relationships: []
       }
+      guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          name: string
+          phone: string | null
+          relationship: string | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name: string
+          phone?: string | null
+          relationship?: string | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name?: string
+          phone?: string | null
+          relationship?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homework: {
         Row: {
           class_id: string
@@ -307,6 +431,50 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          staff_id: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          staff_id: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          staff_id?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -528,41 +696,80 @@ export type Database = {
       }
       staff: {
         Row: {
+          address: string | null
+          bank_details: string | null
           bio: string | null
           category: string
           created_at: string
+          deleted_at: string | null
           department: string | null
           email: string | null
+          emergency_contact: string | null
+          employment_date: string | null
           full_name: string
           id: string
+          national_id: string | null
+          nssa_number: string | null
+          paye_number: string | null
           phone: string | null
           photo_url: string | null
+          qualifications: string | null
+          role: string | null
+          staff_number: string | null
+          status: string | null
+          subjects_taught: string[] | null
           title: string | null
           user_id: string | null
         }
         Insert: {
+          address?: string | null
+          bank_details?: string | null
           bio?: string | null
           category?: string
           created_at?: string
+          deleted_at?: string | null
           department?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          employment_date?: string | null
           full_name: string
           id?: string
+          national_id?: string | null
+          nssa_number?: string | null
+          paye_number?: string | null
           phone?: string | null
           photo_url?: string | null
+          qualifications?: string | null
+          role?: string | null
+          staff_number?: string | null
+          status?: string | null
+          subjects_taught?: string[] | null
           title?: string | null
           user_id?: string | null
         }
         Update: {
+          address?: string | null
+          bank_details?: string | null
           bio?: string | null
           category?: string
           created_at?: string
+          deleted_at?: string | null
           department?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          employment_date?: string | null
           full_name?: string
           id?: string
+          national_id?: string | null
+          nssa_number?: string | null
+          paye_number?: string | null
           phone?: string | null
           photo_url?: string | null
+          qualifications?: string | null
+          role?: string | null
+          staff_number?: string | null
+          status?: string | null
+          subjects_taught?: string[] | null
           title?: string | null
           user_id?: string | null
         }
@@ -593,6 +800,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      students: {
+        Row: {
+          address: string | null
+          admission_number: string
+          created_at: string
+          date_of_birth: string | null
+          deleted_at: string | null
+          emergency_contact: string | null
+          enrollment_date: string | null
+          form: string
+          full_name: string
+          gender: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          has_medical_alert: boolean
+          id: string
+          medical_conditions: string | null
+          profile_photo_url: string | null
+          status: string
+          stream: string | null
+          subject_combination: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          admission_number: string
+          created_at?: string
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          emergency_contact?: string | null
+          enrollment_date?: string | null
+          form?: string
+          full_name: string
+          gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          has_medical_alert?: boolean
+          id?: string
+          medical_conditions?: string | null
+          profile_photo_url?: string | null
+          status?: string
+          stream?: string | null
+          subject_combination?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          admission_number?: string
+          created_at?: string
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          emergency_contact?: string | null
+          enrollment_date?: string | null
+          form?: string
+          full_name?: string
+          gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          has_medical_alert?: boolean
+          id?: string
+          medical_conditions?: string | null
+          profile_photo_url?: string | null
+          status?: string
+          stream?: string | null
+          subject_combination?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       subjects: {
         Row: {
