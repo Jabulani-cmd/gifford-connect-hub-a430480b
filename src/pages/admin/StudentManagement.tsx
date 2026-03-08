@@ -721,6 +721,12 @@ export default function StudentManagement() {
           )}
         </DialogContent>
       </Dialog>
+      <WebcamCapture
+        open={showWebcam}
+        onClose={() => setShowWebcam(false)}
+        onCapture={(blob) => { setCropSrc(URL.createObjectURL(blob)); setCropOpen(true); }}
+        title="Take Student Photo"
+      />
     </div>
   );
 }
