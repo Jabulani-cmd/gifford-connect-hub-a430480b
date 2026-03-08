@@ -148,6 +148,7 @@ export default function UserManagement() {
           phone: form.phone || undefined,
           grade: form.grade || undefined,
           class_name: form.class_name || undefined,
+          assigned_class_id: (form.portal_role === "teacher" || form.portal_role === "admin") && form.assigned_class_id ? form.assigned_class_id : undefined,
         }),
       });
       const data = await res.json();
