@@ -228,7 +228,7 @@ export default function ParentDashboard() {
         </aside>
 
         <main className="flex-1 p-6 max-w-4xl">
-          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} />
+          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} onLinked={fetchInitialData} />
           <TabContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
