@@ -482,6 +482,66 @@ export default function FinanceManagement() {
     fetchExpenses();
   }
 
+  async function deletePayment(payment: any) {
+    if (!confirm(`Delete payment ${payment.receipt_number}? This will reverse the paid amounts on the linked invoice.`)) return;
+    try {
+      // Reverse the invoice paid amounts
+      const { data: invoice } = await supabase.from("invoices").select("*").eq("id", payment.invoice_id).single();
+      if (invoice) {
+        const newPaidUsd = Math.max(0, parseFloat(invoice.paid_usd) - parseFloat(payment.amount_usd));
+        const newPaidZig = Math.max(0, parseFloat(invoice.paid_zig) - parseFloat(payment.amount_zig));
+        let newStatus = "partial";
+        if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
+        else if (newPaidUsd >= parseFloat(invoice.total_usd) && newPaidZig >= parseFloat(invoice.total_zig)) newStatus = "paid";
+        await supabase.from("invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", payment.invoice_id);
+      }
+      // Log to audit
+      await supabase.from("audit_logs").insert({
+        action: "delete_payment",
+        table_name: "payments",
+        record_id: payment.id,
+        user_id: user?.id || null,
+        old_data: payment,
+      });
+      // Delete the payment
+      const { error } = await supabase.from("payments").delete().eq("id", payment.id);
+      if (error) throw error;
+      toast({ title: "Payment deleted", description: `Receipt ${payment.receipt_number} removed and invoice updated.` });
+      fetchPayments();
+      fetchInvoices();
+      if (stmtStudent) selectStmtStudent(stmtStudent);
+    } catch (err: any) {
+      toast({ title: "Error deleting payment", description: err.message, variant: "destructive" });
+    }
+  }
+
+  async function deleteInvoice(invoice: any) {
+    if (!confirm(`Delete invoice ${invoice.invoice_number}? This will also delete all associated payments and invoice items.`)) return;
+    try {
+      // Delete associated payments first
+      await supabase.from("payments").delete().eq("invoice_id", invoice.id);
+      // Delete invoice items
+      await supabase.from("invoice_items").delete().eq("invoice_id", invoice.id);
+      // Log to audit
+      await supabase.from("audit_logs").insert({
+        action: "delete_invoice",
+        table_name: "invoices",
+        record_id: invoice.id,
+        user_id: user?.id || null,
+        old_data: invoice,
+      });
+      // Delete invoice
+      const { error } = await supabase.from("invoices").delete().eq("id", invoice.id);
+      if (error) throw error;
+      toast({ title: "Invoice deleted", description: `${invoice.invoice_number} and associated records removed.` });
+      fetchInvoices();
+      fetchPayments();
+      if (stmtStudent) selectStmtStudent(stmtStudent);
+    } catch (err: any) {
+      toast({ title: "Error deleting invoice", description: err.message, variant: "destructive" });
+    }
+  }
+
   // ═══ COMPUTED ═══
   const filteredInvoices = invoices.filter(inv => {
     if (invoiceStatusFilter !== "all" && inv.status !== invoiceStatusFilter) return false;
