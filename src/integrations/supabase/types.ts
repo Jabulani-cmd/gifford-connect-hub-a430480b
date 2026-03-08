@@ -476,6 +476,68 @@ export type Database = {
           },
         ]
       }
+      communication_logs: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message: string
+          recipient_count: number
+          recipient_ids: string[] | null
+          recipient_type: string
+          reference: string | null
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          subject: string | null
+          template_id: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message: string
+          recipient_count?: number
+          recipient_ids?: string[] | null
+          recipient_type?: string
+          reference?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message?: string
+          recipient_count?: number
+          recipient_ids?: string[] | null
+          recipient_type?: string
+          reference?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "sms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -1683,6 +1745,33 @@ export type Database = {
           setting_key?: string
           setting_value?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_templates: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+          template_text: string
+          variables: string[] | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          name: string
+          template_text: string
+          variables?: string[] | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          template_text?: string
+          variables?: string[] | null
         }
         Relationships: []
       }
