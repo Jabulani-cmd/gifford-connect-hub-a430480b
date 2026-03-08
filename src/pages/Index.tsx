@@ -11,7 +11,7 @@ import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
-function PrincipalPhoto() {
+const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props, ref) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
