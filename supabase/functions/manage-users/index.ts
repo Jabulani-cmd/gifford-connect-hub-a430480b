@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       });
     }
 
-
+    if (action === "register-student") {
       const { email, password, full_name, grade, class_name, phone } = payload;
 
       const { data: newUser, error: createError } =
