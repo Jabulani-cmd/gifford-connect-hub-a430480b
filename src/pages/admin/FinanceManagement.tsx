@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle, ChevronDown, Truck
 } from "lucide-react";
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
