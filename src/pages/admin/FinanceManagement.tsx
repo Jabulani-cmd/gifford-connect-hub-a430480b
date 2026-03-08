@@ -763,7 +763,7 @@ export default function FinanceManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Receipt #</TableHead>
+                         <TableHead>Receipt #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Student</TableHead>
                         <TableHead>Invoice</TableHead>
@@ -771,6 +771,7 @@ export default function FinanceManagement() {
                         <TableHead className="text-right">ZiG</TableHead>
                         <TableHead>Method</TableHead>
                         <TableHead>Ref</TableHead>
+                        {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
