@@ -196,9 +196,12 @@ export default function UserManagement() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       toast({ title: "User deleted" });
+      setDeleteTarget(null);
       fetchUsers();
     } catch (err: any) {
       toast({ title: "Failed to delete user", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
