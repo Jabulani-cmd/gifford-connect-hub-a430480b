@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw
 } from "lucide-react";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
@@ -444,6 +444,8 @@ export default function FinanceManagement() {
       setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" });
       fetchInvoices();
       fetchPayments();
+      // Auto-refresh statement if viewing one
+      if (stmtStudent) selectStmtStudent(stmtStudent);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -861,9 +863,14 @@ export default function FinanceManagement() {
                         <p className="text-sm text-muted-foreground">{stmtStudent.admission_number} • {stmtStudent.form}</p>
                       </div>
                     </div>
-                    <Button variant="outline" onClick={printStudentStatement}>
-                      <Printer className="mr-1 h-4 w-4" /> Print Statement
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="icon" onClick={() => selectStmtStudent(stmtStudent)} title="Refresh statement">
+                        <RefreshCw className={`h-4 w-4 ${stmtLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                      <Button variant="outline" onClick={printStudentStatement}>
+                        <Printer className="mr-1 h-4 w-4" /> Print Statement
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Summary */}
