@@ -255,6 +255,9 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
       await supabaseAdmin.from("personal_timetables").delete().eq("user_id", user_id);
       await supabaseAdmin.from("notifications").delete().eq("user_id", user_id);
+      // Remove teacher-owned academic records that FK to auth.users
+      await supabaseAdmin.from("homework").delete().eq("teacher_id", user_id);
+      await supabaseAdmin.from("marks").delete().eq("teacher_id", user_id);
       // Clean up messaging
       await supabaseAdmin.from("conversation_participants").delete().eq("user_id", user_id);
       // Nullify author references
