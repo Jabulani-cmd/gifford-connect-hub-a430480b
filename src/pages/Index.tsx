@@ -56,7 +56,7 @@ const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props
       </div>
     </div>
   );
-}
+});
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
