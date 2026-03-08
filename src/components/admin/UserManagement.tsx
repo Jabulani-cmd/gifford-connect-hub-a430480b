@@ -269,6 +269,7 @@ export default function UserManagement() {
           staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
           department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
           full_name: editForm.full_name,
+          assigned_class_id: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
         }),
       });
       const data = await res.json();
