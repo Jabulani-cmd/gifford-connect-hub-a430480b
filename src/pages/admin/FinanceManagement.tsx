@@ -114,6 +114,7 @@ export default function FinanceManagement() {
   const [spInvoice, setSpInvoice] = useState<any>(null);
   const [spForm, setSpForm] = useState({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" });
   const [spLoading, setSpLoading] = useState(false);
+  const [supplierPayments, setSupplierPayments] = useState<any[]>([]);
 
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
