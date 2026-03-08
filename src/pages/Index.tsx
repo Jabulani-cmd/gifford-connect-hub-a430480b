@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, FolderKanban } from "lucide-react";
@@ -11,7 +11,7 @@ import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
-function PrincipalPhoto() {
+const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props, ref) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ function PrincipalPhoto() {
   }, []);
 
   return (
-    <div className="flex justify-center">
+    <div ref={ref} className="flex justify-center">
       <div className="relative">
         {photoUrl ? (
           <img src={photoUrl} alt="The Principal" className="h-80 w-64 rounded-xl object-cover object-top shadow-maroon" />
@@ -56,7 +56,7 @@ function PrincipalPhoto() {
       </div>
     </div>
   );
-}
+});
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },

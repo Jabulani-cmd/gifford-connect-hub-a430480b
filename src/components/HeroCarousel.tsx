@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type CarouselImage = {
@@ -7,7 +7,7 @@ type CarouselImage = {
   display_order: number;
 };
 
-export default function HeroCarousel() {
+const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) {
   const [images, setImages] = useState<CarouselImage[]>([]);
   const [current, setCurrent] = useState(0);
 
@@ -37,7 +37,7 @@ export default function HeroCarousel() {
   const goTo = (index: number) => setCurrent(index);
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ aspectRatio: "16/7", minHeight: 260 }}>
+    <section ref={ref} className="relative w-full overflow-hidden" style={{ aspectRatio: "16/7", minHeight: 260 }}>
       {images.map((img, i) => (
         <img
           key={img.id}
@@ -64,4 +64,6 @@ export default function HeroCarousel() {
       )}
     </section>
   );
-}
+});
+
+export default HeroCarousel;
