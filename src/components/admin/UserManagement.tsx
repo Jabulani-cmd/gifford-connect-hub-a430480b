@@ -489,7 +489,7 @@ export default function UserManagement() {
                               variant="ghost"
                               size="icon"
                               title="Delete user"
-                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              onClick={() => confirmDeleteUser(u.id, u.email)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
