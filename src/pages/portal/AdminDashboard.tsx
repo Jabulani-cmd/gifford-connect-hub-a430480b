@@ -426,7 +426,7 @@ export default function AdminDashboard() {
     navigate("/login");
   };
 
-  const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+  const meetingTypeLabels: Record<string, string> = { sdc: "SDC Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
   return (
     <div className="min-h-screen bg-background">
