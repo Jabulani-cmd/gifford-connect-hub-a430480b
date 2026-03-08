@@ -232,10 +232,32 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Delete from user_roles, staff, profiles first (cascade should handle some)
+
+      // Get staff record ID for this user (needed to clean up FK references)
+      const { data: staffRecord } = await supabaseAdmin
+        .from("staff")
+        .select("id")
+        .eq("user_id", user_id)
+        .maybeSingle();
+
+      if (staffRecord) {
+        // Nullify foreign key references pointing to this staff record
+        await supabaseAdmin.from("classes").update({ class_teacher_id: null }).eq("class_teacher_id", staffRecord.id);
+        await supabaseAdmin.from("class_subjects").update({ teacher_id: null }).eq("teacher_id", staffRecord.id);
+        await supabaseAdmin.from("timetable_entries").update({ teacher_id: null }).eq("teacher_id", staffRecord.id);
+        // Delete owned records
+        await supabaseAdmin.from("contracts").delete().eq("staff_id", staffRecord.id);
+        await supabaseAdmin.from("leave_requests").delete().eq("staff_id", staffRecord.id);
+        // Now delete the staff record itself
+        await supabaseAdmin.from("staff").delete().eq("id", staffRecord.id);
+      }
+
+      // Delete related data referencing user_id directly
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
-      await supabaseAdmin.from("staff").delete().eq("user_id", user_id);
-      // Delete auth user (cascades to profiles)
+      await supabaseAdmin.from("personal_timetables").delete().eq("user_id", user_id);
+      await supabaseAdmin.from("notifications").delete().eq("user_id", user_id);
+
+      // Delete auth user (cascades to profiles via trigger)
       const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
       if (error) throw error;
       return new Response(JSON.stringify({ message: "User deleted" }), {
