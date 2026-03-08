@@ -501,6 +501,7 @@ export default function StudentManagement() {
                       <p className={`text-sm ${selectedStudent.has_medical_alert ? "text-destructive font-medium" : ""}`}>{selectedStudent.medical_conditions}</p>
                     </div>
                   )}
+                  <GenerateCodeButton studentId={selectedStudent.id} />
                 </TabsContent>
                 <TabsContent value="academics">
                   <div className="py-8 text-center text-muted-foreground">
