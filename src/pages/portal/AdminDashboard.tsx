@@ -10,6 +10,7 @@ import StudentManagement from "@/pages/admin/StudentManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import BoardingManagement from "@/pages/admin/BoardingManagement";
 import InventoryManagement from "@/pages/admin/InventoryManagement";
+import CommunicationModule from "@/pages/admin/CommunicationModule";
 import UserManagement from "@/components/admin/UserManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
