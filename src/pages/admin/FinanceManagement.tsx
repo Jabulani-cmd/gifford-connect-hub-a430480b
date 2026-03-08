@@ -2077,12 +2077,27 @@ export default function FinanceManagement() {
           <DialogHeader>
             <DialogTitle>Record Supplier Payment</DialogTitle>
             <DialogDescription>
-              {spInvoice && (
+              {spInvoice ? (
                 <span>Payment for <span className="font-semibold">{spInvoice.supplier_name}</span> — Invoice #{spInvoice.invoice_number} (Balance: USD {fmt(Number(spInvoice.amount_usd) - Number(spInvoice.paid_usd))})</span>
+              ) : (
+                <span>Select an unpaid supplier invoice and record a payment.</span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {!spInvoice && (
+              <div className="space-y-1">
+                <Label>Select Supplier Invoice *</Label>
+                <Select onValueChange={v => { const inv = supplierInvoices.find(si => si.id === v); setSpInvoice(inv || null); }}>
+                  <SelectTrigger><SelectValue placeholder="Choose an unpaid invoice..." /></SelectTrigger>
+                  <SelectContent>
+                    {supplierInvoices.filter(si => si.status !== "paid").map(si => (
+                      <SelectItem key={si.id} value={si.id}>{si.supplier_name} — #{si.invoice_number} (Bal: USD {fmt(Number(si.amount_usd) - Number(si.paid_usd))})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Payment Date</Label>
