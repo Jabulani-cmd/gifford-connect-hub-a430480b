@@ -8,6 +8,10 @@ import ReportCardDownloadButton from "./ReportCardPDF";
 
 interface Props {
   studentId: string | null;
+  studentName?: string;
+  admissionNumber?: string;
+  form?: string;
+  stream?: string | null;
 }
 
 interface ExamOption {
