@@ -24,7 +24,7 @@ const clubs = [
   { icon: Trophy, name: "Science Club", desc: "Hands-on experiments and science olympiads." },
 ];
 
-const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+const meetingTypeLabels: Record<string, string> = { sdc: "SDC Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
 export default function SchoolLife() {
   const [meetings, setMeetings] = useState<any[]>([]);
