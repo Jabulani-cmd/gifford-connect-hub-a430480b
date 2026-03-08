@@ -679,6 +679,12 @@ export default function StaffManagementFull() {
           </div>
         </DialogContent>
       </Dialog>
+      <WebcamCapture
+        open={showWebcam}
+        onClose={() => setShowWebcam(false)}
+        onCapture={(blob) => { setCropSrc(URL.createObjectURL(blob)); setCropOpen(true); }}
+        title="Take Staff Photo"
+      />
     </div>
   );
 }
