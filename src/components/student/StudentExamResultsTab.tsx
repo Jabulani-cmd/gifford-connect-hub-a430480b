@@ -4,9 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trophy, Award, TrendingUp, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ReportCardDownloadButton from "./ReportCardPDF";
 
 interface Props {
   studentId: string | null;
+  studentName?: string;
+  admissionNumber?: string;
+  form?: string;
+  stream?: string | null;
 }
 
 interface ExamOption {
@@ -59,7 +64,7 @@ function getMarkBarColor(mark: number): string {
   return "bg-red-500";
 }
 
-export default function StudentExamResultsTab({ studentId }: Props) {
+export default function StudentExamResultsTab({ studentId, studentName, admissionNumber, form, stream }: Props) {
   const [exams, setExams] = useState<ExamOption[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [results, setResults] = useState<ResultRow[]>([]);
@@ -233,6 +238,32 @@ export default function StudentExamResultsTab({ studentId }: Props) {
                 <p className="text-[10px] text-muted-foreground">Best Subject</p>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Download Report Card */}
+          <div className="flex justify-end">
+            <ReportCardDownloadButton
+              studentName={studentName || "Student"}
+              admissionNumber={admissionNumber || "N/A"}
+              form={form || "N/A"}
+              stream={stream || null}
+              examName={selectedExam?.name || "Exam"}
+              term={selectedExam?.term || ""}
+              academicYear={selectedExam?.academic_year || ""}
+              results={results.map((r) => ({
+                subject_name: r.subject_name,
+                subject_code: r.subject_code,
+                mark: r.mark,
+                grade: r.grade || getZIMSECGrade(r.mark),
+                teacher_comment: r.teacher_comment,
+                class_rank: r.class_rank,
+                class_size: r.class_size,
+              }))}
+              overallRank={overallRank}
+              averageMark={avgMark}
+              averageGrade={avgGrade}
+              studentId={studentId}
+            />
           </div>
 
           {/* Results Table */}
