@@ -861,6 +861,11 @@ export default function AdminDashboard() {
           <TabsContent value="inventory">
             <InventoryManagement />
           </TabsContent>
+
+          {/* Communication Tab */}
+          <TabsContent value="communication">
+            <CommunicationModule />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
