@@ -155,7 +155,7 @@ describe("Security: Input Sanitization", () => {
   });
 
   it("strips SQL injection characters", () => {
-    expect(sanitizeSearchInput("'; DROP TABLE students; --")).toBe(" DROP TABLE students --");
+    expect(sanitizeSearchInput("'; DROP TABLE students; --")).toBe("DROP TABLE students --");
   });
 
   it("truncates long input", () => {
