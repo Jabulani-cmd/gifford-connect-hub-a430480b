@@ -168,8 +168,17 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to delete the account for ${email}? This action cannot be undone.`)) return;
+  // Delete confirmation dialog state
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
+
+  const confirmDeleteUser = (userId: string, email: string) => {
+    setDeleteTarget({ userId, email });
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    const { userId } = deleteTarget;
+    setDeleteTarget(null);
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
