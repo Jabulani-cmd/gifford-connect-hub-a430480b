@@ -91,6 +91,15 @@ export default function FinanceManagement() {
 
   // ─── Debtors ───
   const [debtors, setDebtors] = useState<any[]>([]);
+  const [debtorsFormFilter, setDebtorsFormFilter] = useState("all");
+
+  // ─── Student Statements ───
+  const [stmtSearch, setStmtSearch] = useState("");
+  const [stmtStudentResults, setStmtStudentResults] = useState<any[]>([]);
+  const [stmtStudent, setStmtStudent] = useState<any>(null);
+  const [stmtInvoices, setStmtInvoices] = useState<any[]>([]);
+  const [stmtPayments, setStmtPayments] = useState<any[]>([]);
+  const [stmtLoading, setStmtLoading] = useState(false);
 
   // ─── Loading ───
   const [loading, setLoading] = useState(true);
