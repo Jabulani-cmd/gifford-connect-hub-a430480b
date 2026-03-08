@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
-  AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw
+  AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle
 } from "lucide-react";
+import BankReconciliation from "@/components/admin/BankReconciliation";
+import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
@@ -712,6 +714,8 @@ export default function FinanceManagement() {
           <TabsTrigger value="supplier-payables"><Ban className="mr-1 h-4 w-4" /> Supplier Payables</TabsTrigger>
           <TabsTrigger value="statements"><User className="mr-1 h-4 w-4" /> Statements</TabsTrigger>
           <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
+          <TabsTrigger value="bank-recon"><CheckCircle className="mr-1 h-4 w-4" /> Bank Reconciliation</TabsTrigger>
+          <TabsTrigger value="income-expenditure"><TrendingDown className="mr-1 h-4 w-4" /> Income & Expenditure</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
         </TabsList>
 
@@ -1382,6 +1386,16 @@ export default function FinanceManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ═══════ BANK RECONCILIATION TAB ═══════ */}
+        <TabsContent value="bank-recon">
+          <BankReconciliation />
+        </TabsContent>
+
+        {/* ═══════ INCOME & EXPENDITURE TAB ═══════ */}
+        <TabsContent value="income-expenditure">
+          <IncomeExpenditureReport />
         </TabsContent>
 
         {/* ═══════ REPORTS TAB ═══════ */}
