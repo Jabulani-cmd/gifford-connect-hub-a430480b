@@ -714,6 +714,8 @@ export default function FinanceManagement() {
           <TabsTrigger value="supplier-payables"><Ban className="mr-1 h-4 w-4" /> Supplier Payables</TabsTrigger>
           <TabsTrigger value="statements"><User className="mr-1 h-4 w-4" /> Statements</TabsTrigger>
           <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
+          <TabsTrigger value="bank-recon"><CheckCircle className="mr-1 h-4 w-4" /> Bank Reconciliation</TabsTrigger>
+          <TabsTrigger value="income-expenditure"><TrendingDown className="mr-1 h-4 w-4" /> Income & Expenditure</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
         </TabsList>
 
