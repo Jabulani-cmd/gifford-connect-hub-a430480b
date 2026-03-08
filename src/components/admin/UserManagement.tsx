@@ -51,12 +51,19 @@ interface ManagedUser {
   created_at: string;
 }
 
+interface ClassOption {
+  id: string;
+  name: string;
+  form_level: string | null;
+}
+
 export default function UserManagement() {
   const { toast } = useToast();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [classes, setClasses] = useState<ClassOption[]>([]);
 
   // Create user form
   const [form, setForm] = useState({
@@ -69,12 +76,23 @@ export default function UserManagement() {
     phone: "",
     grade: "",
     class_name: "",
+    assigned_class_id: "",
   });
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchUsers();
+    fetchClasses();
   }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const { data } = await supabase.from("classes").select("id, name, form_level").order("name");
+      if (data) setClasses(data);
+    } catch (err) {
+      console.error("Failed to fetch classes:", err);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -130,12 +148,13 @@ export default function UserManagement() {
           phone: form.phone || undefined,
           grade: form.grade || undefined,
           class_name: form.class_name || undefined,
+          assigned_class_id: (form.portal_role === "teacher" || form.portal_role === "admin") && form.assigned_class_id ? form.assigned_class_id : undefined,
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       toast({ title: "User created successfully!" });
-      setForm({ full_name: "", email: "", password: "", portal_role: "teacher", staff_role: "teacher", department: "", phone: "", grade: "", class_name: "" });
+      setForm({ full_name: "", email: "", password: "", portal_role: "teacher", staff_role: "teacher", department: "", phone: "", grade: "", class_name: "", assigned_class_id: "" });
       fetchUsers();
     } catch (err: any) {
       toast({ title: "Failed to create user", description: err.message, variant: "destructive" });
@@ -207,16 +226,26 @@ export default function UserManagement() {
 
   // Edit user state
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
-  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "" });
+  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "" });
   const [saving, setSaving] = useState(false);
 
-  const openEditDialog = (user: ManagedUser) => {
+  const openEditDialog = async (user: ManagedUser) => {
     setEditUser(user);
+    // Find current class assignment for this staff member
+    let currentClassId = "";
+    if (user.portal_role === "teacher" || user.portal_role === "admin") {
+      const { data: staffRecord } = await supabase.from("staff").select("id").eq("user_id", user.id).maybeSingle();
+      if (staffRecord) {
+        const { data: classRecord } = await supabase.from("classes").select("id").eq("class_teacher_id", staffRecord.id).maybeSingle();
+        if (classRecord) currentClassId = classRecord.id;
+      }
+    }
     setEditForm({
       portal_role: user.portal_role,
       staff_role: user.staff_role || "teacher",
       department: user.department || "",
       full_name: user.full_name,
+      assigned_class_id: currentClassId,
     });
   };
 
@@ -240,6 +269,7 @@ export default function UserManagement() {
           staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
           department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
           full_name: editForm.full_name,
+          assigned_class_id: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
         }),
       });
       const data = await res.json();
@@ -336,30 +366,44 @@ export default function UserManagement() {
             </div>
 
             {isStaffRole && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Staff Position / Title</Label>
+                    <Select value={form.staff_role} onValueChange={(v) => setForm((p) => ({ ...p, staff_role: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {staffRoles.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Department</Label>
+                    <Select value={form.department} onValueChange={(v) => setForm((p) => ({ ...p, department: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                      <SelectContent>
+                        {departmentOptions.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>Staff Position / Title</Label>
-                  <Select value={form.staff_role} onValueChange={(v) => setForm((p) => ({ ...p, staff_role: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Label>Assigned Class (Class Teacher)</Label>
+                  <Select value={form.assigned_class_id || "none"} onValueChange={(v) => setForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                     <SelectContent>
-                      {staffRoles.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      <SelectItem value="none">No class assigned</SelectItem>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={form.department} onValueChange={(v) => setForm((p) => ({ ...p, department: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>
-                      {departmentOptions.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              </>
             )}
 
             {form.portal_role === "student" && (
@@ -557,6 +601,18 @@ export default function UserManagement() {
                       <SelectItem value="none">No department</SelectItem>
                       {departmentOptions.map((d) => (
                         <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Assigned Class (Class Teacher)</Label>
+                  <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No class assigned</SelectItem>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
