@@ -1832,6 +1832,174 @@ export default function FinanceManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Petty Cash Dialog */}
+      <Dialog open={pcDialogOpen} onOpenChange={setPcDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{pcForm.transaction_type === "deposit" ? "Deposit to Petty Cash" : "Petty Cash Withdrawal"}</DialogTitle>
+            <DialogDescription>Record a {pcForm.transaction_type} transaction for the petty cash float.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Date</Label>
+                <Input type="date" value={pcForm.transaction_date} onChange={e => setPcForm(p => ({ ...p, transaction_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Type</Label>
+                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deposit">Deposit</SelectItem>
+                    <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input value={pcForm.description} onChange={e => setPcForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Office supplies, Float top-up" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD</Label>
+                <Input type="number" step="0.01" value={pcForm.amount_usd} onChange={e => setPcForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={pcForm.amount_zig} onChange={e => setPcForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={pcForm.reference_number} onChange={e => setPcForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPcDialogOpen(false)}>Cancel</Button>
+            <Button onClick={savePettyCash} disabled={pcLoading || !pcForm.description}>
+              {pcLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Invoice Dialog */}
+      <Dialog open={siDialogOpen} onOpenChange={setSiDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Supplier Invoice</DialogTitle>
+            <DialogDescription>Record an invoice received from a supplier.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input value={siForm.supplier_name} onChange={e => setSiForm(p => ({ ...p, supplier_name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input value={siForm.supplier_contact} onChange={e => setSiForm(p => ({ ...p, supplier_contact: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Invoice Number *</Label>
+                <Input value={siForm.invoice_number} onChange={e => setSiForm(p => ({ ...p, invoice_number: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Invoice Date</Label>
+                <Input type="date" value={siForm.invoice_date} onChange={e => setSiForm(p => ({ ...p, invoice_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Due Date</Label>
+                <Input type="date" value={siForm.due_date} onChange={e => setSiForm(p => ({ ...p, due_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Description</Label>
+                <Input value={siForm.description} onChange={e => setSiForm(p => ({ ...p, description: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={siForm.amount_usd} onChange={e => setSiForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={siForm.amount_zig} onChange={e => setSiForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSiDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveSupplierInvoice} disabled={siLoading || !siForm.supplier_name || !siForm.invoice_number}>
+              {siLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Save Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Payment Dialog */}
+      <Dialog open={spDialogOpen} onOpenChange={v => { if (!v) { setSpDialogOpen(false); setSpInvoice(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Supplier Payment</DialogTitle>
+            <DialogDescription>
+              {spInvoice && (
+                <span>Payment for <span className="font-semibold">{spInvoice.supplier_name}</span> — Invoice #{spInvoice.invoice_number} (Balance: USD {fmt(Number(spInvoice.amount_usd) - Number(spInvoice.paid_usd))})</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input type="date" value={spForm.payment_date} onChange={e => setSpForm(p => ({ ...p, payment_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select value={spForm.payment_method} onValueChange={v => setSpForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={spForm.amount_usd} onChange={e => setSpForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={spForm.amount_zig} onChange={e => setSpForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={spForm.reference_number} onChange={e => setSpForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={spForm.notes} onChange={e => setSpForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSpDialogOpen(false); setSpInvoice(null); }}>Cancel</Button>
+            <Button onClick={saveSupplierPayment} disabled={spLoading || (!spForm.amount_usd && !spForm.amount_zig)}>
+              {spLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
