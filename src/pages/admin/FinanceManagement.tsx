@@ -26,7 +26,7 @@ const boardingOptions = [
   { value: "boarding", label: "Boarding" },
 ];
 const paymentMethods = ["Cash", "EcoCash", "OneMoney", "Bank Transfer", "ZIPIT", "Swipe"];
-const expenseCategories = ["Salaries", "Utilities", "Maintenance", "Supplies", "Transport", "Food", "Sports", "General"];
+const expenseCategories = ["Salaries", "Utilities", "Maintenance", "Supplies", "Transport", "Food", "Sports", "Petty Cash", "General"];
 const restrictionTypes = ["Block Report Cards", "Block Exam Results", "Block Library Access", "Block Sports Activities"];
 
 // ── helpers ──
