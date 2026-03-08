@@ -854,6 +854,11 @@ export default function AdminDashboard() {
           <TabsContent value="boarding">
             <BoardingManagement />
           </TabsContent>
+
+          {/* Inventory Tab */}
+          <TabsContent value="inventory">
+            <InventoryManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
