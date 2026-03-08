@@ -543,6 +543,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
             <TabsTrigger value="inventory"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
+            <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
+            <TabsTrigger value="audit"><ShieldCheck className="mr-1 h-4 w-4" /> Audit Logs</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
