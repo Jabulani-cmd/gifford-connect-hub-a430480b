@@ -58,7 +58,7 @@ export default function SchoolLife() {
             <TabsList className="mb-8 flex-wrap">
               <TabsTrigger value="sports">Sports</TabsTrigger>
               <TabsTrigger value="clubs">Clubs & Activities</TabsTrigger>
-              <TabsTrigger value="sgb"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB</TabsTrigger>
+              <TabsTrigger value="sdc"><HandshakeIcon className="mr-1 h-4 w-4" /> SDC</TabsTrigger>
               <TabsTrigger value="pt-meetings"><Calendar className="mr-1 h-4 w-4" /> Parent-Teacher</TabsTrigger>
               <TabsTrigger value="gallery">Gallery</TabsTrigger>
             </TabsList>
