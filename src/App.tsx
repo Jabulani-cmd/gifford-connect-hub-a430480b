@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import StudentDashboard from "./pages/portal/StudentDashboard";
 import ParentTeacherDashboard from "./pages/portal/ParentTeacherDashboard";
+import ParentDashboard from "./pages/portal/ParentDashboard";
 import TeacherDashboard from "./pages/portal/TeacherDashboard";
 import AdminDashboard from "./pages/portal/AdminDashboard";
 import Downloads from "./pages/Downloads";
