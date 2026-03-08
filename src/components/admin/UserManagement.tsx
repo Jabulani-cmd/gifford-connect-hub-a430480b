@@ -229,13 +229,23 @@ export default function UserManagement() {
   const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "" });
   const [saving, setSaving] = useState(false);
 
-  const openEditDialog = (user: ManagedUser) => {
+  const openEditDialog = async (user: ManagedUser) => {
     setEditUser(user);
+    // Find current class assignment for this staff member
+    let currentClassId = "";
+    if (user.portal_role === "teacher" || user.portal_role === "admin") {
+      const { data: staffRecord } = await supabase.from("staff").select("id").eq("user_id", user.id).maybeSingle();
+      if (staffRecord) {
+        const { data: classRecord } = await supabase.from("classes").select("id").eq("class_teacher_id", staffRecord.id).maybeSingle();
+        if (classRecord) currentClassId = classRecord.id;
+      }
+    }
     setEditForm({
       portal_role: user.portal_role,
       staff_role: user.staff_role || "teacher",
       department: user.department || "",
       full_name: user.full_name,
+      assigned_class_id: currentClassId,
     });
   };
 
