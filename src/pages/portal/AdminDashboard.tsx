@@ -852,11 +852,6 @@ export default function AdminDashboard() {
             <StaffManagementFull />
           </TabsContent>
 
-          {/* Finance Tab */}
-          <TabsContent value="finance">
-            <FinanceManagement />
-          </TabsContent>
-
           {/* Academics Tab */}
           <TabsContent value="academics">
             <AcademicManagement />
