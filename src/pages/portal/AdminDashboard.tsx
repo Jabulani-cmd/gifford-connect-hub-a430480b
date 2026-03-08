@@ -8,6 +8,7 @@ import ProjectsManagement from "@/components/admin/ProjectsManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
 import StudentManagement from "@/pages/admin/StudentManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
+import BoardingManagement from "@/pages/admin/BoardingManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -535,6 +536,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="staff-full"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
             <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
             <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
+            <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -844,6 +846,11 @@ export default function AdminDashboard() {
           {/* Academics Tab */}
           <TabsContent value="academics">
             <AcademicManagement />
+          </TabsContent>
+
+          {/* Boarding Tab */}
+          <TabsContent value="boarding">
+            <BoardingManagement />
           </TabsContent>
         </Tabs>
       </div>
