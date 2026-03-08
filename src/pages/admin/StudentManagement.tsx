@@ -126,7 +126,128 @@ function GenerateCodeButton({ studentId }: { studentId: string }) {
   );
 }
 
-export default function StudentManagement() {
+function BulkGenerateCodes() {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [formFilter, setFormFilter] = useState("all");
+  const [generating, setGenerating] = useState(false);
+  const [results, setResults] = useState<any[] | null>(null);
+
+  const generate = async () => {
+    setGenerating(true);
+    setResults(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/link-child`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "bulk-generate-codes", form_filter: formFilter }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setResults(data.results);
+      toast({ title: `Generated codes for ${data.results.filter((r: any) => r.code).length} students` });
+    } catch (err: any) {
+      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
+  const exportCSV = () => {
+    if (!results) return;
+    const header = "Admission Number,Student Name,Form,Stream,Verification Code";
+    const rows = results
+      .filter((r: any) => r.code)
+      .map((r: any) => `${r.admission_number},"${r.full_name}",${r.form},${r.stream || ""},${r.code}`);
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `verification-codes-${formFilter === "all" ? "all" : formFilter.replace(" ", "-")}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => { setOpen(true); setResults(null); }}>
+        <Users className="mr-1 h-4 w-4" /> Bulk Codes
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Bulk Generate Verification Codes</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Generate parent-linking codes for all students at once and export as CSV.</p>
+
+          <div className="flex items-end gap-3">
+            <div className="space-y-1 flex-1">
+              <Label>Filter by Form</Label>
+              <Select value={formFilter} onValueChange={setFormFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  {formOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={generate} disabled={generating}>
+              {generating ? "Generating..." : "Generate All"}
+            </Button>
+          </div>
+
+          {results && (
+            <div className="space-y-3 mt-2">
+              <div className="flex items-center justify-between">
+                <Badge variant="default" className="text-xs">{results.filter((r: any) => r.code).length} codes generated</Badge>
+                <Button variant="outline" size="sm" onClick={exportCSV}>
+                  <Download className="mr-1 h-4 w-4" /> Export CSV
+                </Button>
+              </div>
+              <div className="max-h-60 overflow-y-auto rounded border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Adm #</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Form</TableHead>
+                      <TableHead>Code</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((r: any, i: number) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-mono text-xs">{r.admission_number}</TableCell>
+                        <TableCell className="text-sm">{r.full_name}</TableCell>
+                        <TableCell className="text-sm">{r.form}</TableCell>
+                        <TableCell>
+                          {r.code ? (
+                            <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono font-bold tracking-wider">{r.code}</code>
+                          ) : (
+                            <span className="text-xs text-destructive">Error</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
