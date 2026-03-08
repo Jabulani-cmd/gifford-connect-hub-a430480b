@@ -64,4 +64,6 @@ const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) 
       )}
     </section>
   );
-}
+});
+
+export default HeroCarousel;
