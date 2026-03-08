@@ -2141,6 +2141,72 @@ export default function FinanceManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cash on Delivery Dialog */}
+      <Dialog open={codDialogOpen} onOpenChange={setCodDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cash on Delivery Payment</DialogTitle>
+            <DialogDescription>Record a direct payment to a supplier for goods/services received on delivery.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input value={codForm.supplier_name} onChange={e => setCodForm(p => ({ ...p, supplier_name: e.target.value }))} placeholder="e.g. ABC Supplies" />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input value={codForm.supplier_contact} onChange={e => setCodForm(p => ({ ...p, supplier_contact: e.target.value }))} placeholder="Phone or email" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input value={codForm.description} onChange={e => setCodForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Office stationery delivery" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input type="date" value={codForm.payment_date} onChange={e => setCodForm(p => ({ ...p, payment_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select value={codForm.payment_method} onValueChange={v => setCodForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={codForm.amount_usd} onChange={e => setCodForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={codForm.amount_zig} onChange={e => setCodForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={codForm.reference_number} onChange={e => setCodForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={codForm.notes} onChange={e => setCodForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCodDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveCodPayment} disabled={codLoading || !codForm.supplier_name || (!codForm.amount_usd && !codForm.amount_zig)}>
+              {codLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Record COD Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
