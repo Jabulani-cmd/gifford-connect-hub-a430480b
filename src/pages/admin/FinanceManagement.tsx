@@ -1862,7 +1862,7 @@ export default function FinanceManagement() {
               </div>
               <div className="space-y-1">
                 <Label>Type</Label>
-                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v }))}>
+                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v, reference_number: v === "deposit" ? "" : p.reference_number }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="deposit">Deposit</SelectItem>
