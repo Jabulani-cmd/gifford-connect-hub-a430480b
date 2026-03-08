@@ -536,6 +536,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="staff-full"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
             <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
             <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
+            <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
