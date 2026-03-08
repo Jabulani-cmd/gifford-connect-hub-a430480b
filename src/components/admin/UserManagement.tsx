@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil, FileSpreadsheet } from "lucide-react";
+import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil, FileSpreadsheet, Loader2 } from "lucide-react";
 import BulkUserImport from "./BulkUserImport";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,6 +171,7 @@ export default function UserManagement() {
 
   // Delete confirmation dialog state
   const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const confirmDeleteUser = (userId: string, email: string) => {
     setDeleteTarget({ userId, email });
@@ -179,7 +180,7 @@ export default function UserManagement() {
   const handleDeleteUser = async () => {
     if (!deleteTarget) return;
     const { userId } = deleteTarget;
-    setDeleteTarget(null);
+    setDeleting(true);
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
@@ -195,9 +196,12 @@ export default function UserManagement() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       toast({ title: "User deleted" });
+      setDeleteTarget(null);
       fetchUsers();
     } catch (err: any) {
       toast({ title: "Failed to delete user", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -578,9 +582,9 @@ export default function UserManagement() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
