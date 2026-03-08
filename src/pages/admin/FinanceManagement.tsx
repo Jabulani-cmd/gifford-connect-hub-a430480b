@@ -176,8 +176,25 @@ export default function FinanceManagement() {
     fetchFeeStructures();
   }
 
-  async function deleteFee(id: string) {
-    if (!confirm("Delete this fee structure?")) return;
+  async function openDeleteImpact(fee: any) {
+    setDeleteTargetFee(fee);
+    setDeleteImpactCount(null);
+    setDeleteImpactOpen(true);
+    setDeleteImpactLoading(true);
+
+    const { count, error } = await supabase
+      .from("invoice_items")
+      .select("id", { count: "exact", head: true })
+      .eq("fee_structure_id", fee.id);
+
+    setDeleteImpactCount(error ? -1 : (count ?? 0));
+    setDeleteImpactLoading(false);
+  }
+
+  async function confirmDeleteFee() {
+    if (!deleteTargetFee) return;
+    setDeleteConfirmLoading(true);
+    const id = deleteTargetFee.id;
 
     const { error: unlinkError } = await supabase
       .from("invoice_items")
@@ -186,6 +203,7 @@ export default function FinanceManagement() {
 
     if (unlinkError) {
       toast({ title: "Failed to delete fee structure", description: unlinkError.message, variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
@@ -197,20 +215,21 @@ export default function FinanceManagement() {
 
     if (deleteError) {
       toast({ title: "Failed to delete fee structure", description: deleteError.message, variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
     if (!deletedRows || deletedRows.length === 0) {
-      toast({
-        title: "Fee structure was not deleted",
-        description: "No matching record was removed (likely permission or record mismatch issue).",
-        variant: "destructive",
-      });
+      toast({ title: "Fee structure was not deleted", description: "Permission or record mismatch issue.", variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
     setFeeStructures((prev) => prev.filter((fee) => fee.id !== id));
     toast({ title: "Fee structure deleted" });
+    setDeleteImpactOpen(false);
+    setDeleteTargetFee(null);
+    setDeleteConfirmLoading(false);
     fetchFeeStructures();
   }
 
