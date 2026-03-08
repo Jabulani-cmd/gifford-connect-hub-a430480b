@@ -171,6 +171,7 @@ export default function UserManagement() {
 
   // Delete confirmation dialog state
   const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const confirmDeleteUser = (userId: string, email: string) => {
     setDeleteTarget({ userId, email });
