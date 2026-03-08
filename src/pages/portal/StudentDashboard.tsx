@@ -324,6 +324,7 @@ function TabContent({
             { id: "timetable" as const, label: "Timetable" },
             { id: "planner" as const, label: "My Planner" },
             { id: "announcements" as const, label: "Announcements" },
+            { id: "results" as const, label: "Results" },
             { id: "fees" as const, label: "Fees" },
           ].map((t) => (
             <button
