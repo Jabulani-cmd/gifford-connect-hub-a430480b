@@ -41,7 +41,7 @@ const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props
   }, []);
 
   return (
-    <div className="flex justify-center">
+    <div ref={ref} className="flex justify-center">
       <div className="relative">
         {photoUrl ? (
           <img src={photoUrl} alt="The Principal" className="h-80 w-64 rounded-xl object-cover object-top shadow-maroon" />
