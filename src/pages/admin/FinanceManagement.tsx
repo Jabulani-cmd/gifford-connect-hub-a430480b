@@ -1113,6 +1113,59 @@ export default function FinanceManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ═══ DELETE IMPACT MODAL ═══ */}
+      <Dialog open={deleteImpactOpen} onOpenChange={(open) => { if (!deleteConfirmLoading) setDeleteImpactOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Delete Fee Structure
+            </DialogTitle>
+            <DialogDescription>
+              {deleteTargetFee && (
+                <span className="block mt-1 font-medium text-foreground">
+                  {deleteTargetFee.form} — {deleteTargetFee.term} {deleteTargetFee.academic_year} ({deleteTargetFee.boarding_status === "boarding" ? "Boarding" : "Day"})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {deleteImpactLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking impact…
+              </div>
+            ) : deleteImpactCount === -1 ? (
+              <p className="text-sm text-destructive">Could not check linked invoice items. Proceed with caution.</p>
+            ) : deleteImpactCount === 0 ? (
+              <p className="text-sm text-muted-foreground">No invoice items are linked to this fee structure. It can be safely deleted.</p>
+            ) : (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-1">
+                <p className="text-sm font-semibold text-amber-800">
+                  {deleteImpactCount} invoice item{deleteImpactCount !== 1 ? "s" : ""} will be unlinked
+                </p>
+                <p className="text-xs text-amber-700">
+                  These invoice items will remain on their invoices but their fee structure reference will be cleared.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteImpactOpen(false)} disabled={deleteConfirmLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteFee}
+              disabled={deleteImpactLoading || deleteConfirmLoading}
+            >
+              {deleteConfirmLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Delete Fee Structure
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
