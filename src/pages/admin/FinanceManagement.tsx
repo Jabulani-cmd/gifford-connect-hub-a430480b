@@ -93,6 +93,9 @@ export default function FinanceManagement() {
   // ─── Debtors ───
   const [debtors, setDebtors] = useState<any[]>([]);
   const [debtorsFormFilter, setDebtorsFormFilter] = useState("all");
+  const [deleteDebtorOpen, setDeleteDebtorOpen] = useState(false);
+  const [debtorToDelete, setDebtorToDelete] = useState<any>(null);
+  const [deletingDebtor, setDeletingDebtor] = useState(false);
 
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
@@ -868,6 +871,7 @@ export default function FinanceManagement() {
                             <TableHead className="text-right">Owed USD</TableHead>
                             <TableHead className="text-right">Owed ZiG</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -882,6 +886,11 @@ export default function FinanceManagement() {
                               <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</TableCell>
                               <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</TableCell>
                               <TableCell>{statusBadge(d.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { setDebtorToDelete(d); setDeleteDebtorOpen(true); }} title="Remove debtor">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1485,6 +1494,44 @@ export default function FinanceManagement() {
             >
               {deleteConfirmLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Delete Fee Structure
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Debtor Confirmation Dialog */}
+      <Dialog open={deleteDebtorOpen} onOpenChange={v => { if (!v) { setDeleteDebtorOpen(false); setDebtorToDelete(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Debtor</DialogTitle>
+            <DialogDescription>
+              This will mark invoice <span className="font-mono font-semibold">{debtorToDelete?.invoice_number}</span> for{" "}
+              <span className="font-semibold">{debtorToDelete?.students?.full_name}</span> as paid and remove them from the debtors list. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDebtorOpen(false); setDebtorToDelete(null); }}>Cancel</Button>
+            <Button variant="destructive" disabled={deletingDebtor} onClick={async () => {
+              if (!debtorToDelete) return;
+              setDeletingDebtor(true);
+              const { error } = await supabase.from("invoices").update({
+                status: "paid",
+                paid_usd: debtorToDelete.total_usd,
+                paid_zig: debtorToDelete.total_zig,
+              }).eq("id", debtorToDelete.id);
+              if (error) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+              } else {
+                toast({ title: "Debtor removed", description: `${debtorToDelete.students?.full_name} has been cleared from the debtors list.` });
+                setDebtors(prev => prev.filter(d => d.id !== debtorToDelete.id));
+                fetchInvoices();
+              }
+              setDeletingDebtor(false);
+              setDeleteDebtorOpen(false);
+              setDebtorToDelete(null);
+            }}>
+              {deletingDebtor && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Confirm Removal
             </Button>
           </DialogFooter>
         </DialogContent>
