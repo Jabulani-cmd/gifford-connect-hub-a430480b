@@ -687,7 +687,7 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* SGB / Meetings Tab */}
+          {/* SDC / Meetings Tab */}
           <TabsContent value="meetings">
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
