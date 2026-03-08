@@ -168,6 +168,11 @@ export default function FinanceManagement() {
     if (data) setSupplierInvoices(data);
   }
 
+  async function fetchSupplierPayments() {
+    const { data } = await supabase.from("supplier_payments").select("*, supplier_invoices(supplier_name, invoice_number)").order("payment_date", { ascending: false });
+    if (data) setSupplierPayments(data);
+  }
+
   async function savePettyCash() {
     setPcLoading(true);
     const payload = {
