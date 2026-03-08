@@ -1388,6 +1388,16 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
+        {/* ═══════ BANK RECONCILIATION TAB ═══════ */}
+        <TabsContent value="bank-recon">
+          <BankReconciliation />
+        </TabsContent>
+
+        {/* ═══════ INCOME & EXPENDITURE TAB ═══════ */}
+        <TabsContent value="income-expenditure">
+          <IncomeExpenditureReport />
+        </TabsContent>
+
         {/* ═══════ REPORTS TAB ═══════ */}
         <TabsContent value="reports">
           <div className="grid gap-6 lg:grid-cols-2">
