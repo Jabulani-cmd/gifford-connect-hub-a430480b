@@ -275,6 +275,7 @@ export default function UserManagement() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
+      const isStaff = editForm.portal_role === "teacher" || editForm.portal_role === "admin";
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: "POST",
         headers: {
@@ -286,10 +287,23 @@ export default function UserManagement() {
           action: "update-user",
           user_id: editUser.id,
           portal_role: editForm.portal_role,
-          staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
-          department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
           full_name: editForm.full_name,
-          assigned_class_id: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
+          staff_role: isStaff ? editForm.staff_role : undefined,
+          department: isStaff ? editForm.department : undefined,
+          assigned_class_id: isStaff && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
+          phone: isStaff ? editForm.phone : undefined,
+          email: isStaff ? editForm.email : undefined,
+          address: isStaff ? editForm.address : undefined,
+          emergency_contact: isStaff ? editForm.emergency_contact : undefined,
+          qualifications: isStaff ? editForm.qualifications : undefined,
+          bio: isStaff ? editForm.bio : undefined,
+          title: isStaff ? editForm.title : undefined,
+          subjects_taught: isStaff ? editForm.subjects_taught : undefined,
+          national_id: isStaff ? editForm.national_id : undefined,
+          nssa_number: isStaff ? editForm.nssa_number : undefined,
+          paye_number: isStaff ? editForm.paye_number : undefined,
+          bank_details: isStaff ? editForm.bank_details : undefined,
+          employment_date: isStaff ? editForm.employment_date : undefined,
         }),
       });
       const data = await res.json();
