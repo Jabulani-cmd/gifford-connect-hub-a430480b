@@ -715,11 +715,12 @@ export default function FinanceManagement() {
                         <TableHead>Student</TableHead>
                         <TableHead>Form</TableHead>
                         <TableHead>Term</TableHead>
+                        <TableHead>Due Date</TableHead>
                         <TableHead className="text-right">Total USD</TableHead>
                         <TableHead className="text-right">Total ZiG</TableHead>
                         <TableHead className="text-right">Paid USD</TableHead>
                         <TableHead className="text-right">Paid ZiG</TableHead>
-                         <TableHead>Status</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Balance Due</TableHead>
                         {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
@@ -731,6 +732,7 @@ export default function FinanceManagement() {
                           <TableCell>{inv.students?.full_name || "—"}</TableCell>
                           <TableCell>{inv.students?.form || "—"}</TableCell>
                           <TableCell>{inv.term}</TableCell>
+                          <TableCell className="text-xs">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "Not set"}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.total_usd)}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.total_zig)}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.paid_usd)}</TableCell>
@@ -743,14 +745,6 @@ export default function FinanceManagement() {
                             </TableCell>
                           )}
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* ═══════ PAYMENTS TAB ═══════ */}
         <TabsContent value="payments">
