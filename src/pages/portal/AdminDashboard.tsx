@@ -13,6 +13,8 @@ import InventoryManagement from "@/pages/admin/InventoryManagement";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import AuditLogs from "@/pages/admin/AuditLogs";
+import DataMigration from "@/pages/admin/DataMigration";
+import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManagement from "@/components/admin/UserManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -545,6 +547,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
             <TabsTrigger value="audit"><ShieldCheck className="mr-1 h-4 w-4" /> Audit Logs</TabsTrigger>
+            <TabsTrigger value="migration"><Database className="mr-1 h-4 w-4" /> Data Migration</TabsTrigger>
+            <TabsTrigger value="golive"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -879,6 +883,16 @@ export default function AdminDashboard() {
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
             <AuditLogs />
+          </TabsContent>
+
+          {/* Data Migration Tab */}
+          <TabsContent value="migration">
+            <DataMigration />
+          </TabsContent>
+
+          {/* Go-Live Checklist Tab */}
+          <TabsContent value="golive">
+            <GoLiveChecklist />
           </TabsContent>
         </Tabs>
       </div>
