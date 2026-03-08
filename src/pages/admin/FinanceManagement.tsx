@@ -117,6 +117,11 @@ export default function FinanceManagement() {
   const [spLoading, setSpLoading] = useState(false);
   const [supplierPayments, setSupplierPayments] = useState<any[]>([]);
 
+  // ─── Cash on Delivery (COD) ───
+  const [codDialogOpen, setCodDialogOpen] = useState(false);
+  const [codForm, setCodForm] = useState({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" });
+  const [codLoading, setCodLoading] = useState(false);
+
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
   const [stmtStudentResults, setStmtStudentResults] = useState<any[]>([]);
