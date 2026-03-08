@@ -242,6 +242,8 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("classes").update({ class_teacher_id: null }).eq("class_teacher_id", staffRecord.id);
         await supabaseAdmin.from("class_subjects").update({ teacher_id: null }).eq("teacher_id", staffRecord.id);
         await supabaseAdmin.from("timetable_entries").update({ teacher_id: null }).eq("teacher_id", staffRecord.id);
+        await supabaseAdmin.from("hostels").update({ housemaster_id: null }).eq("housemaster_id", staffRecord.id);
+        await supabaseAdmin.from("hostels").update({ assistant_housemaster_id: null }).eq("assistant_housemaster_id", staffRecord.id);
         // Delete owned records
         await supabaseAdmin.from("contracts").delete().eq("staff_id", staffRecord.id);
         await supabaseAdmin.from("leave_requests").delete().eq("staff_id", staffRecord.id);
