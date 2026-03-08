@@ -896,6 +896,11 @@ export default function AdminDashboard() {
           <TabsContent value="golive">
             <GoLiveChecklist />
           </TabsContent>
+
+          {/* User Manual Tab */}
+          <TabsContent value="manual">
+            <UserManualPage />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
