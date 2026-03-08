@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type CarouselImage = {
@@ -7,7 +7,7 @@ type CarouselImage = {
   display_order: number;
 };
 
-export default function HeroCarousel() {
+const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) {
   const [images, setImages] = useState<CarouselImage[]>([]);
   const [current, setCurrent] = useState(0);
 
