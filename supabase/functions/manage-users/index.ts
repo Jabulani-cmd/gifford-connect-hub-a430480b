@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Verify caller is admin (except for seed-admin which bootstraps)
-    if (action !== "seed-admin") {
+    // Verify caller is admin (except for seed actions which bootstrap)
+    if (action !== "seed-admin" && action !== "seed-teacher") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
