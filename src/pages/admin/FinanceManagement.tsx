@@ -488,11 +488,11 @@ export default function FinanceManagement() {
       // Reverse the invoice paid amounts
       const { data: invoice } = await supabase.from("invoices").select("*").eq("id", payment.invoice_id).single();
       if (invoice) {
-        const newPaidUsd = Math.max(0, parseFloat(invoice.paid_usd) - parseFloat(payment.amount_usd));
-        const newPaidZig = Math.max(0, parseFloat(invoice.paid_zig) - parseFloat(payment.amount_zig));
+        const newPaidUsd = Math.max(0, Number(invoice.paid_usd) - Number(payment.amount_usd));
+        const newPaidZig = Math.max(0, Number(invoice.paid_zig) - Number(payment.amount_zig));
         let newStatus = "partial";
         if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
-        else if (newPaidUsd >= parseFloat(invoice.total_usd) && newPaidZig >= parseFloat(invoice.total_zig)) newStatus = "paid";
+        else if (newPaidUsd >= Number(invoice.total_usd) && newPaidZig >= Number(invoice.total_zig)) newStatus = "paid";
         await supabase.from("invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", payment.invoice_id);
       }
       // Log to audit
