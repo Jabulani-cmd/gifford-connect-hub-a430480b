@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft
 } from "lucide-react";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
@@ -91,6 +91,15 @@ export default function FinanceManagement() {
 
   // ─── Debtors ───
   const [debtors, setDebtors] = useState<any[]>([]);
+  const [debtorsFormFilter, setDebtorsFormFilter] = useState("all");
+
+  // ─── Student Statements ───
+  const [stmtSearch, setStmtSearch] = useState("");
+  const [stmtStudentResults, setStmtStudentResults] = useState<any[]>([]);
+  const [stmtStudent, setStmtStudent] = useState<any>(null);
+  const [stmtInvoices, setStmtInvoices] = useState<any[]>([]);
+  const [stmtPayments, setStmtPayments] = useState<any[]>([]);
+  const [stmtLoading, setStmtLoading] = useState(false);
 
   // ─── Loading ───
   const [loading, setLoading] = useState(true);
@@ -231,6 +240,91 @@ export default function FinanceManagement() {
     setDeleteTargetFee(null);
     setDeleteConfirmLoading(false);
     fetchFeeStructures();
+  }
+
+  // ═══ STUDENT STATEMENTS ═══
+  async function searchStmtStudents(query: string) {
+    if (query.length < 2) { setStmtStudentResults([]); return; }
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
+      .eq("status", "active").is("deleted_at", null).limit(10);
+    if (data) setStmtStudentResults(data);
+  }
+
+  async function selectStmtStudent(student: any) {
+    setStmtStudent(student);
+    setStmtStudentResults([]);
+    setStmtSearch(student.full_name);
+    setStmtLoading(true);
+    const [invRes, payRes] = await Promise.all([
+      supabase.from("invoices").select("*").eq("student_id", student.id).order("created_at", { ascending: false }),
+      supabase.from("payments").select("*, invoices(invoice_number)").eq("student_id", student.id).order("payment_date", { ascending: false }),
+    ]);
+    setStmtInvoices(invRes.data || []);
+    setStmtPayments(payRes.data || []);
+    setStmtLoading(false);
+  }
+
+  function clearStmtStudent() {
+    setStmtStudent(null);
+    setStmtSearch("");
+    setStmtInvoices([]);
+    setStmtPayments([]);
+  }
+
+  function printStudentStatement() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const totalInvoicedUsd = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+    const totalInvoicedZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
+    const totalPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
+    const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${stmtStudent.full_name}</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      .right{text-align:right}.mono{font-family:monospace}.summary{margin-top:16px;padding:12px;border:2px solid #333;display:inline-block}
+      .red{color:#c00}.green{color:#060}@media print{body{padding:15px}}</style></head><body>
+      <h1>Gifford High School</h1>
+      <p><strong>Student Financial Statement</strong></p>
+      <p>Student: <strong>${stmtStudent.full_name}</strong> | Adm #: <strong>${stmtStudent.admission_number}</strong> | Form: <strong>${stmtStudent.form}</strong></p>
+      <p>Date: ${new Date().toLocaleDateString()}</p>
+      <h2>Invoices</h2>
+      <table><tr><th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th></tr>
+      ${stmtInvoices.map(i => `<tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      </table>
+      <h2>Payments</h2>
+      <table><tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr>
+      ${stmtPayments.map(p => `<tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      </table>
+      <div class="summary">
+        <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
+        <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
+        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? 'red' : 'green'}"><strong>Balance:</strong> USD ${fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${fmt(totalInvoicedZig - totalPaidZig)}</p>
+      </div>
+      </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  }
+
+  function printDebtorsList() {
+    const filtered = debtorsFormFilter === "all" ? debtors : debtors.filter(d => d.students?.form === debtorsFormFilter);
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const totalUsd = filtered.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
+    const totalZig = filtered.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Debtors List</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      .right{text-align:right}.mono{font-family:monospace}.red{color:#c00}.total{font-weight:bold;background:#fef2f2}
+      @media print{body{padding:15px}}</style></head><body>
+      <h1>Gifford High School — Debtors List</h1>
+      <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
+      <table><tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr>
+      ${filtered.map((d, i) => `<tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${d.status}</td></tr>`).join("")}
+      <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
+      </table></body></html>`);
+    printWindow.document.close();
+    printWindow.print();
   }
 
   // ═══ INVOICE GENERATION ═══
@@ -443,6 +537,7 @@ export default function FinanceManagement() {
           <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" /> Invoices</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="mr-1 h-4 w-4" /> Payments</TabsTrigger>
           <TabsTrigger value="debtors"><AlertTriangle className="mr-1 h-4 w-4" /> Debtors</TabsTrigger>
+          <TabsTrigger value="statements"><User className="mr-1 h-4 w-4" /> Statements</TabsTrigger>
           <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
         </TabsList>
@@ -640,69 +735,217 @@ export default function FinanceManagement() {
         <TabsContent value="debtors">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
-              <Card className="border-red-200 bg-red-50">
+              <Card className="border-destructive/30 bg-destructive/5">
                 <CardContent className="p-5">
-                  <p className="text-xs text-red-600 font-medium uppercase tracking-wider">Total Outstanding</p>
-                  <p className="text-xl font-bold text-red-800">USD {fmt(totalOwedUsd)}</p>
-                  <p className="text-sm text-red-600">ZiG {fmt(totalOwedZig)}</p>
+                  <p className="text-xs text-destructive font-medium uppercase tracking-wider">Total Outstanding</p>
+                  <p className="text-xl font-bold text-destructive">USD {fmt(totalOwedUsd)}</p>
+                  <p className="text-sm text-destructive/80">ZiG {fmt(totalOwedZig)}</p>
                 </CardContent>
               </Card>
-              <Card className="border-amber-200 bg-amber-50">
+              <Card className="border-amber-300/50 bg-amber-50/50">
                 <CardContent className="p-5">
-                  <p className="text-xs text-amber-600 font-medium uppercase tracking-wider">Partial Payments</p>
+                  <p className="text-xs text-amber-700 font-medium uppercase tracking-wider">Partial Payments</p>
                   <p className="text-xl font-bold text-amber-800">{debtors.filter(d => d.status === "partial").length}</p>
                   <p className="text-sm text-amber-600">students</p>
                 </CardContent>
               </Card>
-              <Card className="border-red-300 bg-red-100">
+              <Card className="border-destructive/40 bg-destructive/10">
                 <CardContent className="p-5">
-                  <p className="text-xs text-red-700 font-medium uppercase tracking-wider">Unpaid</p>
-                  <p className="text-xl font-bold text-red-900">{debtors.filter(d => d.status === "unpaid").length}</p>
-                  <p className="text-sm text-red-600">students</p>
+                  <p className="text-xs text-destructive font-medium uppercase tracking-wider">Unpaid</p>
+                  <p className="text-xl font-bold text-destructive">{debtors.filter(d => d.status === "unpaid").length}</p>
+                  <p className="text-sm text-destructive/80">students</p>
                 </CardContent>
               </Card>
             </div>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
                 <CardTitle className="font-heading">Debtors List</CardTitle>
+                <div className="flex gap-2 flex-wrap">
+                  <Select value={debtorsFormFilter} onValueChange={setDebtorsFormFilter}>
+                    <SelectTrigger className="w-[140px]"><SelectValue placeholder="Filter by Form" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Forms</SelectItem>
+                      {formOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={printDebtorsList} disabled={debtors.length === 0}>
+                    <Printer className="mr-1 h-4 w-4" /> Print List
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {debtors.length === 0 ? (
-                  <p className="text-center py-8 text-muted-foreground">No outstanding debts. 🎉</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Student</TableHead>
-                          <TableHead>Adm #</TableHead>
-                          <TableHead>Invoice</TableHead>
-                          <TableHead>Term</TableHead>
-                          <TableHead className="text-right">Owed USD</TableHead>
-                          <TableHead className="text-right">Owed ZiG</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {debtors.map(d => (
-                          <TableRow key={d.id}>
-                            <TableCell>{d.students?.full_name || "—"}</TableCell>
-                            <TableCell>{d.students?.admission_number || "—"}</TableCell>
-                            <TableCell className="font-mono text-xs">{d.invoice_number}</TableCell>
-                            <TableCell>{d.term}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600">{fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600">{fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</TableCell>
-                            <TableCell>{statusBadge(d.status)}</TableCell>
+                {(() => {
+                  const filtered = debtorsFormFilter === "all" ? debtors : debtors.filter(d => d.students?.form === debtorsFormFilter);
+                  return filtered.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">No outstanding debts{debtorsFormFilter !== "all" ? ` for ${debtorsFormFilter}` : ""}. 🎉</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>#</TableHead>
+                            <TableHead>Student</TableHead>
+                            <TableHead>Adm #</TableHead>
+                            <TableHead>Form</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Term</TableHead>
+                            <TableHead className="text-right">Owed USD</TableHead>
+                            <TableHead className="text-right">Owed ZiG</TableHead>
+                            <TableHead>Status</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
+                        </TableHeader>
+                        <TableBody>
+                          {filtered.map((d, idx) => (
+                            <TableRow key={d.id}>
+                              <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell>{d.students?.full_name || "—"}</TableCell>
+                              <TableCell>{d.students?.admission_number || "—"}</TableCell>
+                              <TableCell>{d.students?.form || "—"}</TableCell>
+                              <TableCell className="font-mono text-xs">{d.invoice_number}</TableCell>
+                              <TableCell>{d.term}</TableCell>
+                              <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</TableCell>
+                              <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</TableCell>
+                              <TableCell>{statusBadge(d.status)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* ═══════ STATEMENTS TAB ═══════ */}
+        <TabsContent value="statements">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading">Student Financial Statements</CardTitle>
+              <CardDescription>Search for a student to view their full financial history</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!stmtStudent ? (
+                <div className="space-y-2">
+                  <div className="relative max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or admission number…"
+                      value={stmtSearch}
+                      onChange={e => { setStmtSearch(e.target.value); searchStmtStudents(e.target.value); }}
+                      className="pl-9"
+                    />
+                  </div>
+                  {stmtStudentResults.length > 0 && (
+                    <div className="border rounded-md max-w-md divide-y">
+                      {stmtStudentResults.map(s => (
+                        <button key={s.id} className="w-full text-left px-4 py-2 hover:bg-muted/50 transition-colors flex justify-between items-center" onClick={() => selectStmtStudent(s)}>
+                          <span className="font-medium">{s.full_name}</span>
+                          <span className="text-xs text-muted-foreground">{s.admission_number} • {s.form}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : stmtLoading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="icon" onClick={clearStmtStudent}><ArrowLeft className="h-4 w-4" /></Button>
+                      <div>
+                        <p className="font-semibold text-lg">{stmtStudent.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{stmtStudent.admission_number} • {stmtStudent.form}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" onClick={printStudentStatement}>
+                      <Printer className="mr-1 h-4 w-4" /> Print Statement
+                    </Button>
+                  </div>
+
+                  {/* Summary */}
+                  {(() => {
+                    const tInvUsd = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+                    const tInvZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
+                    const tPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
+                    const tPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
+                    const balUsd = tInvUsd - tPaidUsd;
+                    const balZig = tInvZig - tPaidZig;
+                    return (
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <Card className="border-none shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase">Total Invoiced</p><p className="font-bold font-mono">USD {fmt(tInvUsd)}</p><p className="text-sm text-muted-foreground font-mono">ZiG {fmt(tInvZig)}</p></CardContent></Card>
+                        <Card className="border-none shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase">Total Paid</p><p className="font-bold font-mono text-green-700">USD {fmt(tPaidUsd)}</p><p className="text-sm text-muted-foreground font-mono">ZiG {fmt(tPaidZig)}</p></CardContent></Card>
+                        <Card className={`border-none shadow-sm ${balUsd > 0 ? "bg-destructive/5" : "bg-green-50"}`}><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase">Balance</p><p className={`font-bold font-mono ${balUsd > 0 ? "text-destructive" : "text-green-700"}`}>USD {fmt(balUsd)}</p><p className="text-sm text-muted-foreground font-mono">ZiG {fmt(balZig)}</p></CardContent></Card>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Invoices */}
+                  <div>
+                    <h3 className="font-semibold mb-2">Invoices ({stmtInvoices.length})</h3>
+                    {stmtInvoices.length === 0 ? <p className="text-sm text-muted-foreground">No invoices found.</p> : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead>Invoice #</TableHead><TableHead>Term</TableHead><TableHead>Year</TableHead>
+                            <TableHead className="text-right">Total USD</TableHead><TableHead className="text-right">Total ZiG</TableHead>
+                            <TableHead className="text-right">Paid USD</TableHead><TableHead className="text-right">Paid ZiG</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {stmtInvoices.map(i => (
+                              <TableRow key={i.id}>
+                                <TableCell className="font-mono text-xs">{i.invoice_number}</TableCell>
+                                <TableCell>{i.term}</TableCell>
+                                <TableCell>{i.academic_year}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.total_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.total_zig))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.paid_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.paid_zig))}</TableCell>
+                                <TableCell>{statusBadge(i.status)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payments */}
+                  <div>
+                    <h3 className="font-semibold mb-2">Payments ({stmtPayments.length})</h3>
+                    {stmtPayments.length === 0 ? <p className="text-sm text-muted-foreground">No payments recorded.</p> : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead>Receipt #</TableHead><TableHead>Date</TableHead><TableHead>Invoice</TableHead>
+                            <TableHead className="text-right">USD</TableHead><TableHead className="text-right">ZiG</TableHead>
+                            <TableHead>Method</TableHead><TableHead>Ref</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {stmtPayments.map(p => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-mono text-xs">{p.receipt_number}</TableCell>
+                                <TableCell>{p.payment_date}</TableCell>
+                                <TableCell className="font-mono text-xs">{p.invoices?.invoice_number || "—"}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(p.amount_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(p.amount_zig))}</TableCell>
+                                <TableCell>{p.payment_method}</TableCell>
+                                <TableCell className="text-xs">{p.reference_number || "—"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ═══════ EXPENSES TAB ═══════ */}
