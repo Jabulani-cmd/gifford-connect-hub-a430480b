@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import FinanceManagement from "@/pages/admin/FinanceManagement";
+import AcademicManagement from "@/pages/admin/AcademicManagement";
 import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
 import ProjectsManagement from "@/components/admin/ProjectsManagement";
