@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Edit2 } from "lucide-react";
+import { Trash2, Upload, Edit2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ImageCropper from "@/components/ImageCropper";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const categoryOptions = [
   { value: "leadership", label: "Leadership" },
@@ -16,8 +14,6 @@ const categoryOptions = [
   { value: "admin", label: "Admin Staff" },
   { value: "general", label: "General Staff" },
 ];
-
-const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports", "Administration"];
 
 type StaffMember = {
   id: string;
@@ -37,22 +33,17 @@ export default function StaffManagement() {
   const [groupPhotoUrl, setGroupPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // New staff form
-  const [form, setForm] = useState({
-    full_name: "", title: "", department: "", bio: "", email: "", phone: "", category: "teaching"
-  });
-  const photoFileRef = useRef<HTMLInputElement>(null);
-  const groupPhotoRef = useRef<HTMLInputElement>(null);
-
   // Filter
   const [filterCategory, setFilterCategory] = useState("all");
 
   // Cropper state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
-  const [cropTarget, setCropTarget] = useState<{ type: "new" | "existing" | "group"; staffId?: string }>({ type: "new" });
+  const [cropTarget, setCropTarget] = useState<{ type: "existing" | "group"; staffId?: string }>({ type: "group" });
   const [cropAspect, setCropAspect] = useState(1);
   const [cropShape, setCropShape] = useState<"round" | "rect">("round");
+
+  const groupPhotoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchStaff();
@@ -60,7 +51,7 @@ export default function StaffManagement() {
   }, []);
 
   const fetchStaff = async () => {
-    const { data } = await supabase.from("staff").select("*").order("full_name");
+    const { data } = await supabase.from("staff").select("*").is("deleted_at", null).order("full_name");
     if (data) setStaff(data as StaffMember[]);
   };
 
@@ -78,7 +69,6 @@ export default function StaffManagement() {
     return urlData.publicUrl;
   };
 
-  // Open cropper from file input
   const openCropperFromFile = (file: File, target: typeof cropTarget, aspect = 1, shape: "round" | "rect" = "round") => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -91,7 +81,6 @@ export default function StaffManagement() {
     reader.readAsDataURL(file);
   };
 
-  // Handle cropped blob upload
   const handleCroppedUpload = async (blob: Blob) => {
     setUploading(true);
     try {
@@ -110,24 +99,11 @@ export default function StaffManagement() {
         await supabase.from("staff").update({ photo_url: url }).eq("id", cropTarget.staffId);
         toast({ title: "Photo updated!" });
         fetchStaff();
-      } else if (cropTarget.type === "new") {
-        // Store temporarily — will be used when adding the staff member
-        setPendingPhotoUrl(url);
-        toast({ title: "Photo cropped! Click 'Add Staff Member' to save." });
       }
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
     setUploading(false);
-  };
-
-  const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string | null>(null);
-
-  const handleNewStaffPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    openCropperFromFile(file, { type: "new" }, 1, "round");
-    if (photoFileRef.current) photoFileRef.current.value = "";
   };
 
   const handleGroupPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,38 +117,6 @@ export default function StaffManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
     openCropperFromFile(file, { type: "existing", staffId }, 1, "round");
-  };
-
-  const addStaffMember = async () => {
-    if (!form.full_name) { toast({ title: "Name is required", variant: "destructive" }); return; }
-
-    setUploading(true);
-    try {
-      const { error } = await supabase.from("staff").insert({
-        full_name: form.full_name,
-        title: form.title || null,
-        department: form.department || null,
-        bio: form.bio || null,
-        email: form.email || null,
-        phone: form.phone || null,
-        category: form.category,
-        photo_url: pendingPhotoUrl,
-      });
-      if (error) throw error;
-      toast({ title: "Staff member added!" });
-      setForm({ full_name: "", title: "", department: "", bio: "", email: "", phone: "", category: "teaching" });
-      setPendingPhotoUrl(null);
-      fetchStaff();
-    } catch (err: any) {
-      toast({ title: "Failed to add staff", description: err.message, variant: "destructive" });
-    }
-    setUploading(false);
-  };
-
-  const deleteStaff = async (id: string) => {
-    await supabase.from("staff").delete().eq("id", id);
-    toast({ title: "Staff member removed" });
-    fetchStaff();
   };
 
   const updateStaffCategory = async (id: string, category: string) => {
@@ -199,6 +143,13 @@ export default function StaffManagement() {
         />
       )}
 
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          To add new staff members, use the <strong>Staff Directory</strong> tab where they will be issued login credentials. This tab is for managing how staff appear on the public website (photos, bios, categories).
+        </AlertDescription>
+      </Alert>
+
       {/* Group Photo Section */}
       <Card>
         <CardHeader><CardTitle className="font-heading">Staff Group Photo</CardTitle></CardHeader>
@@ -218,68 +169,11 @@ export default function StaffManagement() {
         </CardContent>
       </Card>
 
-      {/* Add New Staff Member */}
-      <Card>
-        <CardHeader><CardTitle className="font-heading">Add Staff Member</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Full Name *</Label>
-              <Input value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. Mr. T. Moyo" />
-            </div>
-            <div className="space-y-2">
-              <Label>Title / Position</Label>
-              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Principal, HOD Science" />
-            </div>
-            <div className="space-y-2">
-              <Label>Category *</Label>
-              <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Department</Label>
-              <Select value={form.department} onValueChange={v => setForm(p => ({ ...p, department: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                <SelectContent>
-                  {departmentOptions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="email@giffordhigh.ac.zw" />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+263 7X XXX XXXX" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Bio / Portfolio</Label>
-              <Textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={3} placeholder="Brief description of qualifications, subjects taught, responsibilities..." />
-            </div>
-            <div className="space-y-2">
-              <Label>Photo (will be cropped)</Label>
-              <input type="file" accept="image/*" ref={photoFileRef} onChange={handleNewStaffPhoto} className="block text-sm file:mr-4 file:rounded-md file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-secondary-foreground hover:file:bg-secondary/90" />
-              {pendingPhotoUrl && (
-                <img src={pendingPhotoUrl} alt="Cropped preview" className="mt-2 h-20 w-20 rounded-full object-cover border" />
-              )}
-            </div>
-          </div>
-          <Button onClick={addStaffMember} disabled={uploading || !form.full_name} className="mt-4">
-            <Plus className="mr-1 h-4 w-4" /> Add Staff Member
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Staff List */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-heading">Staff Directory ({staff.length})</CardTitle>
+            <CardTitle className="font-heading">Website Staff Display ({staff.length})</CardTitle>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -334,9 +228,6 @@ export default function StaffManagement() {
                       {categoryOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" onClick={() => deleteStaff(member.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
                 </div>
               </div>
             ))}
