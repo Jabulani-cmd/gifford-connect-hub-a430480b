@@ -171,13 +171,38 @@ export default function FinanceManagement() {
 
   async function deleteFee(id: string) {
     if (!confirm("Delete this fee structure?")) return;
-    // First remove any invoice_items referencing this fee structure
-    await supabase.from("invoice_items").update({ fee_structure_id: null }).eq("fee_structure_id", id);
-    const { error } = await supabase.from("fee_structures").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Failed to delete fee structure", description: error.message, variant: "destructive" });
+
+    const { error: unlinkError } = await supabase
+      .from("invoice_items")
+      .update({ fee_structure_id: null })
+      .eq("fee_structure_id", id);
+
+    if (unlinkError) {
+      toast({ title: "Failed to delete fee structure", description: unlinkError.message, variant: "destructive" });
       return;
     }
+
+    const { data: deletedRows, error: deleteError } = await supabase
+      .from("fee_structures")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    if (deleteError) {
+      toast({ title: "Failed to delete fee structure", description: deleteError.message, variant: "destructive" });
+      return;
+    }
+
+    if (!deletedRows || deletedRows.length === 0) {
+      toast({
+        title: "Fee structure was not deleted",
+        description: "No matching record was removed (likely permission or record mismatch issue).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFeeStructures((prev) => prev.filter((fee) => fee.id !== id));
     toast({ title: "Fee structure deleted" });
     fetchFeeStructures();
   }
