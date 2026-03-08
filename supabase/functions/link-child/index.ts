@@ -34,19 +34,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Must be a parent
-    const { data: isParent } = await supabaseAdmin.rpc("has_role", {
-      _user_id: user.id,
-      _role: "parent",
-    });
-    if (!isParent) {
-      return new Response(JSON.stringify({ error: "Only parents can link children" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { action, ...payload } = await req.json();
+
+    // For "link" action, must be a parent
+    if (action === "link") {
+      const { data: isParent } = await supabaseAdmin.rpc("has_role", {
+        _user_id: user.id,
+        _role: "parent",
+      });
+      if (!isParent) {
+        return new Response(JSON.stringify({ error: "Only parents can link children" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // ==================== LINK CHILD ====================
     if (action === "link") {
