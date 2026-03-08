@@ -311,6 +311,7 @@ export default function TeacherDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
+            <NotificationBell />
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
           </div>
         </div>
