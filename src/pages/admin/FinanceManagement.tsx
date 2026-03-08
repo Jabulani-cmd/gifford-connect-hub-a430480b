@@ -242,6 +242,91 @@ export default function FinanceManagement() {
     fetchFeeStructures();
   }
 
+  // ═══ STUDENT STATEMENTS ═══
+  async function searchStmtStudents(query: string) {
+    if (query.length < 2) { setStmtStudentResults([]); return; }
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
+      .eq("status", "active").is("deleted_at", null).limit(10);
+    if (data) setStmtStudentResults(data);
+  }
+
+  async function selectStmtStudent(student: any) {
+    setStmtStudent(student);
+    setStmtStudentResults([]);
+    setStmtSearch(student.full_name);
+    setStmtLoading(true);
+    const [invRes, payRes] = await Promise.all([
+      supabase.from("invoices").select("*").eq("student_id", student.id).order("created_at", { ascending: false }),
+      supabase.from("payments").select("*, invoices(invoice_number)").eq("student_id", student.id).order("payment_date", { ascending: false }),
+    ]);
+    setStmtInvoices(invRes.data || []);
+    setStmtPayments(payRes.data || []);
+    setStmtLoading(false);
+  }
+
+  function clearStmtStudent() {
+    setStmtStudent(null);
+    setStmtSearch("");
+    setStmtInvoices([]);
+    setStmtPayments([]);
+  }
+
+  function printStudentStatement() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const totalInvoicedUsd = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+    const totalInvoicedZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
+    const totalPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
+    const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${stmtStudent.full_name}</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      .right{text-align:right}.mono{font-family:monospace}.summary{margin-top:16px;padding:12px;border:2px solid #333;display:inline-block}
+      .red{color:#c00}.green{color:#060}@media print{body{padding:15px}}</style></head><body>
+      <h1>Gifford High School</h1>
+      <p><strong>Student Financial Statement</strong></p>
+      <p>Student: <strong>${stmtStudent.full_name}</strong> | Adm #: <strong>${stmtStudent.admission_number}</strong> | Form: <strong>${stmtStudent.form}</strong></p>
+      <p>Date: ${new Date().toLocaleDateString()}</p>
+      <h2>Invoices</h2>
+      <table><tr><th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th></tr>
+      ${stmtInvoices.map(i => `<tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      </table>
+      <h2>Payments</h2>
+      <table><tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr>
+      ${stmtPayments.map(p => `<tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      </table>
+      <div class="summary">
+        <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
+        <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
+        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? 'red' : 'green'}"><strong>Balance:</strong> USD ${fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${fmt(totalInvoicedZig - totalPaidZig)}</p>
+      </div>
+      </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  }
+
+  function printDebtorsList() {
+    const filtered = debtorsFormFilter === "all" ? debtors : debtors.filter(d => d.students?.form === debtorsFormFilter);
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const totalUsd = filtered.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
+    const totalZig = filtered.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Debtors List</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      .right{text-align:right}.mono{font-family:monospace}.red{color:#c00}.total{font-weight:bold;background:#fef2f2}
+      @media print{body{padding:15px}}</style></head><body>
+      <h1>Gifford High School — Debtors List</h1>
+      <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
+      <table><tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr>
+      ${filtered.map((d, i) => `<tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${d.status}</td></tr>`).join("")}
+      <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
+      </table></body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  }
+
   // ═══ INVOICE GENERATION ═══
   async function generateBulkInvoices() {
     setBulkLoading(true);
