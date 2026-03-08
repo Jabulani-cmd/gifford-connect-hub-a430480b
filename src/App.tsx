@@ -86,6 +86,11 @@ const App = () => (
                 <AdminDashboard />
               </ProtectedRoute>
             } />
+            <Route path="/portal/finance" element={
+              <ProtectedRoute allowedRoles={["finance", "admin"]}>
+                <FinanceDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
