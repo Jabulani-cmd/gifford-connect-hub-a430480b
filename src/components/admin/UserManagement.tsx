@@ -454,8 +454,8 @@ export default function UserManagement() {
                             {u.portal_role}
                           </Badge>
                         </TableCell>
-                        <TableCell className="capitalize">
-                          {u.staff_role?.replace(/_/g, " ") || "—"}
+                        <TableCell>
+                          {u.staff_role ? (staffRoleLabels[u.staff_role] || u.staff_role.replace(/_/g, " ")) : "—"}
                         </TableCell>
                         <TableCell>{u.department || "—"}</TableCell>
                         <TableCell className="text-right">
