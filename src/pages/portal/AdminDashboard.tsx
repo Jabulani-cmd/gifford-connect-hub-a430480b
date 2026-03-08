@@ -15,6 +15,7 @@ import EMISReports from "@/pages/admin/EMISReports";
 import AuditLogs from "@/pages/admin/AuditLogs";
 import DataMigration from "@/pages/admin/DataMigration";
 import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
+import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -549,6 +550,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="audit"><ShieldCheck className="mr-1 h-4 w-4" /> Audit Logs</TabsTrigger>
             <TabsTrigger value="migration"><Database className="mr-1 h-4 w-4" /> Data Migration</TabsTrigger>
             <TabsTrigger value="golive"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
+            <TabsTrigger value="manual"><BookOpen className="mr-1 h-4 w-4" /> User Manual</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
@@ -893,6 +895,11 @@ export default function AdminDashboard() {
           {/* Go-Live Checklist Tab */}
           <TabsContent value="golive">
             <GoLiveChecklist />
+          </TabsContent>
+
+          {/* User Manual Tab */}
+          <TabsContent value="manual">
+            <UserManualPage />
           </TabsContent>
         </Tabs>
       </div>
