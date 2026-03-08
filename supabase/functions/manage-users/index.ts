@@ -148,8 +148,8 @@ Deno.serve(async (req) => {
       // Update profile
       await supabaseAdmin.from("profiles").update({ phone: phone || null, grade: grade || null, class_name: class_name ? `${grade || ""}${class_name}` : null }).eq("id", userId);
 
-      // If staff role (teacher or admin), add to staff table
-      if (portal_role === "teacher" || portal_role === "admin") {
+      // If staff role (not student or parent), add to staff table
+      if (portal_role !== "student" && portal_role !== "parent") {
         // Determine proper category
         let staffCategory = "teaching";
         if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
