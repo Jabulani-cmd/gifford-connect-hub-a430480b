@@ -520,10 +520,13 @@ export default function StudentManagement() {
               ) : (
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-maroon-light"><User className="h-8 w-8 text-secondary" /></div>
               )}
-              <div>
+              <div className="flex gap-2">
                 <input type="file" accept="image/*" ref={photoRef} onChange={handlePhotoSelect} className="hidden" />
                 <Button variant="outline" size="sm" onClick={() => photoRef.current?.click()} disabled={uploading}>
                   <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading..." : "Upload Photo"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowWebcam(true)} disabled={uploading}>
+                  <Camera className="mr-1 h-4 w-4" /> Take Photo
                 </Button>
               </div>
             </div>
