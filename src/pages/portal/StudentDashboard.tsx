@@ -366,6 +366,7 @@ function TabContent({
         {homeSubTab === "timetable" && <StudentTimetableTab studentClassId={studentClassId} />}
         {homeSubTab === "planner" && <PersonalTimetableEditor title="My Personal Planner" />}
         {homeSubTab === "announcements" && <StudentAnnouncementsSection announcements={announcements} />}
+        {homeSubTab === "results" && <StudentExamResultsTab studentId={student?.id} />}
         {homeSubTab === "fees" && <StudentFeeTab studentId={student?.id} />}
       </motion.div>
     );
