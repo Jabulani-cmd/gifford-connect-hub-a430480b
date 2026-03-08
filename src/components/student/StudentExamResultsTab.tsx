@@ -240,6 +240,32 @@ export default function StudentExamResultsTab({ studentId, studentName, admissio
             </Card>
           </div>
 
+          {/* Download Report Card */}
+          <div className="flex justify-end">
+            <ReportCardDownloadButton
+              studentName={studentName || "Student"}
+              admissionNumber={admissionNumber || "N/A"}
+              form={form || "N/A"}
+              stream={stream || null}
+              examName={selectedExam?.name || "Exam"}
+              term={selectedExam?.term || ""}
+              academicYear={selectedExam?.academic_year || ""}
+              results={results.map((r) => ({
+                subject_name: r.subject_name,
+                subject_code: r.subject_code,
+                mark: r.mark,
+                grade: r.grade || getZIMSECGrade(r.mark),
+                teacher_comment: r.teacher_comment,
+                class_rank: r.class_rank,
+                class_size: r.class_size,
+              }))}
+              overallRank={overallRank}
+              averageMark={avgMark}
+              averageGrade={avgGrade}
+              studentId={studentId}
+            />
+          </div>
+
           {/* Results Table */}
           <Card>
             <CardContent className="p-0">
