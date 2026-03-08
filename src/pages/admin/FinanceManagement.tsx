@@ -26,7 +26,7 @@ const boardingOptions = [
   { value: "boarding", label: "Boarding" },
 ];
 const paymentMethods = ["Cash", "EcoCash", "OneMoney", "Bank Transfer", "ZIPIT", "Swipe"];
-const expenseCategories = ["Salaries", "Utilities", "Maintenance", "Supplies", "Transport", "Food", "Sports", "General"];
+const expenseCategories = ["Salaries", "Utilities", "Maintenance", "Supplies", "Transport", "Food", "Sports", "Petty Cash", "General"];
 const restrictionTypes = ["Block Report Cards", "Block Exam Results", "Block Library Access", "Block Sports Activities"];
 
 // ── helpers ──
@@ -715,11 +715,12 @@ export default function FinanceManagement() {
                         <TableHead>Student</TableHead>
                         <TableHead>Form</TableHead>
                         <TableHead>Term</TableHead>
+                        <TableHead>Due Date</TableHead>
                         <TableHead className="text-right">Total USD</TableHead>
                         <TableHead className="text-right">Total ZiG</TableHead>
                         <TableHead className="text-right">Paid USD</TableHead>
                         <TableHead className="text-right">Paid ZiG</TableHead>
-                         <TableHead>Status</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Balance Due</TableHead>
                         {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
@@ -731,6 +732,7 @@ export default function FinanceManagement() {
                           <TableCell>{inv.students?.full_name || "—"}</TableCell>
                           <TableCell>{inv.students?.form || "—"}</TableCell>
                           <TableCell>{inv.term}</TableCell>
+                          <TableCell className="text-xs">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "Not set"}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.total_usd)}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.total_zig)}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.paid_usd)}</TableCell>
@@ -895,6 +897,72 @@ export default function FinanceManagement() {
                           ))}
                         </TableBody>
                       </Table>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* ─── Petty Cash Section ─── */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle className="font-heading">Petty Cash</CardTitle>
+                  <CardDescription>Track small cash disbursements and float balance</CardDescription>
+                </div>
+                <Button onClick={() => { setExpDialogOpen(true); setExpForm({ expense_date: new Date().toISOString().split("T")[0], category: "Petty Cash", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="mr-1 h-4 w-4" /> Record Petty Cash
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const pettyCash = expenses.filter(e => e.category === "Petty Cash");
+                  const totalPcUsd = pettyCash.reduce((s, e) => s + Number(e.amount_usd || 0), 0);
+                  const totalPcZig = pettyCash.reduce((s, e) => s + Number(e.amount_zig || 0), 0);
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-lg border p-4">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Petty Cash Spent (USD)</p>
+                          <p className="text-xl font-bold font-mono">${fmt(totalPcUsd)}</p>
+                        </div>
+                        <div className="rounded-lg border p-4">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Petty Cash Spent (ZiG)</p>
+                          <p className="text-xl font-bold font-mono">ZiG {fmt(totalPcZig)}</p>
+                        </div>
+                      </div>
+                      {pettyCash.length === 0 ? (
+                        <p className="text-center py-6 text-muted-foreground">No petty cash transactions recorded.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">USD</TableHead>
+                                <TableHead className="text-right">ZiG</TableHead>
+                                <TableHead>Reference</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {pettyCash.map(pc => (
+                                <TableRow key={pc.id}>
+                                  <TableCell className="text-xs">{pc.expense_date}</TableCell>
+                                  <TableCell className="max-w-[250px] truncate">{pc.description}</TableCell>
+                                  <TableCell className="text-right font-mono">{fmt(pc.amount_usd)}</TableCell>
+                                  <TableCell className="text-right font-mono">{fmt(pc.amount_zig)}</TableCell>
+                                  <TableCell className="text-xs">{pc.reference_number || "—"}</TableCell>
+                                  <TableCell>
+                                    <Button variant="ghost" size="icon" onClick={() => deleteExpense(pc.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
