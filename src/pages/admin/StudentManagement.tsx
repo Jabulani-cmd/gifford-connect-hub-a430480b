@@ -248,6 +248,7 @@ function BulkGenerateCodes() {
   );
 }
 
+export default function StudentManagement() {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
