@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft } from "lucide-react";
+import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical } from "lucide-react";
 
 type Hostel = {
   id: string; name: string; total_capacity: number; current_occupancy: number;
@@ -180,6 +180,63 @@ export default function BoardingManagement() {
     fetchAll();
   };
 
+  // Drag-and-drop transfer
+  const [dragAlloc, setDragAlloc] = useState<BedAllocation | null>(null);
+  const [dropTargetRoom, setDropTargetRoom] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, alloc: BedAllocation) => {
+    setDragAlloc(alloc);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", alloc.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, roomId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTargetRoom(roomId);
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetRoom(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetRoomId: string) => {
+    e.preventDefault();
+    setDropTargetRoom(null);
+    if (!dragAlloc || dragAlloc.room_id === targetRoomId) { setDragAlloc(null); return; }
+
+    const targetRoom = rooms.find(r => r.id === targetRoomId);
+    const sourceRoom = rooms.find(r => r.id === dragAlloc.room_id);
+    if (!targetRoom || !sourceRoom) { setDragAlloc(null); return; }
+
+    const targetAllocs = allocations.filter(a => a.room_id === targetRoomId);
+    if (targetAllocs.length >= targetRoom.capacity) {
+      toast({ title: "Room is full", description: `${targetRoom.room_number} has no vacancies`, variant: "destructive" });
+      setDragAlloc(null);
+      return;
+    }
+
+    // Update allocation to new room
+    const { error } = await supabase.from("bed_allocations").update({ room_id: targetRoomId, status: "active" }).eq("id", dragAlloc.id);
+    if (error) { toast({ title: "Transfer failed", description: error.message, variant: "destructive" }); setDragAlloc(null); return; }
+
+    // Update occupancy counts
+    await supabase.from("rooms").update({ current_occupancy: Math.max(0, sourceRoom.current_occupancy - 1) }).eq("id", sourceRoom.id);
+    await supabase.from("rooms").update({ current_occupancy: targetRoom.current_occupancy + 1 }).eq("id", targetRoom.id);
+
+    // If different hostels, update hostel occupancy too
+    if (sourceRoom.hostel_id !== targetRoom.hostel_id) {
+      const sourceHostel = hostels.find(h => h.id === sourceRoom.hostel_id);
+      const targetHostel = hostels.find(h => h.id === targetRoom.hostel_id);
+      if (sourceHostel) await supabase.from("hostels").update({ current_occupancy: Math.max(0, sourceHostel.current_occupancy - 1) }).eq("id", sourceHostel.id);
+      if (targetHostel) await supabase.from("hostels").update({ current_occupancy: targetHostel.current_occupancy + 1 }).eq("id", targetHostel.id);
+    }
+
+    toast({ title: "Student transferred", description: `Moved ${studentName(dragAlloc.student_id)} to room ${targetRoom.room_number}` });
+    setDragAlloc(null);
+    fetchAll();
+  };
+
   // =========== HEALTH ===========
   const openAddHealth = () => {
     setHealthForm({ student_id: "", symptoms: "", diagnosis: "", treatment: "", medication_given: "", follow_up_date: "", visited_by: "", notes: "", parent_notified: false });
@@ -281,8 +338,15 @@ export default function BoardingManagement() {
                   const roomAllocs = allocations.filter(a => a.room_id === room.id);
                   const occupancyPct = room.capacity > 0 ? (roomAllocs.length / room.capacity) * 100 : 0;
                   const color = occupancyPct >= 100 ? "bg-destructive/10 border-destructive/30" : occupancyPct >= 75 ? "bg-orange-50 border-orange-200" : "bg-green-50 border-green-200";
+                  const isDropTarget = dropTargetRoom === room.id && dragAlloc?.room_id !== room.id;
                   return (
-                    <Card key={room.id} className={`border-2 ${color}`}>
+                    <Card
+                      key={room.id}
+                      className={`border-2 transition-all ${color} ${isDropTarget ? "ring-2 ring-primary scale-[1.02] shadow-lg" : ""}`}
+                      onDragOver={(e) => handleDragOver(e, room.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, room.id)}
+                    >
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono font-bold text-sm">{room.room_number}</span>
@@ -291,8 +355,17 @@ export default function BoardingManagement() {
                         <div className="text-xs text-muted-foreground mb-2">{roomAllocs.length}/{room.capacity} beds • Floor {room.floor || "G"}</div>
                         <div className="space-y-1 mb-2">
                           {roomAllocs.map(a => (
-                            <div key={a.id} className="flex items-center justify-between text-xs">
-                              <span className="truncate flex-1">{studentName(a.student_id)}</span>
+                            <div
+                              key={a.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, a)}
+                              onDragEnd={() => { setDragAlloc(null); setDropTargetRoom(null); }}
+                              className="flex items-center justify-between text-xs bg-background/80 rounded px-1.5 py-1 cursor-grab active:cursor-grabbing border border-transparent hover:border-muted-foreground/20 transition-colors group"
+                            >
+                              <div className="flex items-center gap-1 truncate flex-1">
+                                <GripVertical className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground shrink-0" />
+                                <span className="truncate">{studentName(a.student_id)}</span>
+                              </div>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5"><Trash2 className="h-3 w-3 text-destructive" /></Button></AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -305,7 +378,12 @@ export default function BoardingManagement() {
                             </div>
                           ))}
                         </div>
-                        {roomAllocs.length < room.capacity && (
+                        {isDropTarget && roomAllocs.length < room.capacity && (
+                          <div className="border-2 border-dashed border-primary/50 rounded p-1.5 text-center text-xs text-primary animate-pulse">
+                            Drop here to transfer
+                          </div>
+                        )}
+                        {roomAllocs.length < room.capacity && !isDropTarget && (
                           <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => openAllocate(room.id)}>
                             <Plus className="mr-1 h-3 w-3" /> Assign
                           </Button>
