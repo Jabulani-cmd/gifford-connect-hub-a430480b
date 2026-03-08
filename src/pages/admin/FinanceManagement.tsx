@@ -785,6 +785,11 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(pay.amount_zig)}</TableCell>
                           <TableCell>{pay.payment_method}</TableCell>
                           <TableCell className="text-xs">{pay.reference_number || "—"}</TableCell>
+                          {isFinanceOrAdmin && (
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => deletePayment(pay)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
