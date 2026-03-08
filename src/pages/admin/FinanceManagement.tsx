@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw
 } from "lucide-react";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
