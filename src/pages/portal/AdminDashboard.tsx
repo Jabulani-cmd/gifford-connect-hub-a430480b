@@ -532,7 +532,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="carousel"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
             <TabsTrigger value="gallery"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
             <TabsTrigger value="downloads"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
-            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB / Meetings</TabsTrigger>
+            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SDC / Meetings</TabsTrigger>
             <TabsTrigger value="user-mgmt"><Shield className="mr-1 h-4 w-4" /> User Management</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
             <TabsTrigger value="site-images"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
