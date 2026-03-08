@@ -444,6 +444,8 @@ export default function FinanceManagement() {
       setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" });
       fetchInvoices();
       fetchPayments();
+      // Auto-refresh statement if viewing one
+      if (stmtStudent) selectStmtStudent(stmtStudent);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
