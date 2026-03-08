@@ -82,7 +82,17 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    fetchClasses();
   }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const { data } = await supabase.from("classes").select("id, name, form_level").order("name");
+      if (data) setClasses(data);
+    } catch (err) {
+      console.error("Failed to fetch classes:", err);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
