@@ -720,7 +720,7 @@ export default function FinanceManagement() {
                         <TableHead className="text-right">Paid USD</TableHead>
                         <TableHead className="text-right">Paid ZiG</TableHead>
                          <TableHead>Status</TableHead>
-                        <TableHead>Due</TableHead>
+                        <TableHead className="text-right">Balance Due</TableHead>
                         {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
