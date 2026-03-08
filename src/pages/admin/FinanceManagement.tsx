@@ -1,0 +1,1061 @@
+import { useState, useEffect, useRef } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
+  AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
+  Ban, Send, BarChart3, Loader2
+} from "lucide-react";
+
+const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
+const termOptions = ["Term 1", "Term 2", "Term 3"];
+const boardingOptions = [
+  { value: "day", label: "Day Scholar" },
+  { value: "boarding", label: "Boarding" },
+];
+const paymentMethods = ["Cash", "EcoCash", "OneMoney", "Bank Transfer", "ZIPIT", "Swipe"];
+const expenseCategories = ["Salaries", "Utilities", "Maintenance", "Supplies", "Transport", "Food", "Sports", "General"];
+const restrictionTypes = ["Block Report Cards", "Block Exam Results", "Block Library Access", "Block Sports Activities"];
+
+// ── helpers ──
+const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const genInvoiceNum = () => `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0")}`;
+const genReceiptNum = () => `RCPT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0")}`;
+
+function statusBadge(status: string) {
+  const map: Record<string, string> = {
+    paid: "bg-green-100 text-green-800 border-green-300",
+    partial: "bg-amber-100 text-amber-800 border-amber-300",
+    unpaid: "bg-red-100 text-red-800 border-red-300",
+    overdue: "bg-red-200 text-red-900 border-red-400",
+  };
+  return <Badge variant="outline" className={map[status] || ""}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+}
+
+export default function FinanceManagement() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // ─── Fee Structures ───
+  const [feeStructures, setFeeStructures] = useState<any[]>([]);
+  const [feeDialogOpen, setFeeDialogOpen] = useState(false);
+  const [editingFee, setEditingFee] = useState<any>(null);
+  const [feeForm, setFeeForm] = useState({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
+  const [feeLoading, setFeeLoading] = useState(false);
+
+  // ─── Invoices ───
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("all");
+  const [invoiceTermFilter, setInvoiceTermFilter] = useState("all");
+  const [bulkInvoiceOpen, setBulkInvoiceOpen] = useState(false);
+  const [bulkYear, setBulkYear] = useState("2026");
+  const [bulkTerm, setBulkTerm] = useState("Term 1");
+  const [bulkDueDate, setBulkDueDate] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  // ─── Payments ───
+  const [payments, setPayments] = useState<any[]>([]);
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [payForm, setPayForm] = useState({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" });
+  const [studentResults, setStudentResults] = useState<any[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [studentInvoices, setStudentInvoices] = useState<any[]>([]);
+  const [payLoading, setPayLoading] = useState(false);
+
+  // ─── Expenses ───
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expDialogOpen, setExpDialogOpen] = useState(false);
+  const [expForm, setExpForm] = useState({ expense_date: new Date().toISOString().split("T")[0], category: "General", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "" });
+  const [expLoading, setExpLoading] = useState(false);
+  const receiptFileRef = useRef<HTMLInputElement>(null);
+
+  // ─── Debtors ───
+  const [debtors, setDebtors] = useState<any[]>([]);
+
+  // ─── Loading ───
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses()])
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ═══ FETCH FUNCTIONS ═══
+  async function fetchFeeStructures() {
+    const { data } = await supabase.from("fee_structures").select("*").order("created_at", { ascending: false });
+    if (data) setFeeStructures(data);
+  }
+
+  async function fetchInvoices() {
+    const { data } = await supabase.from("invoices").select("*, students(full_name, admission_number, form)").order("created_at", { ascending: false });
+    if (data) {
+      setInvoices(data);
+      // compute debtors
+      const owing = data.filter((inv: any) => inv.status !== "paid");
+      setDebtors(owing);
+    }
+  }
+
+  async function fetchPayments() {
+    const { data } = await supabase.from("payments").select("*, students(full_name, admission_number), invoices(invoice_number)").order("created_at", { ascending: false });
+    if (data) setPayments(data);
+  }
+
+  async function fetchExpenses() {
+    const { data } = await supabase.from("expenses").select("*").order("expense_date", { ascending: false });
+    if (data) setExpenses(data);
+  }
+
+  // ═══ FEE STRUCTURE CRUD ═══
+  function openAddFee() {
+    setEditingFee(null);
+    setFeeForm({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
+    setFeeDialogOpen(true);
+  }
+
+  function openEditFee(fee: any) {
+    setEditingFee(fee);
+    setFeeForm({
+      academic_year: fee.academic_year, term: fee.term, form: fee.form,
+      boarding_status: fee.boarding_status, description: fee.description || "",
+      amount_usd: String(fee.amount_usd), amount_zig: String(fee.amount_zig),
+    });
+    setFeeDialogOpen(true);
+  }
+
+  async function duplicateFee(fee: any) {
+    const { error } = await supabase.from("fee_structures").insert({
+      academic_year: fee.academic_year, term: fee.term, form: fee.form,
+      boarding_status: fee.boarding_status, description: fee.description,
+      amount_usd: fee.amount_usd, amount_zig: fee.amount_zig,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Fee structure duplicated" });
+    fetchFeeStructures();
+  }
+
+  async function saveFee() {
+    setFeeLoading(true);
+    const payload = {
+      academic_year: feeForm.academic_year, term: feeForm.term, form: feeForm.form,
+      boarding_status: feeForm.boarding_status, description: feeForm.description || null,
+      amount_usd: parseFloat(feeForm.amount_usd) || 0,
+      amount_zig: parseFloat(feeForm.amount_zig) || 0,
+    };
+    if (editingFee) {
+      const { error } = await supabase.from("fee_structures").update(payload).eq("id", editingFee.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setFeeLoading(false); return; }
+      toast({ title: "Fee structure updated" });
+    } else {
+      const { error } = await supabase.from("fee_structures").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setFeeLoading(false); return; }
+      toast({ title: "Fee structure created" });
+    }
+    setFeeDialogOpen(false);
+    setFeeLoading(false);
+    fetchFeeStructures();
+  }
+
+  async function deleteFee(id: string) {
+    if (!confirm("Delete this fee structure?")) return;
+    await supabase.from("fee_structures").delete().eq("id", id);
+    toast({ title: "Fee structure deleted" });
+    fetchFeeStructures();
+  }
+
+  // ═══ INVOICE GENERATION ═══
+  async function generateBulkInvoices() {
+    setBulkLoading(true);
+    try {
+      // Get active students
+      const { data: students } = await supabase.from("students").select("id, full_name, form, stream").eq("status", "active").is("deleted_at", null);
+      if (!students || students.length === 0) { toast({ title: "No active students found", variant: "destructive" }); setBulkLoading(false); return; }
+
+      // Get fee structures for this term/year
+      const { data: fees } = await supabase.from("fee_structures").select("*").eq("academic_year", bulkYear).eq("term", bulkTerm).eq("is_active", true);
+      if (!fees || fees.length === 0) { toast({ title: "No fee structures found for this term", variant: "destructive" }); setBulkLoading(false); return; }
+
+      let created = 0;
+      for (const student of students) {
+        // Check if invoice already exists
+        const { data: existing } = await supabase.from("invoices").select("id").eq("student_id", student.id).eq("academic_year", bulkYear).eq("term", bulkTerm);
+        if (existing && existing.length > 0) continue;
+
+        // Find matching fee structure (by form, default to day scholar)
+        const fee = fees.find(f => f.form === student.form) || fees[0];
+        if (!fee) continue;
+
+        const invoiceNumber = `INV-${bulkYear.slice(-2)}-${bulkTerm.replace("Term ", "T")}-${String(created + 1).padStart(4, "0")}`;
+        const { data: inv, error } = await supabase.from("invoices").insert({
+          invoice_number: invoiceNumber,
+          student_id: student.id,
+          academic_year: bulkYear,
+          term: bulkTerm,
+          total_usd: fee.amount_usd,
+          total_zig: fee.amount_zig,
+          due_date: bulkDueDate || null,
+          status: "unpaid",
+        }).select().single();
+
+        if (!error && inv) {
+          await supabase.from("invoice_items").insert({
+            invoice_id: inv.id,
+            fee_structure_id: fee.id,
+            description: `${fee.form} - ${fee.boarding_status === "boarding" ? "Boarding" : "Day"} - ${fee.term} ${fee.academic_year}`,
+            amount_usd: fee.amount_usd,
+            amount_zig: fee.amount_zig,
+          });
+          created++;
+        }
+      }
+      toast({ title: `${created} invoices generated` });
+      setBulkInvoiceOpen(false);
+      fetchInvoices();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setBulkLoading(false);
+  }
+
+  // ═══ PAYMENT PROCESSING ═══
+  async function searchStudents(query: string) {
+    if (query.length < 2) { setStudentResults([]); return; }
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
+      .eq("status", "active").is("deleted_at", null).limit(10);
+    if (data) setStudentResults(data);
+  }
+
+  async function selectStudentForPayment(student: any) {
+    setSelectedStudent(student);
+    setStudentResults([]);
+    setPayForm(p => ({ ...p, student_search: student.full_name }));
+    const { data } = await supabase.from("invoices").select("*").eq("student_id", student.id).neq("status", "paid").order("created_at");
+    if (data) setStudentInvoices(data);
+  }
+
+  async function recordPayment() {
+    if (!selectedStudent || !payForm.invoice_id) { toast({ title: "Select student and invoice", variant: "destructive" }); return; }
+    const usd = parseFloat(payForm.amount_usd) || 0;
+    const zig = parseFloat(payForm.amount_zig) || 0;
+    if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+
+    setPayLoading(true);
+    try {
+      const receiptNumber = genReceiptNum();
+      const { error } = await supabase.from("payments").insert({
+        receipt_number: receiptNumber,
+        invoice_id: payForm.invoice_id,
+        student_id: selectedStudent.id,
+        amount_usd: usd,
+        amount_zig: zig,
+        payment_method: payForm.payment_method,
+        reference_number: payForm.reference_number || null,
+        payment_date: payForm.payment_date,
+        recorded_by: user?.id || null,
+        notes: payForm.notes || null,
+      });
+      if (error) throw error;
+
+      // Update invoice paid amounts
+      const invoice = studentInvoices.find(i => i.id === payForm.invoice_id);
+      if (invoice) {
+        const newPaidUsd = parseFloat(invoice.paid_usd) + usd;
+        const newPaidZig = parseFloat(invoice.paid_zig) + zig;
+        const totalUsd = parseFloat(invoice.total_usd);
+        const totalZig = parseFloat(invoice.total_zig);
+        let newStatus = "partial";
+        if (newPaidUsd >= totalUsd && newPaidZig >= totalZig) newStatus = "paid";
+        else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
+
+        await supabase.from("invoices").update({
+          paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus,
+        }).eq("id", payForm.invoice_id);
+      }
+
+      toast({ title: "Payment recorded", description: `Receipt: ${receiptNumber}` });
+      setPayDialogOpen(false);
+      setSelectedStudent(null);
+      setStudentInvoices([]);
+      setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" });
+      fetchInvoices();
+      fetchPayments();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setPayLoading(false);
+  }
+
+  // ═══ EXPENSE RECORDING ═══
+  async function saveExpense() {
+    if (!expForm.description) { toast({ title: "Description required", variant: "destructive" }); return; }
+    setExpLoading(true);
+    const { error } = await supabase.from("expenses").insert({
+      expense_date: expForm.expense_date,
+      category: expForm.category,
+      description: expForm.description,
+      amount_usd: parseFloat(expForm.amount_usd) || 0,
+      amount_zig: parseFloat(expForm.amount_zig) || 0,
+      payment_method: expForm.payment_method,
+      reference_number: expForm.reference_number || null,
+      recorded_by: user?.id || null,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setExpLoading(false); return; }
+    toast({ title: "Expense recorded" });
+    setExpDialogOpen(false);
+    setExpForm({ expense_date: new Date().toISOString().split("T")[0], category: "General", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "" });
+    setExpLoading(false);
+    fetchExpenses();
+  }
+
+  async function deleteExpense(id: string) {
+    if (!confirm("Delete this expense?")) return;
+    await supabase.from("expenses").delete().eq("id", id);
+    toast({ title: "Expense deleted" });
+    fetchExpenses();
+  }
+
+  // ═══ COMPUTED ═══
+  const filteredInvoices = invoices.filter(inv => {
+    if (invoiceStatusFilter !== "all" && inv.status !== invoiceStatusFilter) return false;
+    if (invoiceTermFilter !== "all" && inv.term !== invoiceTermFilter) return false;
+    if (invoiceSearch) {
+      const s = invoiceSearch.toLowerCase();
+      const name = inv.students?.full_name?.toLowerCase() || "";
+      const num = inv.invoice_number?.toLowerCase() || "";
+      const adm = inv.students?.admission_number?.toLowerCase() || "";
+      if (!name.includes(s) && !num.includes(s) && !adm.includes(s)) return false;
+    }
+    return true;
+  });
+
+  const totalOwedUsd = debtors.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
+  const totalOwedZig = debtors.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
+  const totalCollectedUsd = payments.reduce((s, p) => s + parseFloat(p.amount_usd || 0), 0);
+  const totalCollectedZig = payments.reduce((s, p) => s + parseFloat(p.amount_zig || 0), 0);
+  const totalExpensesUsd = expenses.reduce((s, e) => s + parseFloat(e.amount_usd || 0), 0);
+  const totalExpensesZig = expenses.reduce((s, e) => s + parseFloat(e.amount_zig || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Total Collected", usd: totalCollectedUsd, zig: totalCollectedZig, icon: DollarSign, color: "text-green-600" },
+          { label: "Outstanding", usd: totalOwedUsd, zig: totalOwedZig, icon: AlertTriangle, color: "text-red-600" },
+          { label: "Expenses", usd: totalExpensesUsd, zig: totalExpensesZig, icon: TrendingUp, color: "text-amber-600" },
+          { label: "Net Income (USD)", usd: totalCollectedUsd - totalExpensesUsd, zig: totalCollectedZig - totalExpensesZig, icon: BarChart3, color: "text-accent" },
+        ].map((c, i) => (
+          <Card key={i} className="border-none shadow-maroon">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <c.icon className={`h-5 w-5 ${c.color}`} />
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{c.label}</span>
+              </div>
+              <p className="text-lg font-bold">USD {fmt(c.usd)}</p>
+              <p className="text-sm text-muted-foreground">ZiG {fmt(c.zig)}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Tabs defaultValue="fee-structures" className="space-y-4">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="fee-structures"><DollarSign className="mr-1 h-4 w-4" /> Fee Structures</TabsTrigger>
+          <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" /> Invoices</TabsTrigger>
+          <TabsTrigger value="payments"><CreditCard className="mr-1 h-4 w-4" /> Payments</TabsTrigger>
+          <TabsTrigger value="debtors"><AlertTriangle className="mr-1 h-4 w-4" /> Debtors</TabsTrigger>
+          <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
+          <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
+        </TabsList>
+
+        {/* ═══════ FEE STRUCTURES TAB ═══════ */}
+        <TabsContent value="fee-structures">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-heading">Fee Structures</CardTitle>
+                <CardDescription>Define fees per form, term, and boarding status</CardDescription>
+              </div>
+              <Button onClick={openAddFee} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="mr-1 h-4 w-4" /> Add Fee
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {feeStructures.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No fee structures yet. Click "Add Fee" to create one.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Year</TableHead>
+                        <TableHead>Term</TableHead>
+                        <TableHead>Form</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">USD</TableHead>
+                        <TableHead className="text-right">ZiG</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {feeStructures.map(fee => (
+                        <TableRow key={fee.id}>
+                          <TableCell>{fee.academic_year}</TableCell>
+                          <TableCell>{fee.term}</TableCell>
+                          <TableCell>{fee.form}</TableCell>
+                          <TableCell>{fee.boarding_status === "boarding" ? "Boarding" : "Day"}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{fee.description || "—"}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(fee.amount_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(fee.amount_zig)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEditFee(fee)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => duplicateFee(fee)}><Copy className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteFee(fee.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ INVOICES TAB ═══════ */}
+        <TabsContent value="invoices">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+              <div>
+                <CardTitle className="font-heading">Invoices</CardTitle>
+                <CardDescription>{invoices.length} total invoices</CardDescription>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={() => setBulkInvoiceOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="mr-1 h-4 w-4" /> Bulk Generate
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search by name, admission # or invoice #" className="pl-9" value={invoiceSearch} onChange={e => setInvoiceSearch(e.target.value)} />
+                </div>
+                <Select value={invoiceStatusFilter} onValueChange={setInvoiceStatusFilter}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={invoiceTermFilter} onValueChange={setInvoiceTermFilter}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Terms</SelectItem>
+                    {termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredInvoices.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No invoices found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Form</TableHead>
+                        <TableHead>Term</TableHead>
+                        <TableHead className="text-right">Total USD</TableHead>
+                        <TableHead className="text-right">Total ZiG</TableHead>
+                        <TableHead className="text-right">Paid USD</TableHead>
+                        <TableHead className="text-right">Paid ZiG</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Due</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices.map(inv => (
+                        <TableRow key={inv.id}>
+                          <TableCell className="font-mono text-xs">{inv.invoice_number}</TableCell>
+                          <TableCell>{inv.students?.full_name || "—"}</TableCell>
+                          <TableCell>{inv.students?.form || "—"}</TableCell>
+                          <TableCell>{inv.term}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(inv.total_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(inv.total_zig)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(inv.paid_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(inv.paid_zig)}</TableCell>
+                          <TableCell>{statusBadge(inv.status)}</TableCell>
+                          <TableCell className="text-xs">{inv.due_date || "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ PAYMENTS TAB ═══════ */}
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-heading">Payments</CardTitle>
+                <CardDescription>{payments.length} payments recorded</CardDescription>
+              </div>
+              <Button onClick={() => { setPayDialogOpen(true); setSelectedStudent(null); setStudentInvoices([]); setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="mr-1 h-4 w-4" /> Record Payment
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {payments.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No payments recorded yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Receipt #</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead className="text-right">USD</TableHead>
+                        <TableHead className="text-right">ZiG</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Ref</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map(pay => (
+                        <TableRow key={pay.id}>
+                          <TableCell className="font-mono text-xs">{pay.receipt_number}</TableCell>
+                          <TableCell>{pay.payment_date}</TableCell>
+                          <TableCell>{pay.students?.full_name || "—"}</TableCell>
+                          <TableCell className="font-mono text-xs">{pay.invoices?.invoice_number || "—"}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(pay.amount_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(pay.amount_zig)}</TableCell>
+                          <TableCell>{pay.payment_method}</TableCell>
+                          <TableCell className="text-xs">{pay.reference_number || "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ DEBTORS TAB ═══════ */}
+        <TabsContent value="debtors">
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-5">
+                  <p className="text-xs text-red-600 font-medium uppercase tracking-wider">Total Outstanding</p>
+                  <p className="text-xl font-bold text-red-800">USD {fmt(totalOwedUsd)}</p>
+                  <p className="text-sm text-red-600">ZiG {fmt(totalOwedZig)}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="p-5">
+                  <p className="text-xs text-amber-600 font-medium uppercase tracking-wider">Partial Payments</p>
+                  <p className="text-xl font-bold text-amber-800">{debtors.filter(d => d.status === "partial").length}</p>
+                  <p className="text-sm text-amber-600">students</p>
+                </CardContent>
+              </Card>
+              <Card className="border-red-300 bg-red-100">
+                <CardContent className="p-5">
+                  <p className="text-xs text-red-700 font-medium uppercase tracking-wider">Unpaid</p>
+                  <p className="text-xl font-bold text-red-900">{debtors.filter(d => d.status === "unpaid").length}</p>
+                  <p className="text-sm text-red-600">students</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Debtors List</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {debtors.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No outstanding debts. 🎉</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Student</TableHead>
+                          <TableHead>Adm #</TableHead>
+                          <TableHead>Invoice</TableHead>
+                          <TableHead>Term</TableHead>
+                          <TableHead className="text-right">Owed USD</TableHead>
+                          <TableHead className="text-right">Owed ZiG</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {debtors.map(d => (
+                          <TableRow key={d.id}>
+                            <TableCell>{d.students?.full_name || "—"}</TableCell>
+                            <TableCell>{d.students?.admission_number || "—"}</TableCell>
+                            <TableCell className="font-mono text-xs">{d.invoice_number}</TableCell>
+                            <TableCell>{d.term}</TableCell>
+                            <TableCell className="text-right font-mono text-red-600">{fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</TableCell>
+                            <TableCell className="text-right font-mono text-red-600">{fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</TableCell>
+                            <TableCell>{statusBadge(d.status)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══════ EXPENSES TAB ═══════ */}
+        <TabsContent value="expenses">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-heading">Expenses</CardTitle>
+                <CardDescription>Track school expenditures</CardDescription>
+              </div>
+              <Button onClick={() => { setExpDialogOpen(true); setExpForm({ expense_date: new Date().toISOString().split("T")[0], category: "General", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="mr-1 h-4 w-4" /> Record Expense
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {expenses.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No expenses recorded.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">USD</TableHead>
+                        <TableHead className="text-right">ZiG</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map(exp => (
+                        <TableRow key={exp.id}>
+                          <TableCell>{exp.expense_date}</TableCell>
+                          <TableCell><Badge variant="outline">{exp.category}</Badge></TableCell>
+                          <TableCell className="max-w-[250px] truncate">{exp.description}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(exp.amount_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(exp.amount_zig)}</TableCell>
+                          <TableCell>{exp.payment_method}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => deleteExpense(exp.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ REPORTS TAB ═══════ */}
+        <TabsContent value="reports">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Collection Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total USD Collected</p>
+                    <p className="text-2xl font-bold text-green-700">${fmt(totalCollectedUsd)}</p>
+                  </div>
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total ZiG Collected</p>
+                    <p className="text-2xl font-bold text-green-700">ZiG {fmt(totalCollectedZig)}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">By Payment Method</h4>
+                  {paymentMethods.map(method => {
+                    const methodPayments = payments.filter(p => p.payment_method === method);
+                    const mUsd = methodPayments.reduce((s, p) => s + parseFloat(p.amount_usd || 0), 0);
+                    const mZig = methodPayments.reduce((s, p) => s + parseFloat(p.amount_zig || 0), 0);
+                    if (mUsd === 0 && mZig === 0) return null;
+                    return (
+                      <div key={method} className="flex items-center justify-between text-sm border-b pb-1">
+                        <span>{method}</span>
+                        <span className="font-mono">USD {fmt(mUsd)} / ZiG {fmt(mZig)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Income vs Expenditure</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Income (USD)</span>
+                    <span className="font-mono font-bold text-green-700">${fmt(totalCollectedUsd)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Expenses (USD)</span>
+                    <span className="font-mono font-bold text-red-600">${fmt(totalExpensesUsd)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between items-center">
+                    <span className="text-sm font-semibold">Net (USD)</span>
+                    <span className={`font-mono font-bold ${totalCollectedUsd - totalExpensesUsd >= 0 ? "text-green-700" : "text-red-600"}`}>
+                      ${fmt(totalCollectedUsd - totalExpensesUsd)}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Income (ZiG)</span>
+                    <span className="font-mono font-bold text-green-700">ZiG {fmt(totalCollectedZig)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Expenses (ZiG)</span>
+                    <span className="font-mono font-bold text-red-600">ZiG {fmt(totalExpensesZig)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between items-center">
+                    <span className="text-sm font-semibold">Net (ZiG)</span>
+                    <span className={`font-mono font-bold ${totalCollectedZig - totalExpensesZig >= 0 ? "text-green-700" : "text-red-600"}`}>
+                      ZiG {fmt(totalCollectedZig - totalExpensesZig)}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="font-heading">Fee Collection Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {invoices.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">No data available</p>
+                ) : (
+                  <div className="space-y-3">
+                    {["Term 1", "Term 2", "Term 3"].map(term => {
+                      const termInvs = invoices.filter(i => i.term === term);
+                      if (termInvs.length === 0) return null;
+                      const totalUsd = termInvs.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+                      const paidUsd = termInvs.reduce((s, i) => s + parseFloat(i.paid_usd), 0);
+                      const pct = totalUsd > 0 ? (paidUsd / totalUsd) * 100 : 0;
+                      return (
+                        <div key={term}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>{term}</span>
+                            <span className="font-mono">{pct.toFixed(1)}% collected (USD {fmt(paidUsd)} / {fmt(totalUsd)})</span>
+                          </div>
+                          <div className="h-3 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* ═══════ DIALOGS ═══════ */}
+
+      {/* Fee Structure Dialog */}
+      <Dialog open={feeDialogOpen} onOpenChange={setFeeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingFee ? "Edit Fee Structure" : "Add Fee Structure"}</DialogTitle>
+            <DialogDescription>Define the fee amounts in both USD and ZiG.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Academic Year</Label>
+                <Input value={feeForm.academic_year} onChange={e => setFeeForm(p => ({ ...p, academic_year: e.target.value }))} placeholder="2026" />
+              </div>
+              <div className="space-y-2">
+                <Label>Term</Label>
+                <Select value={feeForm.term} onValueChange={v => setFeeForm(p => ({ ...p, term: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Form</Label>
+                <Select value={feeForm.form} onValueChange={v => setFeeForm(p => ({ ...p, form: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{formOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Boarding Status</Label>
+                <Select value={feeForm.boarding_status} onValueChange={v => setFeeForm(p => ({ ...p, boarding_status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{boardingOptions.map(b => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={feeForm.description} onChange={e => setFeeForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Tuition + Levy" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount (USD)</Label>
+                <Input type="number" step="0.01" value={feeForm.amount_usd} onChange={e => setFeeForm(p => ({ ...p, amount_usd: e.target.value }))} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount (ZiG)</Label>
+                <Input type="number" step="0.01" value={feeForm.amount_zig} onChange={e => setFeeForm(p => ({ ...p, amount_zig: e.target.value }))} placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeeDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveFee} disabled={feeLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              {feeLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              {editingFee ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Invoice Dialog */}
+      <Dialog open={bulkInvoiceOpen} onOpenChange={setBulkInvoiceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Generate Invoices</DialogTitle>
+            <DialogDescription>Generate invoices for all active students based on fee structures.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Academic Year</Label>
+                <Input value={bulkYear} onChange={e => setBulkYear(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Term</Label>
+                <Select value={bulkTerm} onValueChange={setBulkTerm}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Due Date</Label>
+              <Input type="date" value={bulkDueDate} onChange={e => setBulkDueDate(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkInvoiceOpen(false)}>Cancel</Button>
+            <Button onClick={generateBulkInvoices} disabled={bulkLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              {bulkLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Generate Invoices
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>Record a payment with split USD/ZiG support.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label>Search Student</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Name or admission #" value={payForm.student_search}
+                  onChange={e => { setPayForm(p => ({ ...p, student_search: e.target.value })); searchStudents(e.target.value); }} />
+              </div>
+              {studentResults.length > 0 && (
+                <div className="border rounded-md max-h-32 overflow-y-auto">
+                  {studentResults.map(s => (
+                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm" onClick={() => selectStudentForPayment(s)}>
+                      {s.full_name} ({s.admission_number}) - {s.form}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedStudent && <p className="text-sm text-accent font-medium">Selected: {selectedStudent.full_name}</p>}
+            </div>
+
+            {studentInvoices.length > 0 && (
+              <div className="space-y-2">
+                <Label>Select Invoice</Label>
+                <Select value={payForm.invoice_id} onValueChange={v => setPayForm(p => ({ ...p, invoice_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select invoice" /></SelectTrigger>
+                  <SelectContent>
+                    {studentInvoices.map(inv => (
+                      <SelectItem key={inv.id} value={inv.id}>
+                        {inv.invoice_number} — USD {fmt(parseFloat(inv.total_usd) - parseFloat(inv.paid_usd))} / ZiG {fmt(parseFloat(inv.total_zig) - parseFloat(inv.paid_zig))} owing
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount USD</Label>
+                <Input type="number" step="0.01" value={payForm.amount_usd} onChange={e => setPayForm(p => ({ ...p, amount_usd: e.target.value }))} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={payForm.amount_zig} onChange={e => setPayForm(p => ({ ...p, amount_zig: e.target.value }))} placeholder="0.00" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select value={payForm.payment_method} onValueChange={v => setPayForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Reference #</Label>
+                <Input value={payForm.reference_number} onChange={e => setPayForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="e.g. TXN123" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Payment Date</Label>
+              <Input type="date" value={payForm.payment_date} onChange={e => setPayForm(p => ({ ...p, payment_date: e.target.value }))} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea value={payForm.notes} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Optional notes" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayDialogOpen(false)}>Cancel</Button>
+            <Button onClick={recordPayment} disabled={payLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              {payLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Expense Dialog */}
+      <Dialog open={expDialogOpen} onOpenChange={setExpDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Expense</DialogTitle>
+            <DialogDescription>Track expenditure in USD and/or ZiG.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input type="date" value={expForm.expense_date} onChange={e => setExpForm(p => ({ ...p, expense_date: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={expForm.category} onValueChange={v => setExpForm(p => ({ ...p, category: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{expenseCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={expForm.description} onChange={e => setExpForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="What was this expense for?" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount USD</Label>
+                <Input type="number" step="0.01" value={expForm.amount_usd} onChange={e => setExpForm(p => ({ ...p, amount_usd: e.target.value }))} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={expForm.amount_zig} onChange={e => setExpForm(p => ({ ...p, amount_zig: e.target.value }))} placeholder="0.00" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select value={expForm.payment_method} onValueChange={v => setExpForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Reference #</Label>
+                <Input value={expForm.reference_number} onChange={e => setExpForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="Optional" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExpDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveExpense} disabled={expLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              {expLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Save Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
