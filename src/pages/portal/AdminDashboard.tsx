@@ -693,7 +693,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader><CardTitle className="font-heading">Schedule Meeting</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>Title *</Label><Input value={meetingTitle} onChange={e => setMeetingTitle(e.target.value)} placeholder="e.g. SGB Quarter 1 Meeting" /></div>
+                  <div className="space-y-2"><Label>Title *</Label><Input value={meetingTitle} onChange={e => setMeetingTitle(e.target.value)} placeholder="e.g. SDC Quarter 1 Meeting" /></div>
                   <div className="space-y-2">
                     <Label>Type</Label>
                     <Select value={meetingType} onValueChange={setMeetingType}>
