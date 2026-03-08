@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft } from "lucide-react";
+import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical } from "lucide-react";
 
 type Hostel = {
   id: string; name: string; total_capacity: number; current_occupancy: number;
