@@ -861,9 +861,14 @@ export default function FinanceManagement() {
                         <p className="text-sm text-muted-foreground">{stmtStudent.admission_number} • {stmtStudent.form}</p>
                       </div>
                     </div>
-                    <Button variant="outline" onClick={printStudentStatement}>
-                      <Printer className="mr-1 h-4 w-4" /> Print Statement
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="icon" onClick={() => selectStmtStudent(stmtStudent)} title="Refresh statement">
+                        <RefreshCw className={`h-4 w-4 ${stmtLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                      <Button variant="outline" onClick={printStudentStatement}>
+                        <Printer className="mr-1 h-4 w-4" /> Print Statement
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Summary */}
