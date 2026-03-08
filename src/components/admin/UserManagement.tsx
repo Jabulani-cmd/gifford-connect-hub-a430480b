@@ -455,6 +455,14 @@ export default function UserManagement() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              title="Edit user"
+                              onClick={() => openEditDialog(u)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               title="Reset password"
                               onClick={() => handleResetPassword(u.id, u.email)}
                             >
