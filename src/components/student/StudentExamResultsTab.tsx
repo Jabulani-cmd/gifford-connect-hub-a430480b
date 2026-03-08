@@ -64,7 +64,7 @@ function getMarkBarColor(mark: number): string {
   return "bg-red-500";
 }
 
-export default function StudentExamResultsTab({ studentId }: Props) {
+export default function StudentExamResultsTab({ studentId, studentName, admissionNumber, form, stream }: Props) {
   const [exams, setExams] = useState<ExamOption[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [results, setResults] = useState<ResultRow[]>([]);
