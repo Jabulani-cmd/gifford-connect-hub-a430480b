@@ -1862,7 +1862,7 @@ export default function FinanceManagement() {
               </div>
               <div className="space-y-1">
                 <Label>Type</Label>
-                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v }))}>
+                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v, reference_number: v === "deposit" ? "" : p.reference_number }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="deposit">Deposit</SelectItem>
@@ -1885,10 +1885,12 @@ export default function FinanceManagement() {
                 <Input type="number" step="0.01" value={pcForm.amount_zig} onChange={e => setPcForm(p => ({ ...p, amount_zig: e.target.value }))} />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Reference Number</Label>
-              <Input value={pcForm.reference_number} onChange={e => setPcForm(p => ({ ...p, reference_number: e.target.value }))} />
-            </div>
+            {pcForm.transaction_type === "withdrawal" && (
+              <div className="space-y-1">
+                <Label>Reference Number</Label>
+                <Input value={pcForm.reference_number} onChange={e => setPcForm(p => ({ ...p, reference_number: e.target.value }))} />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPcDialogOpen(false)}>Cancel</Button>
