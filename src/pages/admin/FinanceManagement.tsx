@@ -1207,6 +1207,50 @@ export default function FinanceManagement() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Supplier Payments History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Supplier Payments History</CardTitle>
+                <CardDescription>All payments made to suppliers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {supplierPayments.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No supplier payments recorded yet. Click the payment icon on an unpaid invoice above to record a payment.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Amount USD</TableHead>
+                          <TableHead className="text-right">Amount ZiG</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supplierPayments.map((sp: any) => (
+                          <TableRow key={sp.id}>
+                            <TableCell className="text-xs">{sp.payment_date}</TableCell>
+                            <TableCell className="font-medium">{sp.supplier_invoices?.supplier_name || "—"}</TableCell>
+                            <TableCell className="font-mono text-xs">{sp.supplier_invoices?.invoice_number || "—"}</TableCell>
+                            <TableCell>{sp.payment_method}</TableCell>
+                            <TableCell className="font-mono text-xs">{sp.reference_number || "—"}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_usd)}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_zig)}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{sp.notes || "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
