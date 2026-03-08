@@ -1498,6 +1498,44 @@ export default function FinanceManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Debtor Confirmation Dialog */}
+      <Dialog open={deleteDebtorOpen} onOpenChange={v => { if (!v) { setDeleteDebtorOpen(false); setDebtorToDelete(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Debtor</DialogTitle>
+            <DialogDescription>
+              This will mark invoice <span className="font-mono font-semibold">{debtorToDelete?.invoice_number}</span> for{" "}
+              <span className="font-semibold">{debtorToDelete?.students?.full_name}</span> as paid and remove them from the debtors list. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDebtorOpen(false); setDebtorToDelete(null); }}>Cancel</Button>
+            <Button variant="destructive" disabled={deletingDebtor} onClick={async () => {
+              if (!debtorToDelete) return;
+              setDeletingDebtor(true);
+              const { error } = await supabase.from("invoices").update({
+                status: "paid",
+                paid_usd: debtorToDelete.total_usd,
+                paid_zig: debtorToDelete.total_zig,
+              }).eq("id", debtorToDelete.id);
+              if (error) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+              } else {
+                toast({ title: "Debtor removed", description: `${debtorToDelete.students?.full_name} has been cleared from the debtors list.` });
+                setDebtors(prev => prev.filter(d => d.id !== debtorToDelete.id));
+                fetchInvoices();
+              }
+              setDeletingDebtor(false);
+              setDeleteDebtorOpen(false);
+              setDebtorToDelete(null);
+            }}>
+              {deletingDebtor && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Confirm Removal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
