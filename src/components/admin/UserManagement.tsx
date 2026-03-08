@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Users, Search, Shield, Trash2, KeyRound } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -185,6 +186,54 @@ export default function UserManagement() {
     } catch (err: any) {
       toast({ title: "Failed to delete user", description: err.message, variant: "destructive" });
     }
+  };
+
+  // Edit user state
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "" });
+  const [saving, setSaving] = useState(false);
+
+  const openEditDialog = (user: ManagedUser) => {
+    setEditUser(user);
+    setEditForm({
+      portal_role: user.portal_role,
+      staff_role: user.staff_role || "teacher",
+      department: user.department || "",
+      full_name: user.full_name,
+    });
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editUser) return;
+    setSaving(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          action: "update-user",
+          user_id: editUser.id,
+          portal_role: editForm.portal_role,
+          staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
+          department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
+          full_name: editForm.full_name,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast({ title: "User updated successfully" });
+      setEditUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Failed to update user", description: err.message, variant: "destructive" });
+    }
+    setSaving(false);
   };
 
   const filteredUsers = users.filter((u) => {
@@ -406,6 +455,14 @@ export default function UserManagement() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              title="Edit user"
+                              onClick={() => openEditDialog(u)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               title="Reset password"
                               onClick={() => handleResetPassword(u.id, u.email)}
                             >
@@ -430,6 +487,69 @@ export default function UserManagement() {
           </CardContent>
         </Card>
       </TabsContent>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update role and position for {editUser?.email}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Portal Access Role</Label>
+              <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {portalRoles.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+              <>
+                <div className="space-y-2">
+                  <Label>Staff Position / Title</Label>
+                  <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {staffRoles.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No department</SelectItem>
+                      {departmentOptions.map((d) => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
+            <Button onClick={handleUpdateUser} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }

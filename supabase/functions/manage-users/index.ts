@@ -243,6 +243,65 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ==================== UPDATE USER ====================
+    if (action === "update-user") {
+      const { user_id, portal_role, staff_role, department, full_name } = payload;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update portal role if provided
+      if (portal_role) {
+        await supabaseAdmin.from("user_roles").update({ role: portal_role }).eq("user_id", user_id);
+      }
+
+      // Update profile name if provided
+      if (full_name) {
+        await supabaseAdmin.from("profiles").update({ full_name }).eq("id", user_id);
+      }
+
+      // Update staff record if staff_role or department provided
+      if (staff_role || department !== undefined) {
+        const { data: existingStaff } = await supabaseAdmin.from("staff").select("id").eq("user_id", user_id).maybeSingle();
+        
+        if (existingStaff) {
+          const updates: Record<string, any> = {};
+          if (staff_role) {
+            updates.role = staff_role;
+            let staffCategory = "teaching";
+            if (["principal", "deputy_principal"].includes(staff_role)) staffCategory = "leadership";
+            else if (["bursar", "secretary"].includes(staff_role)) staffCategory = "administrative";
+            else if (["groundsman", "matron"].includes(staff_role)) staffCategory = "general";
+            updates.category = staffCategory;
+          }
+          if (department !== undefined) updates.department = department || null;
+          if (full_name) updates.full_name = full_name;
+          await supabaseAdmin.from("staff").update(updates).eq("user_id", user_id);
+        } else if (portal_role === "teacher" || portal_role === "admin") {
+          // Create staff record if switching to a staff role
+          const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("id", user_id).maybeSingle();
+          let staffCategory = "teaching";
+          if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
+          else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
+          else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
+          await supabaseAdmin.from("staff").insert({
+            full_name: full_name || profile?.full_name || "",
+            email: profile?.email || "",
+            user_id,
+            role: staff_role || "teacher",
+            category: staffCategory,
+            department: department || null,
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ message: "User updated successfully" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ==================== LEGACY: register-student ====================
     if (action === "register-student") {
       const { email, password, full_name, grade, class_name, phone } = payload;
