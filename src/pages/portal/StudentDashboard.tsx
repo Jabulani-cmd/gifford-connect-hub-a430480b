@@ -59,13 +59,25 @@ export default function StudentDashboard() {
     // Get class ID from student_classes or profile
     let classId: string | null = null;
     if (studentRec) {
+      // Try student table ID first, then auth user ID
       const { data: sc } = await supabase
         .from("student_classes")
         .select("class_id")
         .eq("student_id", studentRec.id)
         .limit(1)
         .maybeSingle();
-      if (sc) classId = sc.class_id;
+      if (sc) {
+        classId = sc.class_id;
+      } else {
+        // student_classes may reference auth.users ID
+        const { data: sc2 } = await supabase
+          .from("student_classes")
+          .select("class_id")
+          .eq("student_id", uid)
+          .limit(1)
+          .maybeSingle();
+        if (sc2) classId = sc2.class_id;
+      }
     }
     if (!classId && prof?.class_name) {
       const { data: c } = await supabase
