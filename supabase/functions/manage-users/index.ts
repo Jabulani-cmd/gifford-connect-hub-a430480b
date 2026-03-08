@@ -89,7 +89,30 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (action === "register-student") {
+    if (action === "seed-teacher") {
+      const { email, password, full_name, department } = payload;
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const exists = existingUsers?.users?.some((u) => u.email === email);
+      if (exists) {
+        return new Response(JSON.stringify({ message: "Teacher already exists" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { full_name: full_name || "Teacher" },
+      });
+      if (createError) throw createError;
+      await supabaseAdmin.from("user_roles").insert({ user_id: newUser.user.id, role: "teacher" });
+      await supabaseAdmin.from("staff").insert({
+        full_name: full_name || "Teacher", email, department, user_id: newUser.user.id, category: "teaching",
+      });
+      return new Response(JSON.stringify({ message: "Teacher seeded", user_id: newUser.user.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
       const { email, password, full_name, grade, class_name, phone } = payload;
 
       const { data: newUser, error: createError } =
