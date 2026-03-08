@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ScrollToTop from "@/components/ScrollToTop";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Academics from "./pages/Academics";
@@ -58,10 +59,26 @@ const App = () => (
             <Route path="/sports-culture" element={<SportsCulture />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/portal/student" element={<StudentDashboard />} />
-            <Route path="/portal/teacher" element={<TeacherDashboard />} />
-            <Route path="/portal/parent-teacher" element={<ParentTeacherDashboard />} />
-            <Route path="/portal/admin" element={<AdminDashboard />} />
+            <Route path="/portal/student" element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/teacher" element={
+              <ProtectedRoute allowedRoles={["teacher"]}>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/parent-teacher" element={
+              <ProtectedRoute allowedRoles={["parent"]}>
+                <ParentTeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/admin" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
