@@ -409,7 +409,8 @@ export default function StudentManagement() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-2xl font-bold text-foreground">Student Management</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <BulkGenerateCodes />
           <Button onClick={exportCSV} variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Export CSV</Button>
           <Button onClick={openAdd} className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="mr-1 h-4 w-4" /> Add Student</Button>
         </div>
