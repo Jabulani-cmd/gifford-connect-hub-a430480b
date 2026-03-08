@@ -708,6 +708,8 @@ export default function FinanceManagement() {
           <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" /> Invoices</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="mr-1 h-4 w-4" /> Payments</TabsTrigger>
           <TabsTrigger value="debtors"><AlertTriangle className="mr-1 h-4 w-4" /> Debtors</TabsTrigger>
+          <TabsTrigger value="petty-cash"><DollarSign className="mr-1 h-4 w-4" /> Petty Cash</TabsTrigger>
+          <TabsTrigger value="supplier-payables"><Ban className="mr-1 h-4 w-4" /> Supplier Payables</TabsTrigger>
           <TabsTrigger value="statements"><User className="mr-1 h-4 w-4" /> Statements</TabsTrigger>
           <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
