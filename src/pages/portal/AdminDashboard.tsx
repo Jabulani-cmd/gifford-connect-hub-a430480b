@@ -13,6 +13,8 @@ import InventoryManagement from "@/pages/admin/InventoryManagement";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import AuditLogs from "@/pages/admin/AuditLogs";
+import DataMigration from "@/pages/admin/DataMigration";
+import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManagement from "@/components/admin/UserManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
