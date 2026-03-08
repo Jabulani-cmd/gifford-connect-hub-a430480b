@@ -264,7 +264,7 @@ Deno.serve(async (req) => {
 
     // ==================== UPDATE USER ====================
     if (action === "update-user") {
-      const { user_id, portal_role, staff_role, department, full_name } = payload;
+      const { user_id, portal_role, staff_role, department, full_name, assigned_class_id } = payload;
       if (!user_id) {
         return new Response(JSON.stringify({ error: "user_id required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -298,6 +298,16 @@ Deno.serve(async (req) => {
           if (department !== undefined) updates.department = department || null;
           if (full_name) updates.full_name = full_name;
           await supabaseAdmin.from("staff").update(updates).eq("user_id", user_id);
+
+          // Update class teacher assignment
+          if (assigned_class_id !== undefined) {
+            // Remove from any previously assigned class
+            await supabaseAdmin.from("classes").update({ class_teacher_id: null }).eq("class_teacher_id", existingStaff.id);
+            // Assign to new class if provided
+            if (assigned_class_id) {
+              await supabaseAdmin.from("classes").update({ class_teacher_id: existingStaff.id }).eq("id", assigned_class_id);
+            }
+          }
         } else if (portal_role === "teacher" || portal_role === "admin") {
           // Create staff record if switching to a staff role
           const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("id", user_id).maybeSingle();
@@ -305,14 +315,18 @@ Deno.serve(async (req) => {
           if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
           else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
           else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
-          await supabaseAdmin.from("staff").insert({
+          const { data: newStaff } = await supabaseAdmin.from("staff").insert({
             full_name: full_name || profile?.full_name || "",
             email: profile?.email || "",
             user_id,
             role: staff_role || "teacher",
             category: staffCategory,
             department: department || null,
-          });
+          }).select("id").single();
+
+          if (assigned_class_id && newStaff) {
+            await supabaseAdmin.from("classes").update({ class_teacher_id: newStaff.id }).eq("id", assigned_class_id);
+          }
         }
       }
 
