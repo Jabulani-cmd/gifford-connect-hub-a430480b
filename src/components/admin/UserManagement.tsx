@@ -226,7 +226,7 @@ export default function UserManagement() {
 
   // Edit user state
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
-  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "" });
+  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "" });
   const [saving, setSaving] = useState(false);
 
   const openEditDialog = (user: ManagedUser) => {
