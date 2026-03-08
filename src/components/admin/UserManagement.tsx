@@ -51,12 +51,19 @@ interface ManagedUser {
   created_at: string;
 }
 
+interface ClassOption {
+  id: string;
+  name: string;
+  form_level: string | null;
+}
+
 export default function UserManagement() {
   const { toast } = useToast();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [classes, setClasses] = useState<ClassOption[]>([]);
 
   // Create user form
   const [form, setForm] = useState({
@@ -69,6 +76,7 @@ export default function UserManagement() {
     phone: "",
     grade: "",
     class_name: "",
+    assigned_class_id: "",
   });
   const [creating, setCreating] = useState(false);
 
