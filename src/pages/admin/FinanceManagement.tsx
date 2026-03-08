@@ -46,7 +46,8 @@ function statusBadge(status: string) {
 
 export default function FinanceManagement() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isFinanceOrAdmin = role === "finance" || role === "admin";
 
   // ─── Fee Structures ───
   const [feeStructures, setFeeStructures] = useState<any[]>([]);
