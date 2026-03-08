@@ -81,29 +81,28 @@ export default function StudentDashboard() {
     const studentTableId = studentRec?.id;
     const now = new Date().toISOString();
 
-    const promises: Promise<any>[] = [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const promises: Array<PromiseLike<any>> = [
       // Announcements
       supabase
         .from("announcements")
         .select("*")
         .eq("is_public", true)
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(20)
+        .then(r => r),
     ];
 
     if (studentTableId) {
-      // Attendance
       promises.push(
-        supabase.from("attendance").select("status").eq("student_id", studentTableId)
+        supabase.from("attendance").select("status").eq("student_id", studentTableId).then(r => r)
       );
-      // Fee balance
       promises.push(
-        supabase.from("invoices").select("total_usd, paid_usd").eq("student_id", studentTableId)
+        supabase.from("invoices").select("total_usd, paid_usd").eq("student_id", studentTableId).then(r => r)
       );
     }
 
     if (classId) {
-      // Upcoming assessments
       promises.push(
         supabase
           .from("assessments")
@@ -111,8 +110,8 @@ export default function StudentDashboard() {
           .eq("class_id", classId)
           .eq("is_published", true)
           .gte("due_date", new Date().toISOString().split("T")[0])
+          .then(r => r)
       );
-      // New materials (last 7 days)
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
       promises.push(
         supabase
@@ -121,6 +120,7 @@ export default function StudentDashboard() {
           .eq("class_id", classId)
           .eq("is_published", true)
           .gte("created_at", weekAgo)
+          .then(r => r)
       );
     }
 
