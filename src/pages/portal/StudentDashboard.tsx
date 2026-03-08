@@ -18,6 +18,7 @@ import StudentProfileTab from "@/components/student/StudentProfileTab";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import StudentTimetableTab from "@/components/student/StudentTimetableTab";
 import StudentFeeTab from "@/components/student/StudentFeeTab";
+import StudentExamResultsTab from "@/components/student/StudentExamResultsTab";
 
 type TabId = "home" | "materials" | "assessments" | "attendance" | "profile";
 
