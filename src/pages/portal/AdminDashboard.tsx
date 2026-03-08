@@ -541,7 +541,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="projects"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
             <TabsTrigger value="student-mgmt"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
             <TabsTrigger value="staff-full"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
-            <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
+            
             <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
             <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
             <TabsTrigger value="inventory"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
