@@ -491,7 +491,7 @@ export default function FinanceManagement() {
                             <div className="flex gap-1">
                               <Button variant="ghost" size="icon" onClick={() => openEditFee(fee)}><Pencil className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => duplicateFee(fee)}><Copy className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => deleteFee(fee.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => openDeleteImpact(fee)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
