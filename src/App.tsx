@@ -19,6 +19,7 @@ import ParentTeacherDashboard from "./pages/portal/ParentTeacherDashboard";
 import ParentDashboard from "./pages/portal/ParentDashboard";
 import TeacherDashboard from "./pages/portal/TeacherDashboard";
 import AdminDashboard from "./pages/portal/AdminDashboard";
+import FinanceDashboard from "./pages/portal/FinanceDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
 import Facilities from "./pages/Facilities";
