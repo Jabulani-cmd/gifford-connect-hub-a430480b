@@ -255,6 +255,12 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
       await supabaseAdmin.from("personal_timetables").delete().eq("user_id", user_id);
       await supabaseAdmin.from("notifications").delete().eq("user_id", user_id);
+      // Clean up messaging
+      await supabaseAdmin.from("conversation_participants").delete().eq("user_id", user_id);
+      // Nullify author references
+      await supabaseAdmin.from("announcements").update({ author_id: null }).eq("author_id", user_id);
+      // Clean up parent links
+      await supabaseAdmin.from("parent_students").delete().eq("parent_id", user_id);
 
       // Delete auth user (cascades to profiles via trigger)
       const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
