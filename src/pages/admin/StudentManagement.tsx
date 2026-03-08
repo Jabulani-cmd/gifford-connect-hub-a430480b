@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy, Users } from "lucide-react";
 import { studentFormSchema, type StudentFormData, zimPhoneRegex } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 

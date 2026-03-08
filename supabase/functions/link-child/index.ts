@@ -168,6 +168,67 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ==================== BULK GENERATE CODES (admin only) ====================
+    if (action === "bulk-generate-codes") {
+      const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Only admins can generate codes" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { form_filter, status_filter } = payload;
+
+      // Get active students, optionally filtered by form
+      let query = supabaseAdmin
+        .from("students")
+        .select("id, admission_number, full_name, form, stream")
+        .eq("status", status_filter || "active")
+        .is("deleted_at", null)
+        .order("full_name");
+
+      if (form_filter && form_filter !== "all") {
+        query = query.eq("form", form_filter);
+      }
+
+      const { data: studentsData, error: studentsError } = await query;
+      if (studentsError) throw studentsError;
+      if (!studentsData || studentsData.length === 0) {
+        return new Response(JSON.stringify({ error: "No students found matching filters" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const results = [];
+
+      for (const student of studentsData) {
+        let code = "";
+        for (let i = 0; i < 6; i++) {
+          code += chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        const { error: insertError } = await supabaseAdmin
+          .from("student_verification_codes")
+          .insert({ student_id: student.id, code });
+
+        if (insertError) {
+          results.push({ ...student, code: null, error: insertError.message });
+        } else {
+          results.push({ ...student, code, error: null });
+        }
+      }
+
+      return new Response(JSON.stringify({ results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
