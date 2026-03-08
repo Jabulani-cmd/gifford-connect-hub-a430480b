@@ -55,6 +55,13 @@ export default function FinanceManagement() {
   const [feeForm, setFeeForm] = useState({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
   const [feeLoading, setFeeLoading] = useState(false);
 
+  // ─── Delete Impact Modal ───
+  const [deleteImpactOpen, setDeleteImpactOpen] = useState(false);
+  const [deleteTargetFee, setDeleteTargetFee] = useState<any>(null);
+  const [deleteImpactCount, setDeleteImpactCount] = useState<number | null>(null);
+  const [deleteImpactLoading, setDeleteImpactLoading] = useState(false);
+  const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
+
   // ─── Invoices ───
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoiceSearch, setInvoiceSearch] = useState("");
