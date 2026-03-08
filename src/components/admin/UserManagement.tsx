@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil, FileSpreadsheet } from "lucide-react";
 import BulkUserImport from "./BulkUserImport";
 import { useToast } from "@/hooks/use-toast";
@@ -168,8 +169,17 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to delete the account for ${email}? This action cannot be undone.`)) return;
+  // Delete confirmation dialog state
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
+
+  const confirmDeleteUser = (userId: string, email: string) => {
+    setDeleteTarget({ userId, email });
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    const { userId } = deleteTarget;
+    setDeleteTarget(null);
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
@@ -480,7 +490,7 @@ export default function UserManagement() {
                               variant="ghost"
                               size="icon"
                               title="Delete user"
-                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              onClick={() => confirmDeleteUser(u.id, u.email)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -558,6 +568,23 @@ export default function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the account for <strong>{deleteTarget?.email}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Tabs>
   );
 }
