@@ -270,6 +270,7 @@ export default function StudentManagement() {
   const [cropOpen, setCropOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showWebcam, setShowWebcam] = useState(false);
 
   useEffect(() => { fetchStudents(); }, []);
 
