@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import StudentDashboard from "./pages/portal/StudentDashboard";
 import ParentTeacherDashboard from "./pages/portal/ParentTeacherDashboard";
+import TeacherDashboard from "./pages/portal/TeacherDashboard";
 import AdminDashboard from "./pages/portal/AdminDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/portal/student" element={<StudentDashboard />} />
+            <Route path="/portal/teacher" element={<TeacherDashboard />} />
             <Route path="/portal/parent-teacher" element={<ParentTeacherDashboard />} />
             <Route path="/portal/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
