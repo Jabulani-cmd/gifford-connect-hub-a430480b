@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,13 @@ export default function FinanceManagement() {
   const [editingFee, setEditingFee] = useState<any>(null);
   const [feeForm, setFeeForm] = useState({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
   const [feeLoading, setFeeLoading] = useState(false);
+
+  // ─── Delete Impact Modal ───
+  const [deleteImpactOpen, setDeleteImpactOpen] = useState(false);
+  const [deleteTargetFee, setDeleteTargetFee] = useState<any>(null);
+  const [deleteImpactCount, setDeleteImpactCount] = useState<number | null>(null);
+  const [deleteImpactLoading, setDeleteImpactLoading] = useState(false);
+  const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
 
   // ─── Invoices ───
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -169,8 +176,25 @@ export default function FinanceManagement() {
     fetchFeeStructures();
   }
 
-  async function deleteFee(id: string) {
-    if (!confirm("Delete this fee structure?")) return;
+  async function openDeleteImpact(fee: any) {
+    setDeleteTargetFee(fee);
+    setDeleteImpactCount(null);
+    setDeleteImpactOpen(true);
+    setDeleteImpactLoading(true);
+
+    const { count, error } = await supabase
+      .from("invoice_items")
+      .select("id", { count: "exact", head: true })
+      .eq("fee_structure_id", fee.id);
+
+    setDeleteImpactCount(error ? -1 : (count ?? 0));
+    setDeleteImpactLoading(false);
+  }
+
+  async function confirmDeleteFee() {
+    if (!deleteTargetFee) return;
+    setDeleteConfirmLoading(true);
+    const id = deleteTargetFee.id;
 
     const { error: unlinkError } = await supabase
       .from("invoice_items")
@@ -179,6 +203,7 @@ export default function FinanceManagement() {
 
     if (unlinkError) {
       toast({ title: "Failed to delete fee structure", description: unlinkError.message, variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
@@ -190,20 +215,21 @@ export default function FinanceManagement() {
 
     if (deleteError) {
       toast({ title: "Failed to delete fee structure", description: deleteError.message, variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
     if (!deletedRows || deletedRows.length === 0) {
-      toast({
-        title: "Fee structure was not deleted",
-        description: "No matching record was removed (likely permission or record mismatch issue).",
-        variant: "destructive",
-      });
+      toast({ title: "Fee structure was not deleted", description: "Permission or record mismatch issue.", variant: "destructive" });
+      setDeleteConfirmLoading(false);
       return;
     }
 
     setFeeStructures((prev) => prev.filter((fee) => fee.id !== id));
     toast({ title: "Fee structure deleted" });
+    setDeleteImpactOpen(false);
+    setDeleteTargetFee(null);
+    setDeleteConfirmLoading(false);
     fetchFeeStructures();
   }
 
@@ -465,7 +491,7 @@ export default function FinanceManagement() {
                             <div className="flex gap-1">
                               <Button variant="ghost" size="icon" onClick={() => openEditFee(fee)}><Pencil className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => duplicateFee(fee)}><Copy className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => deleteFee(fee.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => openDeleteImpact(fee)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1083,6 +1109,59 @@ export default function FinanceManagement() {
             <Button onClick={saveExpense} disabled={expLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
               {expLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Save Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ DELETE IMPACT MODAL ═══ */}
+      <Dialog open={deleteImpactOpen} onOpenChange={(open) => { if (!deleteConfirmLoading) setDeleteImpactOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Delete Fee Structure
+            </DialogTitle>
+            <DialogDescription>
+              {deleteTargetFee && (
+                <span className="block mt-1 font-medium text-foreground">
+                  {deleteTargetFee.form} — {deleteTargetFee.term} {deleteTargetFee.academic_year} ({deleteTargetFee.boarding_status === "boarding" ? "Boarding" : "Day"})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {deleteImpactLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking impact…
+              </div>
+            ) : deleteImpactCount === -1 ? (
+              <p className="text-sm text-destructive">Could not check linked invoice items. Proceed with caution.</p>
+            ) : deleteImpactCount === 0 ? (
+              <p className="text-sm text-muted-foreground">No invoice items are linked to this fee structure. It can be safely deleted.</p>
+            ) : (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-1">
+                <p className="text-sm font-semibold text-amber-800">
+                  {deleteImpactCount} invoice item{deleteImpactCount !== 1 ? "s" : ""} will be unlinked
+                </p>
+                <p className="text-xs text-amber-700">
+                  These invoice items will remain on their invoices but their fee structure reference will be cleared.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteImpactOpen(false)} disabled={deleteConfirmLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteFee}
+              disabled={deleteImpactLoading || deleteConfirmLoading}
+            >
+              {deleteConfirmLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Delete Fee Structure
             </Button>
           </DialogFooter>
         </DialogContent>
