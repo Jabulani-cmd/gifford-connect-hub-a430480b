@@ -180,6 +180,63 @@ export default function BoardingManagement() {
     fetchAll();
   };
 
+  // Drag-and-drop transfer
+  const [dragAlloc, setDragAlloc] = useState<BedAllocation | null>(null);
+  const [dropTargetRoom, setDropTargetRoom] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, alloc: BedAllocation) => {
+    setDragAlloc(alloc);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", alloc.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, roomId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTargetRoom(roomId);
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetRoom(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetRoomId: string) => {
+    e.preventDefault();
+    setDropTargetRoom(null);
+    if (!dragAlloc || dragAlloc.room_id === targetRoomId) { setDragAlloc(null); return; }
+
+    const targetRoom = rooms.find(r => r.id === targetRoomId);
+    const sourceRoom = rooms.find(r => r.id === dragAlloc.room_id);
+    if (!targetRoom || !sourceRoom) { setDragAlloc(null); return; }
+
+    const targetAllocs = allocations.filter(a => a.room_id === targetRoomId);
+    if (targetAllocs.length >= targetRoom.capacity) {
+      toast({ title: "Room is full", description: `${targetRoom.room_number} has no vacancies`, variant: "destructive" });
+      setDragAlloc(null);
+      return;
+    }
+
+    // Update allocation to new room
+    const { error } = await supabase.from("bed_allocations").update({ room_id: targetRoomId, status: "active" }).eq("id", dragAlloc.id);
+    if (error) { toast({ title: "Transfer failed", description: error.message, variant: "destructive" }); setDragAlloc(null); return; }
+
+    // Update occupancy counts
+    await supabase.from("rooms").update({ current_occupancy: Math.max(0, sourceRoom.current_occupancy - 1) }).eq("id", sourceRoom.id);
+    await supabase.from("rooms").update({ current_occupancy: targetRoom.current_occupancy + 1 }).eq("id", targetRoom.id);
+
+    // If different hostels, update hostel occupancy too
+    if (sourceRoom.hostel_id !== targetRoom.hostel_id) {
+      const sourceHostel = hostels.find(h => h.id === sourceRoom.hostel_id);
+      const targetHostel = hostels.find(h => h.id === targetRoom.hostel_id);
+      if (sourceHostel) await supabase.from("hostels").update({ current_occupancy: Math.max(0, sourceHostel.current_occupancy - 1) }).eq("id", sourceHostel.id);
+      if (targetHostel) await supabase.from("hostels").update({ current_occupancy: targetHostel.current_occupancy + 1 }).eq("id", targetHostel.id);
+    }
+
+    toast({ title: "Student transferred", description: `Moved ${studentName(dragAlloc.student_id)} to room ${targetRoom.room_number}` });
+    setDragAlloc(null);
+    fetchAll();
+  };
+
   // =========== HEALTH ===========
   const openAddHealth = () => {
     setHealthForm({ student_id: "", symptoms: "", diagnosis: "", treatment: "", medication_given: "", follow_up_date: "", visited_by: "", notes: "", parent_notified: false });
