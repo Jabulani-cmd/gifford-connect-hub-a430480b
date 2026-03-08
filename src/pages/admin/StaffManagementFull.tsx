@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar, Camera } from "lucide-react";
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
+import WebcamCapture from "@/components/WebcamCapture";
 
 const roleOptions = ["admin", "bursar", "teacher", "housemaster", "counsellor", "librarian", "it", "groundskeeper"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports", "Administration", "IT"];
@@ -106,6 +107,7 @@ export default function StaffManagementFull() {
   const [cropOpen, setCropOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showWebcam, setShowWebcam] = useState(false);
 
   useEffect(() => { fetchStaff(); }, []);
 
@@ -391,10 +393,13 @@ export default function StaffManagementFull() {
                 ) : (
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-maroon-light"><User className="h-8 w-8 text-secondary" /></div>
                 )}
-                <div>
+                <div className="flex gap-2">
                   <input type="file" accept="image/*" ref={photoRef} onChange={handlePhotoSelect} className="hidden" />
                   <Button variant="outline" size="sm" onClick={() => photoRef.current?.click()} disabled={uploading}>
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading..." : "Upload Photo"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowWebcam(true)} disabled={uploading}>
+                    <Camera className="mr-1 h-4 w-4" /> Take Photo
                   </Button>
                 </div>
               </div>
@@ -674,6 +679,12 @@ export default function StaffManagementFull() {
           </div>
         </DialogContent>
       </Dialog>
+      <WebcamCapture
+        open={showWebcam}
+        onClose={() => setShowWebcam(false)}
+        onCapture={(blob) => { setCropSrc(URL.createObjectURL(blob)); setCropOpen(true); }}
+        title="Take Staff Photo"
+      />
     </div>
   );
 }
