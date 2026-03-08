@@ -1068,6 +1068,130 @@ export type Database = {
           },
         ]
       }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          barcode: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          item_code: string
+          location: string | null
+          name: string
+          purchase_price_usd: number | null
+          purchase_price_zig: number | null
+          quantity: number
+          reorder_level: number | null
+          supplier: string | null
+          supplier_contact: string | null
+          unit: string
+        }
+        Insert: {
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_code: string
+          location?: string | null
+          name: string
+          purchase_price_usd?: number | null
+          purchase_price_zig?: number | null
+          quantity?: number
+          reorder_level?: number | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          unit?: string
+        }
+        Update: {
+          barcode?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_code?: string
+          location?: string | null
+          name?: string
+          purchase_price_usd?: number | null
+          purchase_price_zig?: number | null
+          quantity?: number
+          reorder_level?: number | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          notes: string | null
+          quantity: number
+          reference: string | null
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          notes?: string | null
+          quantity: number
+          reference?: string | null
+          transaction_type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          notes?: string | null
+          quantity?: number
+          reference?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           amount_usd: number
@@ -1915,6 +2039,69 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      textbook_issues: {
+        Row: {
+          condition_on_issue: string | null
+          condition_on_return: string | null
+          created_at: string
+          due_date: string
+          fine_amount_usd: number | null
+          fine_amount_zig: number | null
+          id: string
+          inventory_item_id: string
+          issue_date: string
+          issued_by: string | null
+          return_date: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          condition_on_issue?: string | null
+          condition_on_return?: string | null
+          created_at?: string
+          due_date: string
+          fine_amount_usd?: number | null
+          fine_amount_zig?: number | null
+          id?: string
+          inventory_item_id: string
+          issue_date?: string
+          issued_by?: string | null
+          return_date?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          condition_on_issue?: string | null
+          condition_on_return?: string | null
+          created_at?: string
+          due_date?: string
+          fine_amount_usd?: number | null
+          fine_amount_zig?: number | null
+          id?: string
+          inventory_item_id?: string
+          issue_date?: string
+          issued_by?: string | null
+          return_date?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textbook_issues_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "textbook_issues_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       timetable: {
         Row: {
