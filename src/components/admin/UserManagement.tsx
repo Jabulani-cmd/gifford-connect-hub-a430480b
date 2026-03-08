@@ -237,11 +237,12 @@ export default function UserManagement() {
 
   const openEditDialog = async (user: ManagedUser) => {
     setEditUser(user);
-    // Find current class assignment for this staff member
     let currentClassId = "";
+    let staffDetails: any = {};
     if (user.portal_role === "teacher" || user.portal_role === "admin") {
-      const { data: staffRecord } = await supabase.from("staff").select("id").eq("user_id", user.id).maybeSingle();
+      const { data: staffRecord } = await supabase.from("staff").select("*").eq("user_id", user.id).maybeSingle();
       if (staffRecord) {
+        staffDetails = staffRecord;
         const { data: classRecord } = await supabase.from("classes").select("id").eq("class_teacher_id", staffRecord.id).maybeSingle();
         if (classRecord) currentClassId = classRecord.id;
       }
@@ -252,6 +253,19 @@ export default function UserManagement() {
       department: user.department || "",
       full_name: user.full_name,
       assigned_class_id: currentClassId,
+      phone: staffDetails.phone || "",
+      email: staffDetails.email || user.email || "",
+      address: staffDetails.address || "",
+      emergency_contact: staffDetails.emergency_contact || "",
+      qualifications: staffDetails.qualifications || "",
+      bio: staffDetails.bio || "",
+      title: staffDetails.title || "",
+      subjects_taught: staffDetails.subjects_taught || [],
+      national_id: staffDetails.national_id || "",
+      nssa_number: staffDetails.nssa_number || "",
+      paye_number: staffDetails.paye_number || "",
+      bank_details: staffDetails.bank_details || "",
+      employment_date: staffDetails.employment_date || "",
     });
   };
 
