@@ -713,85 +713,9 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* Register Student Tab */}
-          <TabsContent value="register-student">
-            <Card className="max-w-lg">
-              <CardHeader><CardTitle className="font-heading">Register New Student</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Full Name *</Label>
-                  <Input value={studentForm.full_name} onChange={e => setStudentForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. Tafadzwa Moyo" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input type="email" value={studentForm.email} onChange={e => setStudentForm(p => ({ ...p, email: e.target.value }))} placeholder="student@giffordhigh.ac.zw" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password *</Label>
-                  <Input type="password" value={studentForm.password} onChange={e => setStudentForm(p => ({ ...p, password: e.target.value }))} placeholder="Initial password" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Grade *</Label>
-                    <Select value={studentForm.grade} onValueChange={v => setStudentForm(p => ({ ...p, grade: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger>
-                      <SelectContent>{gradeOptions.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Class</Label>
-                    <Select value={studentForm.class_name} onValueChange={v => setStudentForm(p => ({ ...p, class_name: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>{classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone (Parent/Guardian)</Label>
-                  <Input value={studentForm.phone} onChange={e => setStudentForm(p => ({ ...p, phone: e.target.value }))} placeholder="+263 7X XXX XXXX" />
-                </div>
-                <Button onClick={registerStudent} disabled={regLoading} className="w-full">
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  {regLoading ? "Registering..." : "Register Student"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Register Teacher Tab */}
-          <TabsContent value="register-teacher">
-            <Card className="max-w-lg">
-              <CardHeader><CardTitle className="font-heading">Register New Teacher</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Full Name *</Label>
-                  <Input value={teacherForm.full_name} onChange={e => setTeacherForm(p => ({ ...p, full_name: e.target.value }))} placeholder="e.g. Mr. Sibanda" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input type="email" value={teacherForm.email} onChange={e => setTeacherForm(p => ({ ...p, email: e.target.value }))} placeholder="teacher@giffordhigh.ac.zw" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password *</Label>
-                  <Input type="password" value={teacherForm.password} onChange={e => setTeacherForm(p => ({ ...p, password: e.target.value }))} placeholder="Initial password" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={teacherForm.department} onValueChange={v => setTeacherForm(p => ({ ...p, department: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>{departmentOptions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input value={teacherForm.phone} onChange={e => setTeacherForm(p => ({ ...p, phone: e.target.value }))} placeholder="+263 7X XXX XXXX" />
-                </div>
-                <Button onClick={registerTeacher} disabled={regLoading} className="w-full">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  {regLoading ? "Registering..." : "Register Teacher"}
-                </Button>
-              </CardContent>
-            </Card>
+          {/* User Management Tab */}
+          <TabsContent value="user-mgmt">
+            <UserManagement />
           </TabsContent>
 
           {/* Timetable Tab */}
