@@ -261,6 +261,7 @@ export default function UserManagement() {
     <Tabs defaultValue="create" className="space-y-4">
       <TabsList>
         <TabsTrigger value="create"><UserPlus className="mr-1 h-4 w-4" /> Create User</TabsTrigger>
+        <TabsTrigger value="bulk"><FileSpreadsheet className="mr-1 h-4 w-4" /> Bulk Import</TabsTrigger>
         <TabsTrigger value="list"><Users className="mr-1 h-4 w-4" /> All Users</TabsTrigger>
       </TabsList>
 
