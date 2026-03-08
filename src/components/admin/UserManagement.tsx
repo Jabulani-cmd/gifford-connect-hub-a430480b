@@ -188,6 +188,54 @@ export default function UserManagement() {
     }
   };
 
+  // Edit user state
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "" });
+  const [saving, setSaving] = useState(false);
+
+  const openEditDialog = (user: ManagedUser) => {
+    setEditUser(user);
+    setEditForm({
+      portal_role: user.portal_role,
+      staff_role: user.staff_role || "teacher",
+      department: user.department || "",
+      full_name: user.full_name,
+    });
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editUser) return;
+    setSaving(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          action: "update-user",
+          user_id: editUser.id,
+          portal_role: editForm.portal_role,
+          staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
+          department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
+          full_name: editForm.full_name,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast({ title: "User updated successfully" });
+      setEditUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Failed to update user", description: err.message, variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
   const filteredUsers = users.filter((u) => {
     const matchSearch = !searchQuery ||
       u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
