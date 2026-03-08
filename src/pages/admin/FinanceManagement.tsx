@@ -93,6 +93,9 @@ export default function FinanceManagement() {
   // ─── Debtors ───
   const [debtors, setDebtors] = useState<any[]>([]);
   const [debtorsFormFilter, setDebtorsFormFilter] = useState("all");
+  const [deleteDebtorOpen, setDeleteDebtorOpen] = useState(false);
+  const [debtorToDelete, setDebtorToDelete] = useState<any>(null);
+  const [deletingDebtor, setDeletingDebtor] = useState(false);
 
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
