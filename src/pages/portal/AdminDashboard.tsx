@@ -35,7 +35,7 @@ const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 
 const classOptions = ["A", "B", "C", "D"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
 const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
-const meetingTypes = ["sgb", "parent-teacher", "general"];
+const meetingTypes = ["sdc", "parent-teacher", "general"];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -426,7 +426,7 @@ export default function AdminDashboard() {
     navigate("/login");
   };
 
-  const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+  const meetingTypeLabels: Record<string, string> = { sdc: "SDC Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
   return (
     <div className="min-h-screen bg-background">
@@ -532,7 +532,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="carousel"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
             <TabsTrigger value="gallery"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
             <TabsTrigger value="downloads"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
-            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB / Meetings</TabsTrigger>
+            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SDC / Meetings</TabsTrigger>
             <TabsTrigger value="user-mgmt"><Shield className="mr-1 h-4 w-4" /> User Management</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
             <TabsTrigger value="site-images"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
@@ -687,13 +687,13 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* SGB / Meetings Tab */}
+          {/* SDC / Meetings Tab */}
           <TabsContent value="meetings">
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle className="font-heading">Schedule Meeting</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>Title *</Label><Input value={meetingTitle} onChange={e => setMeetingTitle(e.target.value)} placeholder="e.g. SGB Quarter 1 Meeting" /></div>
+                  <div className="space-y-2"><Label>Title *</Label><Input value={meetingTitle} onChange={e => setMeetingTitle(e.target.value)} placeholder="e.g. SDC Quarter 1 Meeting" /></div>
                   <div className="space-y-2">
                     <Label>Type</Label>
                     <Select value={meetingType} onValueChange={setMeetingType}>

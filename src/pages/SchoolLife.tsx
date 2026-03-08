@@ -24,7 +24,7 @@ const clubs = [
   { icon: Trophy, name: "Science Club", desc: "Hands-on experiments and science olympiads." },
 ];
 
-const meetingTypeLabels: Record<string, string> = { sgb: "SGB Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+const meetingTypeLabels: Record<string, string> = { sdc: "SDC Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
 
 export default function SchoolLife() {
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -38,7 +38,7 @@ export default function SchoolLife() {
       .then(({ data }) => { if (data) setGalleryImages(data); });
   }, []);
 
-  const sgbMeetings = meetings.filter(m => m.meeting_type === "sgb");
+  const sdcMeetings = meetings.filter(m => m.meeting_type === "sdc");
   const ptMeetings = meetings.filter(m => m.meeting_type === "parent-teacher");
 
   return (
@@ -58,7 +58,7 @@ export default function SchoolLife() {
             <TabsList className="mb-8 flex-wrap">
               <TabsTrigger value="sports">Sports</TabsTrigger>
               <TabsTrigger value="clubs">Clubs & Activities</TabsTrigger>
-              <TabsTrigger value="sgb"><HandshakeIcon className="mr-1 h-4 w-4" /> SGB</TabsTrigger>
+              <TabsTrigger value="sdc"><HandshakeIcon className="mr-1 h-4 w-4" /> SDC</TabsTrigger>
               <TabsTrigger value="pt-meetings"><Calendar className="mr-1 h-4 w-4" /> Parent-Teacher</TabsTrigger>
               <TabsTrigger value="gallery">Gallery</TabsTrigger>
             </TabsList>
@@ -98,19 +98,19 @@ export default function SchoolLife() {
               </div>
             </TabsContent>
 
-            {/* SGB Tab */}
-            <TabsContent value="sgb">
+            {/* SDC Tab */}
+            <TabsContent value="sdc">
               <div className="mb-6">
-                <h2 className="font-heading text-2xl font-bold text-primary mb-2">Student Governing Body (SGB)</h2>
-                <p className="text-muted-foreground">The SGB represents the interests of students and works alongside the school administration to ensure a thriving learning environment.</p>
+                <h2 className="font-heading text-2xl font-bold text-primary mb-2">School Development Committee (SDC)</h2>
+                <p className="text-muted-foreground">The SDC represents the interests of parents, staff and the community, working alongside the school administration to ensure a thriving learning environment.</p>
               </div>
-              {sgbMeetings.length > 0 ? (
+              {sdcMeetings.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {sgbMeetings.map((m, i) => (
+                  {sdcMeetings.map((m, i) => (
                     <motion.div key={m.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
                       <Card className="h-full transition-shadow hover:shadow-maroon">
                         <CardContent className="p-5">
-                          <span className="inline-block rounded-full bg-maroon-light px-2 py-0.5 text-xs font-semibold text-primary mb-2">SGB Meeting</span>
+                          <span className="inline-block rounded-full bg-maroon-light px-2 py-0.5 text-xs font-semibold text-primary mb-2">SDC Meeting</span>
                           <h3 className="font-heading font-semibold">{m.title}</h3>
                           <p className="text-sm text-accent font-medium">{new Date(m.meeting_date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
                           {m.location && <p className="text-xs text-muted-foreground mt-1">📍 {m.location}</p>}
@@ -121,7 +121,7 @@ export default function SchoolLife() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground italic py-8">No SGB meetings scheduled at this time.</p>
+                <p className="text-center text-muted-foreground italic py-8">No SDC meetings scheduled at this time.</p>
               )}
             </TabsContent>
 
