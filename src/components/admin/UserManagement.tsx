@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const portalRoles = [
   { value: "admin", label: "System Administrator" },
+  { value: "finance", label: "Finance Admin Clerk" },
   { value: "teacher", label: "Teacher" },
   { value: "student", label: "Student" },
   { value: "parent", label: "Parent" },

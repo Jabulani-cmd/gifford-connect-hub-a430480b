@@ -6,6 +6,7 @@ function getRedirectPath(role: string): string {
   if (role === "teacher") return "/portal/teacher";
   if (role === "parent") return "/portal/parent-teacher";
   if (role === "admin") return "/portal/admin";
+  if (role === "finance") return "/portal/finance";
   return "/";
 }
 
