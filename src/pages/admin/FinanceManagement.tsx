@@ -250,6 +250,7 @@ export default function FinanceManagement() {
     setSpDialogOpen(false);
     setSpLoading(false);
     fetchSupplierInvoices();
+    fetchSupplierPayments();
   }
 
 
