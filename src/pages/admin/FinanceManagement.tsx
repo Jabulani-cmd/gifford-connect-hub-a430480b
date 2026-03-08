@@ -114,6 +114,7 @@ export default function FinanceManagement() {
   const [spInvoice, setSpInvoice] = useState<any>(null);
   const [spForm, setSpForm] = useState({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" });
   const [spLoading, setSpLoading] = useState(false);
+  const [supplierPayments, setSupplierPayments] = useState<any[]>([]);
 
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
@@ -127,7 +128,7 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices()])
+    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices(), fetchSupplierPayments()])
       .finally(() => setLoading(false));
   }, []);
 
@@ -165,6 +166,11 @@ export default function FinanceManagement() {
   async function fetchSupplierInvoices() {
     const { data } = await supabase.from("supplier_invoices").select("*").order("created_at", { ascending: false });
     if (data) setSupplierInvoices(data);
+  }
+
+  async function fetchSupplierPayments() {
+    const { data } = await supabase.from("supplier_payments").select("*, supplier_invoices(supplier_name, invoice_number)").order("payment_date", { ascending: false });
+    if (data) setSupplierPayments(data);
   }
 
   async function savePettyCash() {
@@ -244,6 +250,7 @@ export default function FinanceManagement() {
     setSpDialogOpen(false);
     setSpLoading(false);
     fetchSupplierInvoices();
+    fetchSupplierPayments();
   }
 
 
@@ -1192,6 +1199,50 @@ export default function FinanceManagement() {
                                 <Button variant="ghost" size="icon" onClick={() => deleteSupplierInvoice(si.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                               </div>
                             </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Supplier Payments History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Supplier Payments History</CardTitle>
+                <CardDescription>All payments made to suppliers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {supplierPayments.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No supplier payments recorded yet. Click the payment icon on an unpaid invoice above to record a payment.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Amount USD</TableHead>
+                          <TableHead className="text-right">Amount ZiG</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supplierPayments.map((sp: any) => (
+                          <TableRow key={sp.id}>
+                            <TableCell className="text-xs">{sp.payment_date}</TableCell>
+                            <TableCell className="font-medium">{sp.supplier_invoices?.supplier_name || "—"}</TableCell>
+                            <TableCell className="font-mono text-xs">{sp.supplier_invoices?.invoice_number || "—"}</TableCell>
+                            <TableCell>{sp.payment_method}</TableCell>
+                            <TableCell className="font-mono text-xs">{sp.reference_number || "—"}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_usd)}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_zig)}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{sp.notes || "—"}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
