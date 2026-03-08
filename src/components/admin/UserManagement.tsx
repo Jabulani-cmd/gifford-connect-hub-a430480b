@@ -366,42 +366,44 @@ export default function UserManagement() {
             </div>
 
             {isStaffRole && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Staff Position / Title</Label>
+                    <Select value={form.staff_role} onValueChange={(v) => setForm((p) => ({ ...p, staff_role: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {staffRoles.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Department</Label>
+                    <Select value={form.department} onValueChange={(v) => setForm((p) => ({ ...p, department: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                      <SelectContent>
+                        {departmentOptions.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>Staff Position / Title</Label>
-                  <Select value={form.staff_role} onValueChange={(v) => setForm((p) => ({ ...p, staff_role: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Label>Assigned Class (Class Teacher)</Label>
+                  <Select value={form.assigned_class_id || "none"} onValueChange={(v) => setForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                     <SelectContent>
-                      {staffRoles.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      <SelectItem value="none">No class assigned</SelectItem>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={form.department} onValueChange={(v) => setForm((p) => ({ ...p, department: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>
-                      {departmentOptions.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Assigned Class (Class Teacher)</Label>
-                <Select value={form.assigned_class_id} onValueChange={(v) => setForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No class assigned</SelectItem>
-                    {classes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              </>
             )}
 
             {form.portal_role === "student" && (
