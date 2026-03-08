@@ -35,7 +35,7 @@ const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 
 const classOptions = ["A", "B", "C", "D"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
 const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
-const meetingTypes = ["sgb", "parent-teacher", "general"];
+const meetingTypes = ["sdc", "parent-teacher", "general"];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
