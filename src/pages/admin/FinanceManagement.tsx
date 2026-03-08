@@ -97,6 +97,22 @@ export default function FinanceManagement() {
   const [debtorToDelete, setDebtorToDelete] = useState<any>(null);
   const [deletingDebtor, setDeletingDebtor] = useState(false);
 
+  // ─── Petty Cash ───
+  const [pettyCash, setPettyCash] = useState<any[]>([]);
+  const [pcDialogOpen, setPcDialogOpen] = useState(false);
+  const [pcForm, setPcForm] = useState({ transaction_date: new Date().toISOString().split("T")[0], transaction_type: "withdrawal", description: "", amount_usd: "", amount_zig: "", reference_number: "" });
+  const [pcLoading, setPcLoading] = useState(false);
+
+  // ─── Supplier Invoices & Payments ───
+  const [supplierInvoices, setSupplierInvoices] = useState<any[]>([]);
+  const [siDialogOpen, setSiDialogOpen] = useState(false);
+  const [siForm, setSiForm] = useState({ supplier_name: "", supplier_contact: "", invoice_number: "", invoice_date: new Date().toISOString().split("T")[0], due_date: "", description: "", amount_usd: "", amount_zig: "" });
+  const [siLoading, setSiLoading] = useState(false);
+  const [spDialogOpen, setSpDialogOpen] = useState(false);
+  const [spInvoice, setSpInvoice] = useState<any>(null);
+  const [spForm, setSpForm] = useState({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" });
+  const [spLoading, setSpLoading] = useState(false);
+
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
   const [stmtStudentResults, setStmtStudentResults] = useState<any[]>([]);
@@ -109,7 +125,7 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses()])
+    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices()])
       .finally(() => setLoading(false));
   }, []);
 
