@@ -42,6 +42,7 @@ const staffRoleLabels: Record<string, string> = Object.fromEntries(staffRoles.ma
 
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports", "Administration"];
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
+const subjectsList = ["Mathematics", "English", "Shona", "Ndebele", "History", "Geography", "Physics", "Chemistry", "Biology", "Accounts", "Commerce", "Computer Science", "Agriculture", "Technical Graphics", "Food & Nutrition", "Fashion & Fabrics", "Music", "Art", "Physical Education"];
 
 interface ManagedUser {
   id: string;
