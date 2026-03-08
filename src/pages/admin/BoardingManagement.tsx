@@ -338,8 +338,15 @@ export default function BoardingManagement() {
                   const roomAllocs = allocations.filter(a => a.room_id === room.id);
                   const occupancyPct = room.capacity > 0 ? (roomAllocs.length / room.capacity) * 100 : 0;
                   const color = occupancyPct >= 100 ? "bg-destructive/10 border-destructive/30" : occupancyPct >= 75 ? "bg-orange-50 border-orange-200" : "bg-green-50 border-green-200";
+                  const isDropTarget = dropTargetRoom === room.id && dragAlloc?.room_id !== room.id;
                   return (
-                    <Card key={room.id} className={`border-2 ${color}`}>
+                    <Card
+                      key={room.id}
+                      className={`border-2 transition-all ${color} ${isDropTarget ? "ring-2 ring-primary scale-[1.02] shadow-lg" : ""}`}
+                      onDragOver={(e) => handleDragOver(e, room.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, room.id)}
+                    >
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-mono font-bold text-sm">{room.room_number}</span>
@@ -348,8 +355,17 @@ export default function BoardingManagement() {
                         <div className="text-xs text-muted-foreground mb-2">{roomAllocs.length}/{room.capacity} beds • Floor {room.floor || "G"}</div>
                         <div className="space-y-1 mb-2">
                           {roomAllocs.map(a => (
-                            <div key={a.id} className="flex items-center justify-between text-xs">
-                              <span className="truncate flex-1">{studentName(a.student_id)}</span>
+                            <div
+                              key={a.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, a)}
+                              onDragEnd={() => { setDragAlloc(null); setDropTargetRoom(null); }}
+                              className="flex items-center justify-between text-xs bg-background/80 rounded px-1.5 py-1 cursor-grab active:cursor-grabbing border border-transparent hover:border-muted-foreground/20 transition-colors group"
+                            >
+                              <div className="flex items-center gap-1 truncate flex-1">
+                                <GripVertical className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground shrink-0" />
+                                <span className="truncate">{studentName(a.student_id)}</span>
+                              </div>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5"><Trash2 className="h-3 w-3 text-destructive" /></Button></AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -362,7 +378,12 @@ export default function BoardingManagement() {
                             </div>
                           ))}
                         </div>
-                        {roomAllocs.length < room.capacity && (
+                        {isDropTarget && roomAllocs.length < room.capacity && (
+                          <div className="border-2 border-dashed border-primary/50 rounded p-1.5 text-center text-xs text-primary animate-pulse">
+                            Drop here to transfer
+                          </div>
+                        )}
+                        {roomAllocs.length < room.capacity && !isDropTarget && (
                           <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => openAllocate(room.id)}>
                             <Plus className="mr-1 h-3 w-3" /> Assign
                           </Button>
