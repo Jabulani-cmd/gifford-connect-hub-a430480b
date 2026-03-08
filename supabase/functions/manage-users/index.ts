@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Verify caller is admin (except for seed-admin which bootstraps)
-    if (action !== "seed-admin") {
+    // Verify caller is admin (except for seed actions which bootstrap)
+    if (action !== "seed-admin" && action !== "seed-teacher") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -87,6 +87,34 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    if (action === "seed-teacher") {
+      const { email, password, full_name, department } = payload;
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const exists = existingUsers?.users?.some((u) => u.email === email);
+      if (exists) {
+        // Update password for existing teacher
+        const existingUser = existingUsers?.users?.find((u) => u.email === email);
+        if (existingUser && password) {
+          await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+        }
+        return new Response(JSON.stringify({ message: "Teacher already exists, password updated" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { full_name: full_name || "Teacher" },
+      });
+      if (createError) throw createError;
+      await supabaseAdmin.from("user_roles").insert({ user_id: newUser.user.id, role: "teacher" });
+      await supabaseAdmin.from("staff").insert({
+        full_name: full_name || "Teacher", email, department, user_id: newUser.user.id, category: "teaching",
+      });
+      return new Response(JSON.stringify({ message: "Teacher seeded", user_id: newUser.user.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (action === "register-student") {
