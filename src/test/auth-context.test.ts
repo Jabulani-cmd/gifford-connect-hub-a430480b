@@ -6,6 +6,7 @@ function getRedirectPath(role: string): string {
   if (role === "teacher") return "/portal/teacher";
   if (role === "parent") return "/portal/parent-teacher";
   if (role === "admin") return "/portal/admin";
+  if (role === "finance") return "/portal/finance";
   return "/";
 }
 
@@ -26,6 +27,10 @@ describe("Role-Based Redirects", () => {
     expect(getRedirectPath("admin")).toBe("/portal/admin");
   });
 
+  it("redirects finance correctly", () => {
+    expect(getRedirectPath("finance")).toBe("/portal/finance");
+  });
+
   it("defaults to home for unknown roles", () => {
     expect(getRedirectPath("unknown")).toBe("/");
     expect(getRedirectPath("")).toBe("/");
@@ -33,7 +38,7 @@ describe("Role-Based Redirects", () => {
 });
 
 describe("App Role Types", () => {
-  const validRoles = ["student", "parent", "teacher", "admin"];
+  const validRoles = ["student", "parent", "teacher", "admin", "finance"];
 
   it("all portal roles are accounted for", () => {
     validRoles.forEach((role) => {

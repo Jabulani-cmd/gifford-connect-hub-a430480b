@@ -46,7 +46,8 @@ function statusBadge(status: string) {
 
 export default function FinanceManagement() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isFinanceOrAdmin = role === "finance" || role === "admin";
 
   // ─── Fee Structures ───
   const [feeStructures, setFeeStructures] = useState<any[]>([]);
@@ -481,6 +482,66 @@ export default function FinanceManagement() {
     fetchExpenses();
   }
 
+  async function deletePayment(payment: any) {
+    if (!confirm(`Delete payment ${payment.receipt_number}? This will reverse the paid amounts on the linked invoice.`)) return;
+    try {
+      // Reverse the invoice paid amounts
+      const { data: invoice } = await supabase.from("invoices").select("*").eq("id", payment.invoice_id).single();
+      if (invoice) {
+        const newPaidUsd = Math.max(0, Number(invoice.paid_usd) - Number(payment.amount_usd));
+        const newPaidZig = Math.max(0, Number(invoice.paid_zig) - Number(payment.amount_zig));
+        let newStatus = "partial";
+        if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
+        else if (newPaidUsd >= Number(invoice.total_usd) && newPaidZig >= Number(invoice.total_zig)) newStatus = "paid";
+        await supabase.from("invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", payment.invoice_id);
+      }
+      // Log to audit
+      await supabase.from("audit_logs").insert({
+        action: "delete_payment",
+        table_name: "payments",
+        record_id: payment.id,
+        user_id: user?.id || null,
+        old_data: payment,
+      });
+      // Delete the payment
+      const { error } = await supabase.from("payments").delete().eq("id", payment.id);
+      if (error) throw error;
+      toast({ title: "Payment deleted", description: `Receipt ${payment.receipt_number} removed and invoice updated.` });
+      fetchPayments();
+      fetchInvoices();
+      if (stmtStudent) selectStmtStudent(stmtStudent);
+    } catch (err: any) {
+      toast({ title: "Error deleting payment", description: err.message, variant: "destructive" });
+    }
+  }
+
+  async function deleteInvoice(invoice: any) {
+    if (!confirm(`Delete invoice ${invoice.invoice_number}? This will also delete all associated payments and invoice items.`)) return;
+    try {
+      // Delete associated payments first
+      await supabase.from("payments").delete().eq("invoice_id", invoice.id);
+      // Delete invoice items
+      await supabase.from("invoice_items").delete().eq("invoice_id", invoice.id);
+      // Log to audit
+      await supabase.from("audit_logs").insert({
+        action: "delete_invoice",
+        table_name: "invoices",
+        record_id: invoice.id,
+        user_id: user?.id || null,
+        old_data: invoice,
+      });
+      // Delete invoice
+      const { error } = await supabase.from("invoices").delete().eq("id", invoice.id);
+      if (error) throw error;
+      toast({ title: "Invoice deleted", description: `${invoice.invoice_number} and associated records removed.` });
+      fetchInvoices();
+      fetchPayments();
+      if (stmtStudent) selectStmtStudent(stmtStudent);
+    } catch (err: any) {
+      toast({ title: "Error deleting invoice", description: err.message, variant: "destructive" });
+    }
+  }
+
   // ═══ COMPUTED ═══
   const filteredInvoices = invoices.filter(inv => {
     if (invoiceStatusFilter !== "all" && inv.status !== invoiceStatusFilter) return false;
@@ -655,8 +716,9 @@ export default function FinanceManagement() {
                         <TableHead className="text-right">Total ZiG</TableHead>
                         <TableHead className="text-right">Paid USD</TableHead>
                         <TableHead className="text-right">Paid ZiG</TableHead>
-                        <TableHead>Status</TableHead>
+                         <TableHead>Status</TableHead>
                         <TableHead>Due</TableHead>
+                        {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -672,6 +734,11 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(inv.paid_zig)}</TableCell>
                           <TableCell>{statusBadge(inv.status)}</TableCell>
                           <TableCell className="text-xs">{inv.due_date || "—"}</TableCell>
+                          {isFinanceOrAdmin && (
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -702,7 +769,7 @@ export default function FinanceManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Receipt #</TableHead>
+                         <TableHead>Receipt #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Student</TableHead>
                         <TableHead>Invoice</TableHead>
@@ -710,6 +777,7 @@ export default function FinanceManagement() {
                         <TableHead className="text-right">ZiG</TableHead>
                         <TableHead>Method</TableHead>
                         <TableHead>Ref</TableHead>
+                        {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -723,6 +791,11 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(pay.amount_zig)}</TableCell>
                           <TableCell>{pay.payment_method}</TableCell>
                           <TableCell className="text-xs">{pay.reference_number || "—"}</TableCell>
+                          {isFinanceOrAdmin && (
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => deletePayment(pay)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>

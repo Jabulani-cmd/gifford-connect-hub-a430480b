@@ -48,6 +48,7 @@ export default function Login() {
     else if (r === "teacher") navigate("/portal/teacher");
     else if (r === "parent") navigate("/portal/parent-teacher");
     else if (r === "admin") navigate("/portal/admin");
+    else if (r === "finance") navigate("/portal/finance");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
