@@ -390,6 +390,10 @@ export default function UserManagement() {
         </Card>
       </TabsContent>
 
+      <TabsContent value="bulk">
+        <BulkUserImport onImportComplete={fetchUsers} />
+      </TabsContent>
+
       <TabsContent value="list">
         <Card>
           <CardHeader>
