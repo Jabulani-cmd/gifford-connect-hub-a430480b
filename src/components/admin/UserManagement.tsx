@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil } from "lucide-react";
+import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil, FileSpreadsheet } from "lucide-react";
+import BulkUserImport from "./BulkUserImport";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
