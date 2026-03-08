@@ -38,7 +38,7 @@ export default function SchoolLife() {
       .then(({ data }) => { if (data) setGalleryImages(data); });
   }, []);
 
-  const sgbMeetings = meetings.filter(m => m.meeting_type === "sgb");
+  const sdcMeetings = meetings.filter(m => m.meeting_type === "sdc");
   const ptMeetings = meetings.filter(m => m.meeting_type === "parent-teacher");
 
   return (
