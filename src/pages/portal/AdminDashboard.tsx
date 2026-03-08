@@ -547,6 +547,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
             <TabsTrigger value="audit"><ShieldCheck className="mr-1 h-4 w-4" /> Audit Logs</TabsTrigger>
+            <TabsTrigger value="migration"><DatabaseBackup className="mr-1 h-4 w-4" /> Data Migration</TabsTrigger>
+            <TabsTrigger value="golive"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
           </TabsList>
 
           {/* Announcements Tab */}
