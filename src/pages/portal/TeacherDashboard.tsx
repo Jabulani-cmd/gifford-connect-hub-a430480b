@@ -182,6 +182,8 @@ export default function TeacherDashboard() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
       toast({ title: `Mark submitted — Grade: ${zimGrade(parseInt(mark))}` });
+      // Create notification for mark entry
+      await supabase.from("notifications").insert({ user_id: user!.id, title: "Mark Recorded", message: `Grade ${zimGrade(parseInt(mark))} recorded for ${assessment_type}.`, type: "mark" });
       setMarkForm({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", comment: "" });
       const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
       if (data) setMarks(data);
