@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle, ChevronDown, Truck
 } from "lucide-react";
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
@@ -115,6 +116,11 @@ export default function FinanceManagement() {
   const [spForm, setSpForm] = useState({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" });
   const [spLoading, setSpLoading] = useState(false);
   const [supplierPayments, setSupplierPayments] = useState<any[]>([]);
+
+  // ─── Cash on Delivery (COD) ───
+  const [codDialogOpen, setCodDialogOpen] = useState(false);
+  const [codForm, setCodForm] = useState({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" });
+  const [codLoading, setCodLoading] = useState(false);
 
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
@@ -249,6 +255,44 @@ export default function FinanceManagement() {
     toast({ title: "Supplier payment recorded" });
     setSpDialogOpen(false);
     setSpLoading(false);
+    fetchSupplierInvoices();
+    fetchSupplierPayments();
+  }
+
+  async function saveCodPayment() {
+    setCodLoading(true);
+    // Create a supplier invoice marked as paid + a matching payment
+    const invNumber = `COD-${Date.now()}`;
+    const amtUsd = parseFloat(codForm.amount_usd) || 0;
+    const amtZig = parseFloat(codForm.amount_zig) || 0;
+    const { data: inv, error: invErr } = await supabase.from("supplier_invoices").insert({
+      supplier_name: codForm.supplier_name,
+      supplier_contact: codForm.supplier_contact || null,
+      invoice_number: invNumber,
+      invoice_date: codForm.payment_date,
+      description: codForm.description || "Cash on Delivery",
+      amount_usd: amtUsd,
+      amount_zig: amtZig,
+      paid_usd: amtUsd,
+      paid_zig: amtZig,
+      status: "paid",
+      recorded_by: user?.id,
+    }).select().single();
+    if (invErr) { toast({ title: "Error", description: invErr.message, variant: "destructive" }); setCodLoading(false); return; }
+    await supabase.from("supplier_payments").insert({
+      supplier_invoice_id: inv.id,
+      payment_date: codForm.payment_date,
+      amount_usd: amtUsd,
+      amount_zig: amtZig,
+      payment_method: codForm.payment_method,
+      reference_number: codForm.reference_number || null,
+      notes: codForm.notes || "Cash on Delivery",
+      recorded_by: user?.id,
+    });
+    toast({ title: "Cash on delivery payment recorded" });
+    setCodDialogOpen(false);
+    setCodLoading(false);
+    setCodForm({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" });
     fetchSupplierInvoices();
     fetchSupplierPayments();
   }
@@ -880,9 +924,24 @@ export default function FinanceManagement() {
                 <CardTitle className="font-heading">Payments</CardTitle>
                 <CardDescription>{payments.length} payments recorded</CardDescription>
               </div>
-              <Button onClick={() => { setPayDialogOpen(true); setSelectedStudent(null); setStudentInvoices([]); setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="mr-1 h-4 w-4" /> Record Payment
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Plus className="mr-1 h-4 w-4" /> Record Payment <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => { setPayDialogOpen(true); setSelectedStudent(null); setStudentInvoices([]); setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" }); }}>
+                    <User className="mr-2 h-4 w-4" /> Student Fee Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setSpInvoice(null); setSpDialogOpen(true); setSpForm({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" }); }}>
+                    <FileText className="mr-2 h-4 w-4" /> Supplier Invoice Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setCodDialogOpen(true); setCodForm({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" }); }}>
+                    <Truck className="mr-2 h-4 w-4" /> Cash on Delivery (COD)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardHeader>
             <CardContent>
               {payments.length === 0 ? (
@@ -2018,12 +2077,27 @@ export default function FinanceManagement() {
           <DialogHeader>
             <DialogTitle>Record Supplier Payment</DialogTitle>
             <DialogDescription>
-              {spInvoice && (
+              {spInvoice ? (
                 <span>Payment for <span className="font-semibold">{spInvoice.supplier_name}</span> — Invoice #{spInvoice.invoice_number} (Balance: USD {fmt(Number(spInvoice.amount_usd) - Number(spInvoice.paid_usd))})</span>
+              ) : (
+                <span>Select an unpaid supplier invoice and record a payment.</span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {!spInvoice && (
+              <div className="space-y-1">
+                <Label>Select Supplier Invoice *</Label>
+                <Select onValueChange={v => { const inv = supplierInvoices.find(si => si.id === v); setSpInvoice(inv || null); }}>
+                  <SelectTrigger><SelectValue placeholder="Choose an unpaid invoice..." /></SelectTrigger>
+                  <SelectContent>
+                    {supplierInvoices.filter(si => si.status !== "paid").map(si => (
+                      <SelectItem key={si.id} value={si.id}>{si.supplier_name} — #{si.invoice_number} (Bal: USD {fmt(Number(si.amount_usd) - Number(si.paid_usd))})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Payment Date</Label>
@@ -2063,6 +2137,72 @@ export default function FinanceManagement() {
             <Button onClick={saveSupplierPayment} disabled={spLoading || (!spForm.amount_usd && !spForm.amount_zig)}>
               {spLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cash on Delivery Dialog */}
+      <Dialog open={codDialogOpen} onOpenChange={setCodDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cash on Delivery Payment</DialogTitle>
+            <DialogDescription>Record a direct payment to a supplier for goods/services received on delivery.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input value={codForm.supplier_name} onChange={e => setCodForm(p => ({ ...p, supplier_name: e.target.value }))} placeholder="e.g. ABC Supplies" />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input value={codForm.supplier_contact} onChange={e => setCodForm(p => ({ ...p, supplier_contact: e.target.value }))} placeholder="Phone or email" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input value={codForm.description} onChange={e => setCodForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Office stationery delivery" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input type="date" value={codForm.payment_date} onChange={e => setCodForm(p => ({ ...p, payment_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select value={codForm.payment_method} onValueChange={v => setCodForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={codForm.amount_usd} onChange={e => setCodForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={codForm.amount_zig} onChange={e => setCodForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={codForm.reference_number} onChange={e => setCodForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={codForm.notes} onChange={e => setCodForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCodDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveCodPayment} disabled={codLoading || !codForm.supplier_name || (!codForm.amount_usd && !codForm.amount_zig)}>
+              {codLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Record COD Payment
             </Button>
           </DialogFooter>
         </DialogContent>
