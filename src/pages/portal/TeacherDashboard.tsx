@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
+import NotificationBell from "@/components/NotificationBell";
 
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
@@ -181,6 +182,8 @@ export default function TeacherDashboard() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
       toast({ title: `Mark submitted — Grade: ${zimGrade(parseInt(mark))}` });
+      // Create notification for mark entry
+      await supabase.from("notifications").insert({ user_id: user!.id, title: "Mark Recorded", message: `Grade ${zimGrade(parseInt(mark))} recorded for ${assessment_type}.`, type: "mark" });
       setMarkForm({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", comment: "" });
       const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
       if (data) setMarks(data);
@@ -235,6 +238,8 @@ export default function TeacherDashboard() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
       toast({ title: "Material uploaded!" });
+      // Create self-notification for record
+      await supabase.from("notifications").insert({ user_id: user!.id, title: "Material Uploaded", message: `"${matForm.title}" has been published.`, type: "material" });
       setMatForm({ title: "", description: "", class_id: "", subject_id: "", material_type: "document", link_url: "", is_published: true });
       setMatFile(null);
       if (matFileRef.current) matFileRef.current.value = "";
@@ -310,6 +315,7 @@ export default function TeacherDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
+            <NotificationBell />
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
           </div>
         </div>
