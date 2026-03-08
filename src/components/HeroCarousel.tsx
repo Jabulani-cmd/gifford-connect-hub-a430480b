@@ -37,7 +37,7 @@ const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) 
   const goTo = (index: number) => setCurrent(index);
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ aspectRatio: "16/7", minHeight: 260 }}>
+    <section ref={ref} className="relative w-full overflow-hidden" style={{ aspectRatio: "16/7", minHeight: 260 }}>
       {images.map((img, i) => (
         <img
           key={img.id}
