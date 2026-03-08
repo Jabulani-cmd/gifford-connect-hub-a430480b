@@ -259,6 +259,44 @@ export default function FinanceManagement() {
     fetchSupplierPayments();
   }
 
+  async function saveCodPayment() {
+    setCodLoading(true);
+    // Create a supplier invoice marked as paid + a matching payment
+    const invNumber = `COD-${Date.now()}`;
+    const amtUsd = parseFloat(codForm.amount_usd) || 0;
+    const amtZig = parseFloat(codForm.amount_zig) || 0;
+    const { data: inv, error: invErr } = await supabase.from("supplier_invoices").insert({
+      supplier_name: codForm.supplier_name,
+      supplier_contact: codForm.supplier_contact || null,
+      invoice_number: invNumber,
+      invoice_date: codForm.payment_date,
+      description: codForm.description || "Cash on Delivery",
+      amount_usd: amtUsd,
+      amount_zig: amtZig,
+      paid_usd: amtUsd,
+      paid_zig: amtZig,
+      status: "paid",
+      recorded_by: user?.id,
+    }).select().single();
+    if (invErr) { toast({ title: "Error", description: invErr.message, variant: "destructive" }); setCodLoading(false); return; }
+    await supabase.from("supplier_payments").insert({
+      supplier_invoice_id: inv.id,
+      payment_date: codForm.payment_date,
+      amount_usd: amtUsd,
+      amount_zig: amtZig,
+      payment_method: codForm.payment_method,
+      reference_number: codForm.reference_number || null,
+      notes: codForm.notes || "Cash on Delivery",
+      recorded_by: user?.id,
+    });
+    toast({ title: "Cash on delivery payment recorded" });
+    setCodDialogOpen(false);
+    setCodLoading(false);
+    setCodForm({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" });
+    fetchSupplierInvoices();
+    fetchSupplierPayments();
+  }
+
 
   function openAddFee() {
     setEditingFee(null);
