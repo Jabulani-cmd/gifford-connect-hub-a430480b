@@ -97,6 +97,22 @@ export default function FinanceManagement() {
   const [debtorToDelete, setDebtorToDelete] = useState<any>(null);
   const [deletingDebtor, setDeletingDebtor] = useState(false);
 
+  // ─── Petty Cash ───
+  const [pettyCash, setPettyCash] = useState<any[]>([]);
+  const [pcDialogOpen, setPcDialogOpen] = useState(false);
+  const [pcForm, setPcForm] = useState({ transaction_date: new Date().toISOString().split("T")[0], transaction_type: "withdrawal", description: "", amount_usd: "", amount_zig: "", reference_number: "" });
+  const [pcLoading, setPcLoading] = useState(false);
+
+  // ─── Supplier Invoices & Payments ───
+  const [supplierInvoices, setSupplierInvoices] = useState<any[]>([]);
+  const [siDialogOpen, setSiDialogOpen] = useState(false);
+  const [siForm, setSiForm] = useState({ supplier_name: "", supplier_contact: "", invoice_number: "", invoice_date: new Date().toISOString().split("T")[0], due_date: "", description: "", amount_usd: "", amount_zig: "" });
+  const [siLoading, setSiLoading] = useState(false);
+  const [spDialogOpen, setSpDialogOpen] = useState(false);
+  const [spInvoice, setSpInvoice] = useState<any>(null);
+  const [spForm, setSpForm] = useState({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" });
+  const [spLoading, setSpLoading] = useState(false);
+
   // ─── Student Statements ───
   const [stmtSearch, setStmtSearch] = useState("");
   const [stmtStudentResults, setStmtStudentResults] = useState<any[]>([]);
@@ -109,7 +125,7 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses()])
+    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices()])
       .finally(() => setLoading(false));
   }, []);
 
@@ -139,7 +155,96 @@ export default function FinanceManagement() {
     if (data) setExpenses(data);
   }
 
-  // ═══ FEE STRUCTURE CRUD ═══
+  async function fetchPettyCash() {
+    const { data } = await supabase.from("petty_cash").select("*").order("transaction_date", { ascending: false });
+    if (data) setPettyCash(data);
+  }
+
+  async function fetchSupplierInvoices() {
+    const { data } = await supabase.from("supplier_invoices").select("*").order("created_at", { ascending: false });
+    if (data) setSupplierInvoices(data);
+  }
+
+  async function savePettyCash() {
+    setPcLoading(true);
+    const payload = {
+      transaction_date: pcForm.transaction_date,
+      transaction_type: pcForm.transaction_type,
+      description: pcForm.description,
+      amount_usd: parseFloat(pcForm.amount_usd) || 0,
+      amount_zig: parseFloat(pcForm.amount_zig) || 0,
+      reference_number: pcForm.reference_number || null,
+      recorded_by: user?.id,
+    };
+    const { error } = await supabase.from("petty_cash").insert(payload);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setPcLoading(false); return; }
+    toast({ title: pcForm.transaction_type === "deposit" ? "Petty cash deposit recorded" : "Petty cash withdrawal recorded" });
+    setPcDialogOpen(false);
+    setPcLoading(false);
+    fetchPettyCash();
+  }
+
+  async function deletePettyCash(id: string) {
+    await supabase.from("petty_cash").delete().eq("id", id);
+    toast({ title: "Petty cash entry deleted" });
+    fetchPettyCash();
+  }
+
+  async function saveSupplierInvoice() {
+    setSiLoading(true);
+    const payload = {
+      supplier_name: siForm.supplier_name,
+      supplier_contact: siForm.supplier_contact || null,
+      invoice_number: siForm.invoice_number,
+      invoice_date: siForm.invoice_date,
+      due_date: siForm.due_date || null,
+      description: siForm.description || null,
+      amount_usd: parseFloat(siForm.amount_usd) || 0,
+      amount_zig: parseFloat(siForm.amount_zig) || 0,
+      recorded_by: user?.id,
+    };
+    const { error } = await supabase.from("supplier_invoices").insert(payload);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSiLoading(false); return; }
+    toast({ title: "Supplier invoice recorded" });
+    setSiDialogOpen(false);
+    setSiLoading(false);
+    fetchSupplierInvoices();
+  }
+
+  async function deleteSupplierInvoice(id: string) {
+    await supabase.from("supplier_invoices").delete().eq("id", id);
+    toast({ title: "Supplier invoice deleted" });
+    fetchSupplierInvoices();
+  }
+
+  async function saveSupplierPayment() {
+    if (!spInvoice) return;
+    setSpLoading(true);
+    const payUsd = parseFloat(spForm.amount_usd) || 0;
+    const payZig = parseFloat(spForm.amount_zig) || 0;
+    const { error } = await supabase.from("supplier_payments").insert({
+      supplier_invoice_id: spInvoice.id,
+      payment_date: spForm.payment_date,
+      amount_usd: payUsd,
+      amount_zig: payZig,
+      payment_method: spForm.payment_method,
+      reference_number: spForm.reference_number || null,
+      notes: spForm.notes || null,
+      recorded_by: user?.id,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSpLoading(false); return; }
+    // Update supplier invoice paid amounts and status
+    const newPaidUsd = Number(spInvoice.paid_usd) + payUsd;
+    const newPaidZig = Number(spInvoice.paid_zig) + payZig;
+    const newStatus = newPaidUsd >= Number(spInvoice.amount_usd) ? "paid" : newPaidUsd > 0 ? "partial" : "unpaid";
+    await supabase.from("supplier_invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", spInvoice.id);
+    toast({ title: "Supplier payment recorded" });
+    setSpDialogOpen(false);
+    setSpLoading(false);
+    fetchSupplierInvoices();
+  }
+
+
   function openAddFee() {
     setEditingFee(null);
     setFeeForm({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
@@ -603,6 +708,8 @@ export default function FinanceManagement() {
           <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" /> Invoices</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="mr-1 h-4 w-4" /> Payments</TabsTrigger>
           <TabsTrigger value="debtors"><AlertTriangle className="mr-1 h-4 w-4" /> Debtors</TabsTrigger>
+          <TabsTrigger value="petty-cash"><DollarSign className="mr-1 h-4 w-4" /> Petty Cash</TabsTrigger>
+          <TabsTrigger value="supplier-payables"><Ban className="mr-1 h-4 w-4" /> Supplier Payables</TabsTrigger>
           <TabsTrigger value="statements"><User className="mr-1 h-4 w-4" /> Statements</TabsTrigger>
           <TabsTrigger value="expenses"><Receipt className="mr-1 h-4 w-4" /> Expenses</TabsTrigger>
           <TabsTrigger value="reports"><BarChart3 className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
@@ -903,69 +1010,190 @@ export default function FinanceManagement() {
               </CardContent>
             </Card>
 
-            {/* ─── Petty Cash Section ─── */}
+          </div>
+        </TabsContent>
+
+        {/* ═══════ PETTY CASH TAB ═══════ */}
+        <TabsContent value="petty-cash">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+              <div>
+                <CardTitle className="font-heading">Petty Cash</CardTitle>
+                <CardDescription>Track deposits into and withdrawals from the petty cash float</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setPcForm({ transaction_date: new Date().toISOString().split("T")[0], transaction_type: "deposit", description: "", amount_usd: "", amount_zig: "", reference_number: "" }); setPcDialogOpen(true); }}>
+                  <TrendingUp className="mr-1 h-4 w-4" /> Deposit
+                </Button>
+                <Button onClick={() => { setPcForm({ transaction_date: new Date().toISOString().split("T")[0], transaction_type: "withdrawal", description: "", amount_usd: "", amount_zig: "", reference_number: "" }); setPcDialogOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="mr-1 h-4 w-4" /> Withdrawal
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const depositsUsd = pettyCash.filter(t => t.transaction_type === "deposit").reduce((s, t) => s + Number(t.amount_usd), 0);
+                const depositsZig = pettyCash.filter(t => t.transaction_type === "deposit").reduce((s, t) => s + Number(t.amount_zig), 0);
+                const withdrawalsUsd = pettyCash.filter(t => t.transaction_type === "withdrawal").reduce((s, t) => s + Number(t.amount_usd), 0);
+                const withdrawalsZig = pettyCash.filter(t => t.transaction_type === "withdrawal").reduce((s, t) => s + Number(t.amount_zig), 0);
+                const balUsd = depositsUsd - withdrawalsUsd;
+                const balZig = depositsZig - withdrawalsZig;
+                return (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Deposits</p>
+                        <p className="text-xl font-bold font-mono text-green-700">USD {fmt(depositsUsd)}</p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(depositsZig)}</p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Withdrawals</p>
+                        <p className="text-xl font-bold font-mono text-destructive">USD {fmt(withdrawalsUsd)}</p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(withdrawalsZig)}</p>
+                      </div>
+                      <div className={`rounded-lg border p-4 ${balUsd >= 0 ? "bg-green-50/50 border-green-200" : "bg-destructive/5 border-destructive/30"}`}>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Float Balance</p>
+                        <p className={`text-xl font-bold font-mono ${balUsd >= 0 ? "text-green-700" : "text-destructive"}`}>USD {fmt(balUsd)}</p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(balZig)}</p>
+                      </div>
+                    </div>
+                    {pettyCash.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">No petty cash transactions recorded.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead className="text-right">USD</TableHead>
+                              <TableHead className="text-right">ZiG</TableHead>
+                              <TableHead>Reference</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {pettyCash.map(pc => (
+                              <TableRow key={pc.id}>
+                                <TableCell className="text-xs">{pc.transaction_date}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={pc.transaction_type === "deposit" ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}>
+                                    {pc.transaction_type === "deposit" ? "Deposit" : "Withdrawal"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="max-w-[250px] truncate">{pc.description}</TableCell>
+                                <TableCell className={`text-right font-mono ${pc.transaction_type === "deposit" ? "text-green-700" : "text-destructive"}`}>
+                                  {pc.transaction_type === "deposit" ? "+" : "-"}{fmt(pc.amount_usd)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{fmt(pc.amount_zig)}</TableCell>
+                                <TableCell className="text-xs">{pc.reference_number || "—"}</TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="icon" onClick={() => deletePettyCash(pc.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════ SUPPLIER PAYABLES TAB ═══════ */}
+        <TabsContent value="supplier-payables">
+          <div className="space-y-4">
+            {(() => {
+              const totalOwedSupUsd = supplierInvoices.reduce((s, si) => s + (Number(si.amount_usd) - Number(si.paid_usd)), 0);
+              const totalOwedSupZig = supplierInvoices.reduce((s, si) => s + (Number(si.amount_zig) - Number(si.paid_zig)), 0);
+              const unpaidCount = supplierInvoices.filter(si => si.status !== "paid").length;
+              return (
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Card className="border-destructive/30 bg-destructive/5">
+                    <CardContent className="p-5">
+                      <p className="text-xs text-destructive font-medium uppercase tracking-wider">Total Owed to Suppliers</p>
+                      <p className="text-xl font-bold text-destructive">USD {fmt(totalOwedSupUsd)}</p>
+                      <p className="text-sm text-destructive/80">ZiG {fmt(totalOwedSupZig)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Invoices</p>
+                      <p className="text-xl font-bold">{supplierInvoices.length}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Unpaid Invoices</p>
+                      <p className="text-xl font-bold text-destructive">{unpaidCount}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
                 <div>
-                  <CardTitle className="font-heading">Petty Cash</CardTitle>
-                  <CardDescription>Track small cash disbursements and float balance</CardDescription>
+                  <CardTitle className="font-heading">Supplier Invoices</CardTitle>
+                  <CardDescription>Record invoices from suppliers and track payments</CardDescription>
                 </div>
-                <Button onClick={() => { setExpDialogOpen(true); setExpForm({ expense_date: new Date().toISOString().split("T")[0], category: "Petty Cash", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  <Plus className="mr-1 h-4 w-4" /> Record Petty Cash
+                <Button onClick={() => { setSiForm({ supplier_name: "", supplier_contact: "", invoice_number: "", invoice_date: new Date().toISOString().split("T")[0], due_date: "", description: "", amount_usd: "", amount_zig: "" }); setSiDialogOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="mr-1 h-4 w-4" /> Add Supplier Invoice
                 </Button>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  const pettyCash = expenses.filter(e => e.category === "Petty Cash");
-                  const totalPcUsd = pettyCash.reduce((s, e) => s + Number(e.amount_usd || 0), 0);
-                  const totalPcZig = pettyCash.reduce((s, e) => s + Number(e.amount_zig || 0), 0);
-                  return (
-                    <div className="space-y-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-lg border p-4">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Petty Cash Spent (USD)</p>
-                          <p className="text-xl font-bold font-mono">${fmt(totalPcUsd)}</p>
-                        </div>
-                        <div className="rounded-lg border p-4">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Petty Cash Spent (ZiG)</p>
-                          <p className="text-xl font-bold font-mono">ZiG {fmt(totalPcZig)}</p>
-                        </div>
-                      </div>
-                      {pettyCash.length === 0 ? (
-                        <p className="text-center py-6 text-muted-foreground">No petty cash transactions recorded.</p>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className="text-right">USD</TableHead>
-                                <TableHead className="text-right">ZiG</TableHead>
-                                <TableHead>Reference</TableHead>
-                                <TableHead>Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {pettyCash.map(pc => (
-                                <TableRow key={pc.id}>
-                                  <TableCell className="text-xs">{pc.expense_date}</TableCell>
-                                  <TableCell className="max-w-[250px] truncate">{pc.description}</TableCell>
-                                  <TableCell className="text-right font-mono">{fmt(pc.amount_usd)}</TableCell>
-                                  <TableCell className="text-right font-mono">{fmt(pc.amount_zig)}</TableCell>
-                                  <TableCell className="text-xs">{pc.reference_number || "—"}</TableCell>
-                                  <TableCell>
-                                    <Button variant="ghost" size="icon" onClick={() => deleteExpense(pc.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                {supplierInvoices.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No supplier invoices recorded.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Amount USD</TableHead>
+                          <TableHead className="text-right">Paid USD</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supplierInvoices.map(si => (
+                          <TableRow key={si.id}>
+                            <TableCell className="font-medium">{si.supplier_name}</TableCell>
+                            <TableCell className="font-mono text-xs">{si.invoice_number}</TableCell>
+                            <TableCell className="text-xs">{si.invoice_date}</TableCell>
+                            <TableCell className="text-xs">{si.due_date || "—"}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{si.description || "—"}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(si.amount_usd)}</TableCell>
+                            <TableCell className="text-right font-mono text-green-700">{fmt(si.paid_usd)}</TableCell>
+                            <TableCell className="text-right font-mono text-destructive">{fmt(Number(si.amount_usd) - Number(si.paid_usd))}</TableCell>
+                            <TableCell>{statusBadge(si.status)}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {si.status !== "paid" && (
+                                  <Button variant="ghost" size="icon" title="Record payment" onClick={() => { setSpInvoice(si); setSpForm({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" }); setSpDialogOpen(true); }}>
+                                    <CreditCard className="h-4 w-4 text-green-700" />
+                                  </Button>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={() => deleteSupplierInvoice(si.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1600,6 +1828,174 @@ export default function FinanceManagement() {
             }}>
               {deletingDebtor && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Confirm Removal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Petty Cash Dialog */}
+      <Dialog open={pcDialogOpen} onOpenChange={setPcDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{pcForm.transaction_type === "deposit" ? "Deposit to Petty Cash" : "Petty Cash Withdrawal"}</DialogTitle>
+            <DialogDescription>Record a {pcForm.transaction_type} transaction for the petty cash float.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Date</Label>
+                <Input type="date" value={pcForm.transaction_date} onChange={e => setPcForm(p => ({ ...p, transaction_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Type</Label>
+                <Select value={pcForm.transaction_type} onValueChange={v => setPcForm(p => ({ ...p, transaction_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deposit">Deposit</SelectItem>
+                    <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input value={pcForm.description} onChange={e => setPcForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Office supplies, Float top-up" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD</Label>
+                <Input type="number" step="0.01" value={pcForm.amount_usd} onChange={e => setPcForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={pcForm.amount_zig} onChange={e => setPcForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={pcForm.reference_number} onChange={e => setPcForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPcDialogOpen(false)}>Cancel</Button>
+            <Button onClick={savePettyCash} disabled={pcLoading || !pcForm.description}>
+              {pcLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Invoice Dialog */}
+      <Dialog open={siDialogOpen} onOpenChange={setSiDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Supplier Invoice</DialogTitle>
+            <DialogDescription>Record an invoice received from a supplier.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input value={siForm.supplier_name} onChange={e => setSiForm(p => ({ ...p, supplier_name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input value={siForm.supplier_contact} onChange={e => setSiForm(p => ({ ...p, supplier_contact: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Invoice Number *</Label>
+                <Input value={siForm.invoice_number} onChange={e => setSiForm(p => ({ ...p, invoice_number: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Invoice Date</Label>
+                <Input type="date" value={siForm.invoice_date} onChange={e => setSiForm(p => ({ ...p, invoice_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Due Date</Label>
+                <Input type="date" value={siForm.due_date} onChange={e => setSiForm(p => ({ ...p, due_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Description</Label>
+                <Input value={siForm.description} onChange={e => setSiForm(p => ({ ...p, description: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={siForm.amount_usd} onChange={e => setSiForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={siForm.amount_zig} onChange={e => setSiForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSiDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveSupplierInvoice} disabled={siLoading || !siForm.supplier_name || !siForm.invoice_number}>
+              {siLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Save Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Payment Dialog */}
+      <Dialog open={spDialogOpen} onOpenChange={v => { if (!v) { setSpDialogOpen(false); setSpInvoice(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Supplier Payment</DialogTitle>
+            <DialogDescription>
+              {spInvoice && (
+                <span>Payment for <span className="font-semibold">{spInvoice.supplier_name}</span> — Invoice #{spInvoice.invoice_number} (Balance: USD {fmt(Number(spInvoice.amount_usd) - Number(spInvoice.paid_usd))})</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input type="date" value={spForm.payment_date} onChange={e => setSpForm(p => ({ ...p, payment_date: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select value={spForm.payment_method} onValueChange={v => setSpForm(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={spForm.amount_usd} onChange={e => setSpForm(p => ({ ...p, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={spForm.amount_zig} onChange={e => setSpForm(p => ({ ...p, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input value={spForm.reference_number} onChange={e => setSpForm(p => ({ ...p, reference_number: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={spForm.notes} onChange={e => setSpForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSpDialogOpen(false); setSpInvoice(null); }}>Cancel</Button>
+            <Button onClick={saveSupplierPayment} disabled={spLoading || (!spForm.amount_usd && !spForm.amount_zig)}>
+              {spLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Record Payment
             </Button>
           </DialogFooter>
         </DialogContent>

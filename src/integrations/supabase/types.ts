@@ -1767,6 +1767,42 @@ export type Database = {
         }
         Relationships: []
       }
+      petty_cash: {
+        Row: {
+          amount_usd: number
+          amount_zig: number
+          created_at: string
+          description: string
+          id: string
+          recorded_by: string | null
+          reference_number: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          description: string
+          id?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Update: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          description?: string
+          id?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2272,6 +2308,104 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      supplier_invoices: {
+        Row: {
+          amount_usd: number
+          amount_zig: number
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          paid_usd: number
+          paid_zig: number
+          recorded_by: string | null
+          status: string
+          supplier_contact: string | null
+          supplier_name: string
+        }
+        Insert: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          paid_usd?: number
+          paid_zig?: number
+          recorded_by?: string | null
+          status?: string
+          supplier_contact?: string | null
+          supplier_name: string
+        }
+        Update: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          paid_usd?: number
+          paid_zig?: number
+          recorded_by?: string | null
+          status?: string
+          supplier_contact?: string | null
+          supplier_name?: string
+        }
+        Relationships: []
+      }
+      supplier_payments: {
+        Row: {
+          amount_usd: number
+          amount_zig: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          recorded_by: string | null
+          reference_number: string | null
+          supplier_invoice_id: string
+        }
+        Insert: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          supplier_invoice_id: string
+        }
+        Update: {
+          amount_usd?: number
+          amount_zig?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          supplier_invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payments_supplier_invoice_id_fkey"
+            columns: ["supplier_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       textbook_issues: {
         Row: {
