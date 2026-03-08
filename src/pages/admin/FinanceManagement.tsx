@@ -716,8 +716,9 @@ export default function FinanceManagement() {
                         <TableHead className="text-right">Total ZiG</TableHead>
                         <TableHead className="text-right">Paid USD</TableHead>
                         <TableHead className="text-right">Paid ZiG</TableHead>
-                        <TableHead>Status</TableHead>
+                         <TableHead>Status</TableHead>
                         <TableHead>Due</TableHead>
+                        {isFinanceOrAdmin && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -733,6 +734,11 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(inv.paid_zig)}</TableCell>
                           <TableCell>{statusBadge(inv.status)}</TableCell>
                           <TableCell className="text-xs">{inv.due_date || "—"}</TableCell>
+                          {isFinanceOrAdmin && (
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
