@@ -590,70 +590,173 @@ export default function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update role and position for {editUser?.email}</DialogDescription>
+            <DialogDescription>Update details for {editUser?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                value={editForm.full_name}
-                onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Portal Access Role</Label>
-              <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {portalRoles.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+                <>
+                  <TabsTrigger value="contact">Contact</TabsTrigger>
+                  <TabsTrigger value="employment">Employment</TabsTrigger>
+                  <TabsTrigger value="subjects">Subjects</TabsTrigger>
+                </>
+              )}
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input value={editForm.full_name} onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Title (e.g. Mr, Mrs, Dr)</Label>
+                  <Input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Portal Access Role</Label>
+                <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {portalRoles.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Staff Position</Label>
+                      <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {staffRoles.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
+                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No department</SelectItem>
+                          {departmentOptions.map((d) => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assigned Class (Class Teacher)</Label>
+                    <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No class assigned</SelectItem>
+                        {classes.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bio</Label>
+                    <Textarea value={editForm.bio} onChange={(e) => setEditForm((p) => ({ ...p, bio: e.target.value }))} rows={3} />
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
             {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
               <>
-                <div className="space-y-2">
-                  <Label>Staff Position / Title</Label>
-                  <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {staffRoles.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No department</SelectItem>
-                      {departmentOptions.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Assigned Class (Class Teacher)</Label>
-                  <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No class assigned</SelectItem>
-                      {classes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <TabsContent value="contact" className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input value={editForm.phone} onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="07XXXXXXXX" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Emergency Contact</Label>
+                      <Input value={editForm.emergency_contact} onChange={(e) => setEditForm((p) => ({ ...p, emergency_contact: e.target.value }))} placeholder="07XXXXXXXX" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>National ID</Label>
+                      <Input value={editForm.national_id} onChange={(e) => setEditForm((p) => ({ ...p, national_id: e.target.value }))} placeholder="XX-XXXXXXX-X-XX" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Textarea value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} rows={2} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="employment" className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Employment Date</Label>
+                      <Input type="date" value={editForm.employment_date} onChange={(e) => setEditForm((p) => ({ ...p, employment_date: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Qualifications</Label>
+                      <Input value={editForm.qualifications} onChange={(e) => setEditForm((p) => ({ ...p, qualifications: e.target.value }))} placeholder="e.g. B.Ed, M.Sc" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>NSSA Number</Label>
+                      <Input value={editForm.nssa_number} onChange={(e) => setEditForm((p) => ({ ...p, nssa_number: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PAYE Number</Label>
+                      <Input value={editForm.paye_number} onChange={(e) => setEditForm((p) => ({ ...p, paye_number: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bank Details</Label>
+                    <Textarea value={editForm.bank_details} onChange={(e) => setEditForm((p) => ({ ...p, bank_details: e.target.value }))} rows={2} placeholder="Bank name, account number, branch" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="subjects" className="space-y-4">
+                  <Label>Subjects Taught</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {subjectsList.map((subject) => (
+                      <Badge
+                        key={subject}
+                        variant={editForm.subjects_taught.includes(subject) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const current = editForm.subjects_taught;
+                          const updated = current.includes(subject)
+                            ? current.filter((s) => s !== subject)
+                            : [...current, subject];
+                          setEditForm((p) => ({ ...p, subjects_taught: updated }));
+                        }}
+                      >
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+                  {editForm.subjects_taught.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {editForm.subjects_taught.join(", ")}
+                    </p>
+                  )}
+                </TabsContent>
               </>
             )}
-          </div>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
             <Button onClick={handleUpdateUser} disabled={saving}>
