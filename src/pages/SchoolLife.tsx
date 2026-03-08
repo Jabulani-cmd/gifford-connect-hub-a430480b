@@ -122,7 +122,7 @@ export default function SchoolLife() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground italic py-8">No SDC meetings scheduled at this time.</p>
-              )
+              )}
             </TabsContent>
 
             {/* Parent-Teacher Tab */}
