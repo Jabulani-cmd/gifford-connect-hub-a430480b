@@ -871,6 +871,7 @@ export default function FinanceManagement() {
                             <TableHead className="text-right">Owed USD</TableHead>
                             <TableHead className="text-right">Owed ZiG</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -885,6 +886,11 @@ export default function FinanceManagement() {
                               <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</TableCell>
                               <TableCell className="text-right font-mono text-destructive">{fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</TableCell>
                               <TableCell>{statusBadge(d.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { setDebtorToDelete(d); setDeleteDebtorOpen(true); }} title="Remove debtor">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
