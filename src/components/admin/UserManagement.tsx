@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ const staffRoleLabels: Record<string, string> = Object.fromEntries(staffRoles.ma
 
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports", "Administration"];
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
+const subjectsList = ["Mathematics", "English", "Shona", "Ndebele", "History", "Geography", "Physics", "Chemistry", "Biology", "Accounts", "Commerce", "Computer Science", "Agriculture", "Technical Graphics", "Food & Nutrition", "Fashion & Fabrics", "Music", "Art", "Physical Education"];
 
 interface ManagedUser {
   id: string;
@@ -227,16 +229,22 @@ export default function UserManagement() {
 
   // Edit user state
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
-  const [editForm, setEditForm] = useState({ portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "" });
+  const [editForm, setEditForm] = useState({
+    portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "",
+    phone: "", email: "", address: "", emergency_contact: "", qualifications: "",
+    bio: "", title: "", subjects_taught: [] as string[], national_id: "",
+    nssa_number: "", paye_number: "", bank_details: "", employment_date: "",
+  });
   const [saving, setSaving] = useState(false);
 
   const openEditDialog = async (user: ManagedUser) => {
     setEditUser(user);
-    // Find current class assignment for this staff member
     let currentClassId = "";
+    let staffDetails: any = {};
     if (user.portal_role === "teacher" || user.portal_role === "admin") {
-      const { data: staffRecord } = await supabase.from("staff").select("id").eq("user_id", user.id).maybeSingle();
+      const { data: staffRecord } = await supabase.from("staff").select("*").eq("user_id", user.id).maybeSingle();
       if (staffRecord) {
+        staffDetails = staffRecord;
         const { data: classRecord } = await supabase.from("classes").select("id").eq("class_teacher_id", staffRecord.id).maybeSingle();
         if (classRecord) currentClassId = classRecord.id;
       }
@@ -247,6 +255,19 @@ export default function UserManagement() {
       department: user.department || "",
       full_name: user.full_name,
       assigned_class_id: currentClassId,
+      phone: staffDetails.phone || "",
+      email: staffDetails.email || user.email || "",
+      address: staffDetails.address || "",
+      emergency_contact: staffDetails.emergency_contact || "",
+      qualifications: staffDetails.qualifications || "",
+      bio: staffDetails.bio || "",
+      title: staffDetails.title || "",
+      subjects_taught: staffDetails.subjects_taught || [],
+      national_id: staffDetails.national_id || "",
+      nssa_number: staffDetails.nssa_number || "",
+      paye_number: staffDetails.paye_number || "",
+      bank_details: staffDetails.bank_details || "",
+      employment_date: staffDetails.employment_date || "",
     });
   };
 
@@ -256,6 +277,7 @@ export default function UserManagement() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
+      const isStaff = editForm.portal_role === "teacher" || editForm.portal_role === "admin";
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: "POST",
         headers: {
@@ -267,10 +289,23 @@ export default function UserManagement() {
           action: "update-user",
           user_id: editUser.id,
           portal_role: editForm.portal_role,
-          staff_role: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.staff_role : undefined,
-          department: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") ? editForm.department : undefined,
           full_name: editForm.full_name,
-          assigned_class_id: (editForm.portal_role === "teacher" || editForm.portal_role === "admin") && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
+          staff_role: isStaff ? editForm.staff_role : undefined,
+          department: isStaff ? editForm.department : undefined,
+          assigned_class_id: isStaff && editForm.assigned_class_id ? editForm.assigned_class_id : undefined,
+          phone: isStaff ? editForm.phone : undefined,
+          email: isStaff ? editForm.email : undefined,
+          address: isStaff ? editForm.address : undefined,
+          emergency_contact: isStaff ? editForm.emergency_contact : undefined,
+          qualifications: isStaff ? editForm.qualifications : undefined,
+          bio: isStaff ? editForm.bio : undefined,
+          title: isStaff ? editForm.title : undefined,
+          subjects_taught: isStaff ? editForm.subjects_taught : undefined,
+          national_id: isStaff ? editForm.national_id : undefined,
+          nssa_number: isStaff ? editForm.nssa_number : undefined,
+          paye_number: isStaff ? editForm.paye_number : undefined,
+          bank_details: isStaff ? editForm.bank_details : undefined,
+          employment_date: isStaff ? editForm.employment_date : undefined,
         }),
       });
       const data = await res.json();
@@ -557,70 +592,173 @@ export default function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update role and position for {editUser?.email}</DialogDescription>
+            <DialogDescription>Update details for {editUser?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                value={editForm.full_name}
-                onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Portal Access Role</Label>
-              <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {portalRoles.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+                <>
+                  <TabsTrigger value="contact">Contact</TabsTrigger>
+                  <TabsTrigger value="employment">Employment</TabsTrigger>
+                  <TabsTrigger value="subjects">Subjects</TabsTrigger>
+                </>
+              )}
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input value={editForm.full_name} onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Title (e.g. Mr, Mrs, Dr)</Label>
+                  <Input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Portal Access Role</Label>
+                <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {portalRoles.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Staff Position</Label>
+                      <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {staffRoles.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
+                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No department</SelectItem>
+                          {departmentOptions.map((d) => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assigned Class (Class Teacher)</Label>
+                    <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No class assigned</SelectItem>
+                        {classes.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bio</Label>
+                    <Textarea value={editForm.bio} onChange={(e) => setEditForm((p) => ({ ...p, bio: e.target.value }))} rows={3} />
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
             {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
               <>
-                <div className="space-y-2">
-                  <Label>Staff Position / Title</Label>
-                  <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {staffRoles.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No department</SelectItem>
-                      {departmentOptions.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Assigned Class (Class Teacher)</Label>
-                  <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No class assigned</SelectItem>
-                      {classes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <TabsContent value="contact" className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input value={editForm.phone} onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="07XXXXXXXX" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Emergency Contact</Label>
+                      <Input value={editForm.emergency_contact} onChange={(e) => setEditForm((p) => ({ ...p, emergency_contact: e.target.value }))} placeholder="07XXXXXXXX" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>National ID</Label>
+                      <Input value={editForm.national_id} onChange={(e) => setEditForm((p) => ({ ...p, national_id: e.target.value }))} placeholder="XX-XXXXXXX-X-XX" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Textarea value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} rows={2} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="employment" className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Employment Date</Label>
+                      <Input type="date" value={editForm.employment_date} onChange={(e) => setEditForm((p) => ({ ...p, employment_date: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Qualifications</Label>
+                      <Input value={editForm.qualifications} onChange={(e) => setEditForm((p) => ({ ...p, qualifications: e.target.value }))} placeholder="e.g. B.Ed, M.Sc" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>NSSA Number</Label>
+                      <Input value={editForm.nssa_number} onChange={(e) => setEditForm((p) => ({ ...p, nssa_number: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PAYE Number</Label>
+                      <Input value={editForm.paye_number} onChange={(e) => setEditForm((p) => ({ ...p, paye_number: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bank Details</Label>
+                    <Textarea value={editForm.bank_details} onChange={(e) => setEditForm((p) => ({ ...p, bank_details: e.target.value }))} rows={2} placeholder="Bank name, account number, branch" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="subjects" className="space-y-4">
+                  <Label>Subjects Taught</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {subjectsList.map((subject) => (
+                      <Badge
+                        key={subject}
+                        variant={editForm.subjects_taught.includes(subject) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const current = editForm.subjects_taught;
+                          const updated = current.includes(subject)
+                            ? current.filter((s) => s !== subject)
+                            : [...current, subject];
+                          setEditForm((p) => ({ ...p, subjects_taught: updated }));
+                        }}
+                      >
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+                  {editForm.subjects_taught.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {editForm.subjects_taught.join(", ")}
+                    </p>
+                  )}
+                </TabsContent>
               </>
             )}
-          </div>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
             <Button onClick={handleUpdateUser} disabled={saving}>
