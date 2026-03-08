@@ -94,7 +94,12 @@ Deno.serve(async (req) => {
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const exists = existingUsers?.users?.some((u) => u.email === email);
       if (exists) {
-        return new Response(JSON.stringify({ message: "Teacher already exists" }), {
+        // Update password for existing teacher
+        const existingUser = existingUsers?.users?.find((u) => u.email === email);
+        if (existingUser && password) {
+          await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+        }
+        return new Response(JSON.stringify({ message: "Teacher already exists, password updated" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
