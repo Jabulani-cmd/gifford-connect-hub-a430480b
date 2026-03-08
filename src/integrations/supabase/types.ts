@@ -946,6 +946,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       parent_students: {
         Row: {
           created_at: string
@@ -1363,6 +1396,66 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      study_materials: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          description: string | null
+          download_count: number
+          file_url: string | null
+          id: string
+          is_published: boolean
+          link_url: string | null
+          material_type: string
+          subject_id: string | null
+          teacher_id: string
+          title: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          description?: string | null
+          download_count?: number
+          file_url?: string | null
+          id?: string
+          is_published?: boolean
+          link_url?: string | null
+          material_type?: string
+          subject_id?: string | null
+          teacher_id: string
+          title: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          description?: string | null
+          download_count?: number
+          file_url?: string | null
+          id?: string
+          is_published?: boolean
+          link_url?: string | null
+          material_type?: string
+          subject_id?: string | null
+          teacher_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_materials_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_materials_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subjects: {
         Row: {
