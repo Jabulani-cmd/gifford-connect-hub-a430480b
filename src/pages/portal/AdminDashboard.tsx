@@ -884,6 +884,16 @@ export default function AdminDashboard() {
           <TabsContent value="audit">
             <AuditLogs />
           </TabsContent>
+
+          {/* Data Migration Tab */}
+          <TabsContent value="migration">
+            <DataMigration />
+          </TabsContent>
+
+          {/* Go-Live Checklist Tab */}
+          <TabsContent value="golive">
+            <GoLiveChecklist />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
