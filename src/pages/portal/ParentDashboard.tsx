@@ -251,7 +251,7 @@ export default function ParentDashboard() {
       {/* Mobile */}
       <div className="md:hidden">
         <main className="container px-4 py-4 space-y-4">
-          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} />
+          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} onLinked={fetchInitialData} />
           {/* Tab pills */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {tabs.map((t) => (
