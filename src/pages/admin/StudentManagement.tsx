@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy } from "lucide-react";
 import { studentFormSchema, type StudentFormData, zimPhoneRegex } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 
@@ -64,6 +64,67 @@ const emptyForm: StudentFormData = {
   enrollment_date: new Date().toISOString().split("T")[0],
   status: "active",
 };
+
+function GenerateCodeButton({ studentId }: { studentId: string }) {
+  const { toast } = useToast();
+  const [code, setCode] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/link-child`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "generate-code", student_id: studentId }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setCode(data.code);
+      toast({ title: "Verification code generated" });
+    } catch (err: any) {
+      toast({ title: "Failed to generate code", description: err.message, variant: "destructive" });
+    }
+    setGenerating(false);
+  };
+
+  const copyCode = () => {
+    if (code) {
+      navigator.clipboard.writeText(code);
+      toast({ title: "Code copied to clipboard" });
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-dashed p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <LinkIcon className="h-4 w-4 text-primary" />
+        <p className="text-sm font-semibold">Parent Linking Code</p>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Generate a verification code for parents to link their account to this student.
+      </p>
+      {code ? (
+        <div className="flex items-center gap-3">
+          <code className="rounded bg-muted px-4 py-2 text-lg font-mono font-bold tracking-widest">{code}</code>
+          <Button variant="outline" size="sm" onClick={copyCode}><Copy className="h-3.5 w-3.5 mr-1" /> Copy</Button>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" onClick={generate} disabled={generating}>
+          {generating ? "Generating..." : "Generate Code"}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function StudentManagement() {
   const { toast } = useToast();
@@ -501,6 +562,7 @@ export default function StudentManagement() {
                       <p className={`text-sm ${selectedStudent.has_medical_alert ? "text-destructive font-medium" : ""}`}>{selectedStudent.medical_conditions}</p>
                     </div>
                   )}
+                  <GenerateCodeButton studentId={selectedStudent.id} />
                 </TabsContent>
                 <TabsContent value="academics">
                   <div className="py-8 text-center text-muted-foreground">

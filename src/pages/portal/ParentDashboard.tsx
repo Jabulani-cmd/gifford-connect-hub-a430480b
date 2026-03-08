@@ -4,16 +4,20 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   LogOut, Users, GraduationCap, Calendar, DollarSign, Bell,
-  TrendingUp, BookOpen, Trophy, Award, ChevronRight
+  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements";
@@ -224,7 +228,7 @@ export default function ParentDashboard() {
         </aside>
 
         <main className="flex-1 p-6 max-w-4xl">
-          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} />
+          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} onLinked={fetchInitialData} />
           <TabContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -247,7 +251,7 @@ export default function ParentDashboard() {
       {/* Mobile */}
       <div className="md:hidden">
         <main className="container px-4 py-4 space-y-4">
-          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} />
+          <ChildSelector children={children} selectedChildId={selectedChildId} onSelect={setSelectedChildId} onLinked={fetchInitialData} />
           {/* Tab pills */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {tabs.map((t) => (
@@ -286,10 +290,99 @@ export default function ParentDashboard() {
   );
 }
 
-function ChildSelector({ children, selectedChildId, onSelect }: {
+function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [admissionNumber, setAdmissionNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [linking, setLinking] = useState(false);
+  const { toast } = useToast();
+
+  const handleLink = async () => {
+    if (!admissionNumber.trim() || !verificationCode.trim()) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    setLinking(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/link-child`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            action: "link",
+            admission_number: admissionNumber.trim(),
+            verification_code: verificationCode.trim().toUpperCase(),
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to link child");
+      toast({ title: "Child linked!", description: `${data.student.full_name} has been linked to your account.` });
+      setOpen(false);
+      setAdmissionNumber("");
+      setVerificationCode("");
+      onLinked();
+    } catch (err: any) {
+      toast({ title: "Link failed", description: err.message, variant: "destructive" });
+    }
+    setLinking(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Plus className="h-3.5 w-3.5" /> Link Child
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LinkIcon className="h-5 w-5 text-primary" /> Link Your Child
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-muted-foreground">
+            Enter your child's admission number and the verification code provided by the school.
+          </p>
+          <div className="space-y-2">
+            <Label>Admission Number</Label>
+            <Input
+              placeholder="e.g. GHS-2026-001"
+              value={admissionNumber}
+              onChange={(e) => setAdmissionNumber(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Verification Code</Label>
+            <Input
+              placeholder="e.g. ABC123"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+              maxLength={6}
+              className="tracking-widest font-mono text-center text-lg"
+            />
+          </div>
+          <Button onClick={handleLink} disabled={linking} className="w-full">
+            {linking ? "Linking..." : "Link Child"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChildSelector({ children, selectedChildId, onSelect, onLinked }: {
   children: ChildInfo[];
   selectedChildId: string | null;
   onSelect: (id: string) => void;
+  onLinked: () => void;
 }) {
   if (children.length === 0) {
     return (
@@ -297,7 +390,8 @@ function ChildSelector({ children, selectedChildId, onSelect }: {
         <CardContent className="py-8 text-center">
           <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No children linked to your account yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Contact the school administration to link your child's record.</p>
+          <p className="text-xs text-muted-foreground mt-1 mb-3">Use a verification code from the school to link your child.</p>
+          <LinkChildDialog onLinked={onLinked} />
         </CardContent>
       </Card>
     );
@@ -306,20 +400,23 @@ function ChildSelector({ children, selectedChildId, onSelect }: {
   if (children.length === 1) {
     const child = children[0];
     return (
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
-          <GraduationCap className="h-5 w-5 text-secondary" />
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
+            <GraduationCap className="h-5 w-5 text-secondary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">{child.full_name}</p>
+            <p className="text-xs text-muted-foreground">{child.form} {child.stream} · {child.admission_number}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">{child.full_name}</p>
-          <p className="text-xs text-muted-foreground">{child.form} {child.stream} · {child.admission_number}</p>
-        </div>
+        <LinkChildDialog onLinked={onLinked} />
       </div>
     );
   }
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 flex items-center gap-3">
       <Select value={selectedChildId || ""} onValueChange={onSelect}>
         <SelectTrigger className="w-full sm:w-72">
           <SelectValue placeholder="Select child" />
@@ -332,6 +429,7 @@ function ChildSelector({ children, selectedChildId, onSelect }: {
           ))}
         </SelectContent>
       </Select>
+      <LinkChildDialog onLinked={onLinked} />
     </div>
   );
 }
