@@ -847,6 +847,11 @@ export default function AdminDashboard() {
           <TabsContent value="academics">
             <AcademicManagement />
           </TabsContent>
+
+          {/* Boarding Tab */}
+          <TabsContent value="boarding">
+            <BoardingManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
