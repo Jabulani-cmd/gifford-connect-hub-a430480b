@@ -153,7 +153,7 @@ export default function UserManagement() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       toast({ title: "User created successfully!" });
-      setForm({ full_name: "", email: "", password: "", portal_role: "teacher", staff_role: "teacher", department: "", phone: "", grade: "", class_name: "" });
+      setForm({ full_name: "", email: "", password: "", portal_role: "teacher", staff_role: "teacher", department: "", phone: "", grade: "", class_name: "", assigned_class_id: "" });
       fetchUsers();
     } catch (err: any) {
       toast({ title: "Failed to create user", description: err.message, variant: "destructive" });
