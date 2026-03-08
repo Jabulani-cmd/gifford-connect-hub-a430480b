@@ -924,9 +924,24 @@ export default function FinanceManagement() {
                 <CardTitle className="font-heading">Payments</CardTitle>
                 <CardDescription>{payments.length} payments recorded</CardDescription>
               </div>
-              <Button onClick={() => { setPayDialogOpen(true); setSelectedStudent(null); setStudentInvoices([]); setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" }); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="mr-1 h-4 w-4" /> Record Payment
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Plus className="mr-1 h-4 w-4" /> Record Payment <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => { setPayDialogOpen(true); setSelectedStudent(null); setStudentInvoices([]); setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" }); }}>
+                    <User className="mr-2 h-4 w-4" /> Student Fee Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setSpInvoice(null); setSpDialogOpen(true); setSpForm({ payment_date: new Date().toISOString().split("T")[0], amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", notes: "" }); }}>
+                    <FileText className="mr-2 h-4 w-4" /> Supplier Invoice Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setCodDialogOpen(true); setCodForm({ supplier_name: "", supplier_contact: "", description: "", amount_usd: "", amount_zig: "", payment_method: "Cash", payment_date: new Date().toISOString().split("T")[0], reference_number: "", notes: "" }); }}>
+                    <Truck className="mr-2 h-4 w-4" /> Cash on Delivery (COD)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardHeader>
             <CardContent>
               {payments.length === 0 ? (
