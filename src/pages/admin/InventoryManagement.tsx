@@ -209,8 +209,9 @@ export default function InventoryManagement() {
     setTimeout(async () => {
       if (barcodeCanvasRef.current) {
         try {
-          const bwipjs = await import("bwip-js");
-          (bwipjs as any).toCanvas(barcodeCanvasRef.current, {
+          const bwipjs = await import("bwip-js") as any;
+          const render = bwipjs.default?.toCanvas || bwipjs.toCanvas;
+          render(barcodeCanvasRef.current, {
             bcid: "code128", text: item.item_code,
             scale: 3, height: 10, includetext: true,
             textxalign: "center"
