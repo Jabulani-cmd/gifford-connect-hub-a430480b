@@ -72,7 +72,12 @@ const App = () => (
             } />
             <Route path="/portal/parent-teacher" element={
               <ProtectedRoute allowedRoles={["parent"]}>
-                <ParentTeacherDashboard />
+                <ParentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/parent" element={
+              <ProtectedRoute allowedRoles={["parent"]}>
+                <ParentDashboard />
               </ProtectedRoute>
             } />
             <Route path="/portal/admin" element={
