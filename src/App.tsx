@@ -64,32 +64,32 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/portal/student" element={
               <ProtectedRoute allowedRoles={["student"]}>
-                <StudentDashboard />
+                <AuthenticatedLayout><StudentDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/teacher" element={
               <ProtectedRoute allowedRoles={["teacher"]}>
-                <TeacherDashboard />
+                <AuthenticatedLayout><TeacherDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/parent-teacher" element={
               <ProtectedRoute allowedRoles={["parent"]}>
-                <ParentDashboard />
+                <AuthenticatedLayout><ParentDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/parent" element={
               <ProtectedRoute allowedRoles={["parent"]}>
-                <ParentDashboard />
+                <AuthenticatedLayout><ParentDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/admin" element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
+                <AuthenticatedLayout><AdminDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/finance" element={
               <ProtectedRoute allowedRoles={["finance", "admin"]}>
-                <FinanceDashboard />
+                <AuthenticatedLayout><FinanceDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
