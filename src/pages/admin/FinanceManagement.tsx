@@ -744,6 +744,7 @@ export default function FinanceManagement() {
                               <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </TableCell>
                           )}
+                        </TableRow>
                       ))}
                     </TableBody>
                   </Table>
