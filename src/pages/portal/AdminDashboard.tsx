@@ -870,6 +870,16 @@ export default function AdminDashboard() {
           <TabsContent value="communication">
             <CommunicationModule />
           </TabsContent>
+
+          {/* EMIS Reports Tab */}
+          <TabsContent value="reports">
+            <EMISReports />
+          </TabsContent>
+
+          {/* Audit Logs Tab */}
+          <TabsContent value="audit">
+            <AuditLogs />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
