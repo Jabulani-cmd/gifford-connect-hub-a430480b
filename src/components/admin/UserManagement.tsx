@@ -603,6 +603,18 @@ export default function UserManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Assigned Class (Class Teacher)</Label>
+                  <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No class assigned</SelectItem>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </>
             )}
           </div>
