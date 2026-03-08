@@ -264,7 +264,9 @@ Deno.serve(async (req) => {
 
     // ==================== UPDATE USER ====================
     if (action === "update-user") {
-      const { user_id, portal_role, staff_role, department, full_name, assigned_class_id } = payload;
+      const { user_id, portal_role, staff_role, department, full_name, assigned_class_id,
+        phone, email: staffEmail, address, emergency_contact, qualifications, bio, title,
+        subjects_taught, national_id, nssa_number, paye_number, bank_details, employment_date } = payload;
       if (!user_id) {
         return new Response(JSON.stringify({ error: "user_id required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -282,7 +284,11 @@ Deno.serve(async (req) => {
       }
 
       // Update staff record if staff_role or department provided
-      if (staff_role || department !== undefined) {
+      if (staff_role || department !== undefined || phone !== undefined || staffEmail !== undefined ||
+          address !== undefined || emergency_contact !== undefined || qualifications !== undefined ||
+          bio !== undefined || title !== undefined || subjects_taught !== undefined ||
+          national_id !== undefined || nssa_number !== undefined || paye_number !== undefined ||
+          bank_details !== undefined || employment_date !== undefined) {
         const { data: existingStaff } = await supabaseAdmin.from("staff").select("id").eq("user_id", user_id).maybeSingle();
         
         if (existingStaff) {
@@ -297,19 +303,29 @@ Deno.serve(async (req) => {
           }
           if (department !== undefined) updates.department = department || null;
           if (full_name) updates.full_name = full_name;
+          if (phone !== undefined) updates.phone = phone || null;
+          if (staffEmail !== undefined) updates.email = staffEmail || null;
+          if (address !== undefined) updates.address = address || null;
+          if (emergency_contact !== undefined) updates.emergency_contact = emergency_contact || null;
+          if (qualifications !== undefined) updates.qualifications = qualifications || null;
+          if (bio !== undefined) updates.bio = bio || null;
+          if (title !== undefined) updates.title = title || null;
+          if (subjects_taught !== undefined) updates.subjects_taught = subjects_taught;
+          if (national_id !== undefined) updates.national_id = national_id || null;
+          if (nssa_number !== undefined) updates.nssa_number = nssa_number || null;
+          if (paye_number !== undefined) updates.paye_number = paye_number || null;
+          if (bank_details !== undefined) updates.bank_details = bank_details || null;
+          if (employment_date !== undefined) updates.employment_date = employment_date || null;
           await supabaseAdmin.from("staff").update(updates).eq("user_id", user_id);
 
           // Update class teacher assignment
           if (assigned_class_id !== undefined) {
-            // Remove from any previously assigned class
             await supabaseAdmin.from("classes").update({ class_teacher_id: null }).eq("class_teacher_id", existingStaff.id);
-            // Assign to new class if provided
             if (assigned_class_id) {
               await supabaseAdmin.from("classes").update({ class_teacher_id: existingStaff.id }).eq("id", assigned_class_id);
             }
           }
         } else if (portal_role === "teacher" || portal_role === "admin") {
-          // Create staff record if switching to a staff role
           const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("id", user_id).maybeSingle();
           let staffCategory = "teaching";
           if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
@@ -317,11 +333,23 @@ Deno.serve(async (req) => {
           else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
           const { data: newStaff } = await supabaseAdmin.from("staff").insert({
             full_name: full_name || profile?.full_name || "",
-            email: profile?.email || "",
+            email: staffEmail || profile?.email || "",
             user_id,
             role: staff_role || "teacher",
             category: staffCategory,
             department: department || null,
+            phone: phone || null,
+            address: address || null,
+            emergency_contact: emergency_contact || null,
+            qualifications: qualifications || null,
+            bio: bio || null,
+            title: title || null,
+            subjects_taught: subjects_taught || null,
+            national_id: national_id || null,
+            nssa_number: nssa_number || null,
+            paye_number: paye_number || null,
+            bank_details: bank_details || null,
+            employment_date: employment_date || null,
           }).select("id").single();
 
           if (assigned_class_id && newStaff) {
