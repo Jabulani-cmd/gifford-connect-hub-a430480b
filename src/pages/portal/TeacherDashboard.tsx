@@ -236,6 +236,8 @@ export default function TeacherDashboard() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
       toast({ title: "Material uploaded!" });
+      // Create self-notification for record
+      await supabase.from("notifications").insert({ user_id: user!.id, title: "Material Uploaded", message: `"${matForm.title}" has been published.`, type: "material" });
       setMatForm({ title: "", description: "", class_id: "", subject_id: "", material_type: "document", link_url: "", is_published: true });
       setMatFile(null);
       if (matFileRef.current) matFileRef.current.value = "";
