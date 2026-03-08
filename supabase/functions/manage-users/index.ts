@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
 
     // ==================== CREATE USER (unified) ====================
     if (action === "create-user") {
-      const { email, password, full_name, portal_role, staff_role, department, phone, grade, class_name } = payload;
+      const { email, password, full_name, portal_role, staff_role, department, phone, grade, class_name, assigned_class_id } = payload;
 
       if (!email || !password || !full_name || !portal_role) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -150,21 +150,13 @@ Deno.serve(async (req) => {
 
       // If staff role (teacher or admin), add to staff table
       if (portal_role === "teacher" || portal_role === "admin") {
-        const category = ["principal", "deputy_principal", "hod", "teacher", "senior_teacher", "sports_director"].includes(staff_role || "")
-          ? "teaching"
-          : ["bursar", "secretary"].includes(staff_role || "")
-            ? "administrative"
-            : ["principal", "deputy_principal"].includes(staff_role || "")
-              ? "leadership"
-              : "general";
-
         // Determine proper category
         let staffCategory = "teaching";
         if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
         else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
         else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
 
-        await supabaseAdmin.from("staff").insert({
+        const { data: staffRecord } = await supabaseAdmin.from("staff").insert({
           full_name,
           email,
           phone: phone || null,
@@ -172,7 +164,12 @@ Deno.serve(async (req) => {
           user_id: userId,
           category: staffCategory,
           role: staff_role || "teacher",
-        });
+        }).select("id").single();
+
+        // Assign as class teacher if a class was selected
+        if (assigned_class_id && staffRecord) {
+          await supabaseAdmin.from("classes").update({ class_teacher_id: staffRecord.id }).eq("id", assigned_class_id);
+        }
       }
 
       return new Response(JSON.stringify({ message: "User created successfully", user_id: userId }), {
