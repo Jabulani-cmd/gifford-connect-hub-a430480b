@@ -155,7 +155,96 @@ export default function FinanceManagement() {
     if (data) setExpenses(data);
   }
 
-  // ═══ FEE STRUCTURE CRUD ═══
+  async function fetchPettyCash() {
+    const { data } = await supabase.from("petty_cash").select("*").order("transaction_date", { ascending: false });
+    if (data) setPettyCash(data);
+  }
+
+  async function fetchSupplierInvoices() {
+    const { data } = await supabase.from("supplier_invoices").select("*").order("created_at", { ascending: false });
+    if (data) setSupplierInvoices(data);
+  }
+
+  async function savePettyCash() {
+    setPcLoading(true);
+    const payload = {
+      transaction_date: pcForm.transaction_date,
+      transaction_type: pcForm.transaction_type,
+      description: pcForm.description,
+      amount_usd: parseFloat(pcForm.amount_usd) || 0,
+      amount_zig: parseFloat(pcForm.amount_zig) || 0,
+      reference_number: pcForm.reference_number || null,
+      recorded_by: user?.id,
+    };
+    const { error } = await supabase.from("petty_cash").insert(payload);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setPcLoading(false); return; }
+    toast({ title: pcForm.transaction_type === "deposit" ? "Petty cash deposit recorded" : "Petty cash withdrawal recorded" });
+    setPcDialogOpen(false);
+    setPcLoading(false);
+    fetchPettyCash();
+  }
+
+  async function deletePettyCash(id: string) {
+    await supabase.from("petty_cash").delete().eq("id", id);
+    toast({ title: "Petty cash entry deleted" });
+    fetchPettyCash();
+  }
+
+  async function saveSupplierInvoice() {
+    setSiLoading(true);
+    const payload = {
+      supplier_name: siForm.supplier_name,
+      supplier_contact: siForm.supplier_contact || null,
+      invoice_number: siForm.invoice_number,
+      invoice_date: siForm.invoice_date,
+      due_date: siForm.due_date || null,
+      description: siForm.description || null,
+      amount_usd: parseFloat(siForm.amount_usd) || 0,
+      amount_zig: parseFloat(siForm.amount_zig) || 0,
+      recorded_by: user?.id,
+    };
+    const { error } = await supabase.from("supplier_invoices").insert(payload);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSiLoading(false); return; }
+    toast({ title: "Supplier invoice recorded" });
+    setSiDialogOpen(false);
+    setSiLoading(false);
+    fetchSupplierInvoices();
+  }
+
+  async function deleteSupplierInvoice(id: string) {
+    await supabase.from("supplier_invoices").delete().eq("id", id);
+    toast({ title: "Supplier invoice deleted" });
+    fetchSupplierInvoices();
+  }
+
+  async function saveSupplierPayment() {
+    if (!spInvoice) return;
+    setSpLoading(true);
+    const payUsd = parseFloat(spForm.amount_usd) || 0;
+    const payZig = parseFloat(spForm.amount_zig) || 0;
+    const { error } = await supabase.from("supplier_payments").insert({
+      supplier_invoice_id: spInvoice.id,
+      payment_date: spForm.payment_date,
+      amount_usd: payUsd,
+      amount_zig: payZig,
+      payment_method: spForm.payment_method,
+      reference_number: spForm.reference_number || null,
+      notes: spForm.notes || null,
+      recorded_by: user?.id,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSpLoading(false); return; }
+    // Update supplier invoice paid amounts and status
+    const newPaidUsd = Number(spInvoice.paid_usd) + payUsd;
+    const newPaidZig = Number(spInvoice.paid_zig) + payZig;
+    const newStatus = newPaidUsd >= Number(spInvoice.amount_usd) ? "paid" : newPaidUsd > 0 ? "partial" : "unpaid";
+    await supabase.from("supplier_invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", spInvoice.id);
+    toast({ title: "Supplier payment recorded" });
+    setSpDialogOpen(false);
+    setSpLoading(false);
+    fetchSupplierInvoices();
+  }
+
+
   function openAddFee() {
     setEditingFee(null);
     setFeeForm({ academic_year: "2026", term: "Term 1", form: "Form 1", boarding_status: "day", description: "", amount_usd: "", amount_zig: "" });
