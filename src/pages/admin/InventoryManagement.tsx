@@ -209,7 +209,8 @@ export default function InventoryManagement() {
     setTimeout(async () => {
       if (barcodeCanvasRef.current) {
         try {
-          const bwipjs = await import("bwip-js") as any;
+          // @ts-ignore - dynamic import for barcode generation
+          const bwipjs = await import(/* @vite-ignore */ "bwip-js") as any;
           const render = bwipjs.default?.toCanvas || bwipjs.toCanvas;
           render(barcodeCanvasRef.current, {
             bcid: "code128", text: item.item_code,
