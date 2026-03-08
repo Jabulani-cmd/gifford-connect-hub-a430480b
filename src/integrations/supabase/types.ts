@@ -353,6 +353,63 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_transactions: {
+        Row: {
+          account_number: string | null
+          amount_usd: number
+          amount_zig: number
+          bank_name: string | null
+          created_at: string
+          description: string
+          id: string
+          matched_expense_id: string | null
+          matched_payment_id: string | null
+          matched_supplier_payment_id: string | null
+          notes: string | null
+          reconciliation_status: string
+          recorded_by: string | null
+          reference_number: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          account_number?: string | null
+          amount_usd?: number
+          amount_zig?: number
+          bank_name?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          matched_expense_id?: string | null
+          matched_payment_id?: string | null
+          matched_supplier_payment_id?: string | null
+          notes?: string | null
+          reconciliation_status?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Update: {
+          account_number?: string | null
+          amount_usd?: number
+          amount_zig?: number
+          bank_name?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          matched_expense_id?: string | null
+          matched_payment_id?: string | null
+          matched_supplier_payment_id?: string | null
+          notes?: string | null
+          reconciliation_status?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       bed_allocations: {
         Row: {
           allocation_end_date: string | null
