@@ -97,44 +97,29 @@ export default function StudentExamResultsTab({ studentId }: Props) {
     setResultsLoading(true);
 
     // Get this student's results
-    const { data: myResults } = await supabase
-      .from("exam_results")
-      .select("id, mark, grade, teacher_comment, subject_id, subjects(name, code)")
-      .eq("exam_id", selectedExamId)
-      .eq("student_id", studentId)
-      .order("mark", { ascending: false });
+    const [{ data: myResults }, { data: rankingsData }] = await Promise.all([
+      supabase
+        .from("exam_results")
+        .select("id, mark, grade, teacher_comment, subject_id, subjects(name, code)")
+        .eq("exam_id", selectedExamId)
+        .eq("student_id", studentId)
+        .order("mark", { ascending: false }),
+      supabase.rpc("get_exam_rankings", { p_exam_id: selectedExamId, p_student_id: studentId }),
+    ]);
 
-    // Get all students' results for this exam to compute rankings
-    const { data: allResults } = await supabase
-      .from("exam_results")
-      .select("student_id, mark, subject_id")
-      .eq("exam_id", selectedExamId);
+    const rankings = (rankingsData as any) || {};
+    const subjectRankings = rankings.subject_rankings || {};
 
-    // Process per-subject ranks
-    const subjectStudentMarks: Record<string, { student_id: string; mark: number }[]> = {};
-    const studentTotals: Record<string, number> = {};
-
-    (allResults || []).forEach((r: any) => {
-      if (!subjectStudentMarks[r.subject_id]) subjectStudentMarks[r.subject_id] = [];
-      subjectStudentMarks[r.subject_id].push({ student_id: r.student_id, mark: r.mark });
-      studentTotals[r.student_id] = (studentTotals[r.student_id] || 0) + r.mark;
-    });
-
-    // Sort each subject for ranking
-    Object.values(subjectStudentMarks).forEach((arr) =>
-      arr.sort((a, b) => b.mark - a.mark)
+    setOverallRank(
+      rankings.overall_rank
+        ? { rank: rankings.overall_rank, total: rankings.total_students }
+        : null
     );
-
-    // Overall ranking
-    const sortedTotals = Object.entries(studentTotals).sort((a, b) => b[1] - a[1]);
-    const myOverallRank = sortedTotals.findIndex(([sid]) => sid === studentId) + 1;
-    setOverallRank(myOverallRank > 0 ? { rank: myOverallRank, total: sortedTotals.length } : null);
 
     // Build result rows
     const rows: ResultRow[] = (myResults || []).map((r: any) => {
       const subjectId = r.subject_id;
-      const subjectRanks = subjectStudentMarks[subjectId] || [];
-      const subjectRank = subjectRanks.findIndex((s) => s.student_id === studentId) + 1;
+      const sr = subjectRankings[subjectId] || {};
 
       return {
         id: r.id,
@@ -143,8 +128,8 @@ export default function StudentExamResultsTab({ studentId }: Props) {
         teacher_comment: r.teacher_comment,
         subject_name: r.subjects?.name || "Unknown",
         subject_code: r.subjects?.code || null,
-        class_rank: subjectRank > 0 ? subjectRank : null,
-        class_size: subjectRanks.length,
+        class_rank: sr.rank || null,
+        class_size: sr.total || null,
       };
     });
 
