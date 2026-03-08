@@ -15,8 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
-  AlertTriangle, TrendingUp, Search, Download, Upload, Receipt,
-  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw
+  AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
+  Ban, Send, BarChart3, Loader2, Printer, User, ArrowLeft, RefreshCw, CheckCircle
 } from "lucide-react";
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
