@@ -45,7 +45,8 @@ export default function Login() {
 
   const redirectByRole = (r: string) => {
     if (r === "student") navigate("/portal/student");
-    else if (r === "parent" || r === "teacher") navigate("/portal/parent-teacher");
+    else if (r === "teacher") navigate("/portal/teacher");
+    else if (r === "parent") navigate("/portal/parent-teacher");
     else if (r === "admin") navigate("/portal/admin");
   };
 
