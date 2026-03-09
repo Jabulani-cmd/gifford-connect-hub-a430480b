@@ -755,7 +755,7 @@ export default function AcademicManagement() {
                 </Select>
                 <Select value={marksSubject} onValueChange={setMarksSubject}>
                   <SelectTrigger className="w-48"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                  <SelectContent>{subjects.filter(s => s.is_examinable).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{subjects.filter(s => s.is_examinable && (!selectedExam?.subject_ids?.length || selectedExam.subject_ids.includes(s.id))).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
 
