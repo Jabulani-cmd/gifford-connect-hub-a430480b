@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, Calendar } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, Calendar, CalendarOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
+import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 
 export default function HODDashboard() {
   const { signOut } = useAuth();
@@ -83,6 +84,7 @@ export default function HODDashboard() {
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
+            <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
@@ -91,6 +93,7 @@ export default function HODDashboard() {
           <TabsContent value="communication"><CommunicationModule /></TabsContent>
           <TabsContent value="reports"><EMISReports /></TabsContent>
           <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
+          <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
         </Tabs>
       </div>
     </div>

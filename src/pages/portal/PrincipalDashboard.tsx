@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, UserCheck, Building, BedDouble, Package, Calendar, Shield, DollarSign } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, UserCheck, Building, BedDouble, Package, Calendar, Shield, DollarSign, CalendarOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import EMISReports from "@/pages/admin/EMISReports";
 import FinanceManagement from "@/pages/admin/FinanceManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
+import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 
 export default function PrincipalDashboard() {
   const { toast } = useToast();
@@ -101,6 +102,7 @@ export default function PrincipalDashboard() {
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
+            <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
@@ -113,6 +115,7 @@ export default function PrincipalDashboard() {
           <TabsContent value="reports"><EMISReports /></TabsContent>
           <TabsContent value="finance"><FinanceManagement /></TabsContent>
           <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
+          <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
         </Tabs>
       </div>
     </div>

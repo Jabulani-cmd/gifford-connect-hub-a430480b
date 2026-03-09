@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Bell, BarChart3, Calendar, ClipboardList,
-  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle
+  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +23,7 @@ import AssessmentsTab from "@/components/teacher/AssessmentsTab";
 import EnhancedMaterialsTab from "@/components/teacher/EnhancedMaterialsTab";
 import EnhancedAnnouncementsTab from "@/components/teacher/EnhancedAnnouncementsTab";
 import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
-
+import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -263,6 +263,7 @@ export default function TeacherDashboard() {
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
             <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
+            <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
           </TabsList>
 
           {/* MATERIALS - Enhanced */}
@@ -457,6 +458,11 @@ export default function TeacherDashboard() {
           {/* MY SCHEDULE */}
           <TabsContent value="schedule">
             <PersonalTimetableEditor />
+          </TabsContent>
+
+          {/* LEAVE REQUESTS */}
+          <TabsContent value="leave">
+            <StaffLeaveRequest />
           </TabsContent>
         </Tabs>
       </div>
