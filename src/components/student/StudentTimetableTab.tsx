@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { Calendar, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -9,21 +9,23 @@ const shortDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 interface Props {
   studentClassId: string | null;
+  studentId?: string | null;
 }
 
-export default function StudentTimetableTab({ studentClassId }: Props) {
+export default function StudentTimetableTab({ studentClassId, studentId }: Props) {
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sportsActivities, setSportsActivities] = useState<string[]>([]);
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
   const [selectedDay, setSelectedDay] = useState(today >= 1 && today <= 5 ? today : 1);
 
   useEffect(() => {
     if (studentClassId) fetchTimetable();
-  }, [studentClassId]);
+    if (studentId) fetchSports();
+  }, [studentClassId, studentId]);
 
   const fetchTimetable = async () => {
     setLoading(true);
-    // Try timetable_entries first (more detailed)
     const { data: entries } = await supabase
       .from("timetable_entries")
       .select("*, subjects(name), staff(full_name), classes(name)")
@@ -33,7 +35,6 @@ export default function StudentTimetableTab({ studentClassId }: Props) {
     if (entries && entries.length > 0) {
       setEntries(entries);
     } else {
-      // Fallback to basic timetable
       const { data: basic } = await supabase
         .from("timetable")
         .select("*, subjects(name)")
@@ -42,6 +43,18 @@ export default function StudentTimetableTab({ studentClassId }: Props) {
       setEntries(basic || []);
     }
     setLoading(false);
+  };
+
+  const fetchSports = async () => {
+    if (!studentId) return;
+    const { data } = await supabase
+      .from("students")
+      .select("sports_activities")
+      .eq("id", studentId)
+      .single();
+    if (data?.sports_activities) {
+      setSportsActivities(data.sports_activities as string[]);
+    }
   };
 
   const dayEntries = entries.filter((e) => e.day_of_week === selectedDay);
@@ -109,6 +122,27 @@ export default function StudentTimetableTab({ studentClassId }: Props) {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Sports & Extracurricular Activities Section */}
+      {sportsActivities.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-secondary" />
+            <h3 className="text-sm font-semibold text-foreground">Sports & Activities</h3>
+          </div>
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex flex-wrap gap-2">
+                {sportsActivities.map((sport) => (
+                  <Badge key={sport} variant="secondary" className="text-xs">
+                    {sport}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -45,7 +45,10 @@ type Student = {
   profile_photo_url: string | null;
   deleted_at: string | null;
   created_at: string;
+  sports_activities: string[] | null;
 };
+
+const sportsOptions = ["Rugby", "Soccer", "Cricket", "Tennis", "Athletics", "Swimming", "Volleyball", "Basketball", "Hockey", "Netball", "Chess", "Table Tennis"];
 
 const emptyForm: StudentFormData = {
   admission_number: "",
@@ -64,6 +67,7 @@ const emptyForm: StudentFormData = {
   address: "",
   enrollment_date: new Date().toISOString().split("T")[0],
   status: "active",
+  sports_activities: [],
 };
 
 function GenerateCodeButton({ studentId }: { studentId: string }) {
@@ -321,6 +325,7 @@ export default function StudentManagement() {
       address: s.address || "",
       enrollment_date: s.enrollment_date || "",
       status: s.status,
+      sports_activities: s.sports_activities || [],
     });
     setPhotoUrl(s.profile_photo_url);
     setErrors({});
@@ -609,6 +614,32 @@ export default function StudentManagement() {
               <Checkbox checked={formData.has_medical_alert} onCheckedChange={v => updateField("has_medical_alert", !!v)} id="medical-alert" />
               <Label htmlFor="medical-alert" className="text-sm text-destructive font-medium">Has Medical Alert</Label>
             </div>
+
+            {/* Sports Activities */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Sports & Extracurricular Activities</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-md border p-3">
+                {sportsOptions.map(sport => (
+                  <label key={sport} className="flex items-center gap-2 cursor-pointer hover:bg-muted rounded p-1">
+                    <Checkbox
+                      checked={(formData.sports_activities || []).includes(sport)}
+                      onCheckedChange={(checked) => {
+                        const current = formData.sports_activities || [];
+                        const updated = checked
+                          ? [...current, sport]
+                          : current.filter(s => s !== sport);
+                        updateField("sports_activities", updated);
+                      }}
+                    />
+                    <span className="text-sm">{sport}</span>
+                  </label>
+                ))}
+              </div>
+              {(formData.sports_activities || []).length > 0 && (
+                <p className="text-xs text-primary font-medium">{(formData.sports_activities || []).length} sport(s) selected</p>
+              )}
+            </div>
+
             <div className="space-y-1">
               <Label>Enrollment Date</Label>
               <Input type="date" value={formData.enrollment_date || ""} onChange={e => updateField("enrollment_date", e.target.value)} />
@@ -684,6 +715,7 @@ export default function StudentManagement() {
                       ["Address", selectedStudent.address],
                       ["Enrollment Date", selectedStudent.enrollment_date],
                       ["Status", selectedStudent.status],
+                      ["Sports/Activities", (selectedStudent.sports_activities || []).join(", ") || "None"],
                     ].map(([label, value]) => (
                       <div key={label as string}>
                         <p className="text-xs text-muted-foreground">{label}</p>

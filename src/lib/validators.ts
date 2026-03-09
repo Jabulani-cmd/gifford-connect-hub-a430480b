@@ -26,6 +26,7 @@ export const studentFormSchema = z.object({
   address: z.string().min(5, "Address is required"),
   enrollment_date: z.string().min(1, "Enrollment date is required"),
   status: z.string().default("active"),
+  sports_activities: z.array(z.string()).optional().default([]),
 });
 
 export const staffFormSchema = z.object({

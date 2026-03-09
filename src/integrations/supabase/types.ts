@@ -2331,6 +2331,7 @@ export type Database = {
           id: string
           medical_conditions: string | null
           profile_photo_url: string | null
+          sports_activities: string[] | null
           status: string
           stream: string | null
           subject_combination: string | null
@@ -2354,6 +2355,7 @@ export type Database = {
           id?: string
           medical_conditions?: string | null
           profile_photo_url?: string | null
+          sports_activities?: string[] | null
           status?: string
           stream?: string | null
           subject_combination?: string | null
@@ -2377,6 +2379,7 @@ export type Database = {
           id?: string
           medical_conditions?: string | null
           profile_photo_url?: string | null
+          sports_activities?: string[] | null
           status?: string
           stream?: string | null
           subject_combination?: string | null
