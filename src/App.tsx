@@ -25,6 +25,7 @@ import PrincipalDashboard from "./pages/portal/PrincipalDashboard";
 import DeputyPrincipalDashboard from "./pages/portal/DeputyPrincipalDashboard";
 import HODDashboard from "./pages/portal/HODDashboard";
 import AdminSupervisorDashboard from "./pages/portal/AdminSupervisorDashboard";
+import RegistrationDashboard from "./pages/portal/RegistrationDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
 import Facilities from "./pages/Facilities";
