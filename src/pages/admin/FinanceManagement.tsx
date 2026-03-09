@@ -684,9 +684,16 @@ export default function FinanceManagement() {
   }
 
   async function deletePayment(payment: any) {
+    if (isFinanceClerk) {
+      await requestApproval("void_payment", "payments", payment.id, `Void payment ${payment.receipt_number} ($${fmt(Number(payment.amount_usd))})`, {
+        invoice_id: payment.invoice_id,
+        amount_usd: payment.amount_usd,
+        amount_zig: payment.amount_zig,
+      });
+      return;
+    }
     if (!confirm(`Delete payment ${payment.receipt_number}? This will reverse the paid amounts on the linked invoice.`)) return;
     try {
-      // Reverse the invoice paid amounts
       const { data: invoice } = await supabase.from("invoices").select("*").eq("id", payment.invoice_id).single();
       if (invoice) {
         const newPaidUsd = Math.max(0, Number(invoice.paid_usd) - Number(payment.amount_usd));
@@ -696,7 +703,6 @@ export default function FinanceManagement() {
         else if (newPaidUsd >= Number(invoice.total_usd) && newPaidZig >= Number(invoice.total_zig)) newStatus = "paid";
         await supabase.from("invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", payment.invoice_id);
       }
-      // Log to audit
       await supabase.from("audit_logs").insert({
         action: "delete_payment",
         table_name: "payments",
@@ -704,7 +710,6 @@ export default function FinanceManagement() {
         user_id: user?.id || null,
         old_data: payment,
       });
-      // Delete the payment
       const { error } = await supabase.from("payments").delete().eq("id", payment.id);
       if (error) throw error;
       toast({ title: "Payment deleted", description: `Receipt ${payment.receipt_number} removed and invoice updated.` });
@@ -717,13 +722,14 @@ export default function FinanceManagement() {
   }
 
   async function deleteInvoice(invoice: any) {
+    if (isFinanceClerk) {
+      await requestApproval("void_invoice", "invoices", invoice.id, `Void invoice ${invoice.invoice_number} ($${fmt(Number(invoice.total_usd))})`);
+      return;
+    }
     if (!confirm(`Delete invoice ${invoice.invoice_number}? This will also delete all associated payments and invoice items.`)) return;
     try {
-      // Delete associated payments first
       await supabase.from("payments").delete().eq("invoice_id", invoice.id);
-      // Delete invoice items
       await supabase.from("invoice_items").delete().eq("invoice_id", invoice.id);
-      // Log to audit
       await supabase.from("audit_logs").insert({
         action: "delete_invoice",
         table_name: "invoices",
@@ -731,7 +737,6 @@ export default function FinanceManagement() {
         user_id: user?.id || null,
         old_data: invoice,
       });
-      // Delete invoice
       const { error } = await supabase.from("invoices").delete().eq("id", invoice.id);
       if (error) throw error;
       toast({ title: "Invoice deleted", description: `${invoice.invoice_number} and associated records removed.` });
