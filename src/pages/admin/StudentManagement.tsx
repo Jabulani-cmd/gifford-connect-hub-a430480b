@@ -275,8 +275,14 @@ export default function StudentManagement() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
+  const [dbSubjects, setDbSubjects] = useState<{ id: string; name: string; department: string | null }[]>([]);
 
-  useEffect(() => { fetchStudents(); }, []);
+  useEffect(() => { fetchStudents(); fetchSubjects(); }, []);
+
+  const fetchSubjects = async () => {
+    const { data } = await supabase.from("subjects").select("id, name, department").order("name");
+    if (data) setDbSubjects(data);
+  };
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -580,9 +586,37 @@ export default function StudentManagement() {
                 <SelectContent>{streamOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1 sm:col-span-2">
-              <Label>Subject Combination</Label>
-              <Input value={formData.subject_combination || ""} onChange={e => updateField("subject_combination", e.target.value)} placeholder="e.g. Maths, Physics, Chemistry" />
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Subjects</Label>
+              {dbSubjects.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-md border p-3 max-h-48 overflow-y-auto">
+                  {dbSubjects.map(subj => {
+                    const selected = (formData.subject_combination || "").split(", ").filter(Boolean);
+                    const isChecked = selected.includes(subj.name);
+                    return (
+                      <label key={subj.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted rounded p-1">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            const current = (formData.subject_combination || "").split(", ").filter(Boolean);
+                            const updated = checked
+                              ? [...current, subj.name]
+                              : current.filter(s => s !== subj.name);
+                            updateField("subject_combination", updated.join(", "));
+                          }}
+                        />
+                        <span className="text-sm">{subj.name}</span>
+                        {subj.department && <span className="text-[10px] text-muted-foreground">({subj.department})</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No subjects loaded. Add subjects in Academic Management first.</p>
+              )}
+              {formData.subject_combination && (
+                <p className="text-xs text-primary font-medium">{formData.subject_combination.split(", ").filter(Boolean).length} subject(s) selected</p>
+              )}
             </div>
             <div className="space-y-1">
               <Label>Guardian Name</Label>
