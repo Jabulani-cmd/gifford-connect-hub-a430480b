@@ -248,7 +248,11 @@ export default function FinanceManagement() {
     fetchSupplierInvoices();
   }
 
-  async function deleteSupplierInvoice(id: string) {
+  async function deleteSupplierInvoice(id: string, description?: string) {
+    if (isFinanceClerk) {
+      await requestApproval("delete_supplier_invoice", "supplier_invoices", id, `Delete supplier invoice: ${description || id}`);
+      return;
+    }
     await supabase.from("supplier_invoices").delete().eq("id", id);
     toast({ title: "Supplier invoice deleted" });
     fetchSupplierInvoices();
