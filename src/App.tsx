@@ -111,6 +111,11 @@ const App = () => (
                 <AuthenticatedLayout><HODDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
+            <Route path="/portal/admin-supervisor" element={
+              <ProtectedRoute allowedRoles={["admin_supervisor"]}>
+                <AuthenticatedLayout><AdminSupervisorDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
