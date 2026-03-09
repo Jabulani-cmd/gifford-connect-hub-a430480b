@@ -857,6 +857,16 @@ export default function AcademicManagement() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ═══ EXAM TIMETABLE ═══ */}
+        <TabsContent value="exam-timetable">
+          <ExamTimetableTab />
+        </TabsContent>
+
+        {/* ═══ TERM REPORTS ═══ */}
+        <TabsContent value="term-reports">
+          <TermReportsTab />
+        </TabsContent>
       </Tabs>
 
       {/* ═══════ DIALOGS ═══════ */}
