@@ -345,9 +345,11 @@ export default function StudentManagement() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Student updated!" });
     } else {
-      const { error } = await supabase.from("students").insert(payload as any);
+      // Remove admission_number so the database trigger auto-generates GHS#####
+      const { admission_number, ...insertPayload } = payload;
+      const { data: newStudent, error } = await supabase.from("students").insert(insertPayload as any).select("admission_number").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      toast({ title: "Student added!" });
+      toast({ title: "Student added!", description: `Student number: ${newStudent?.admission_number}` });
     }
     setSaving(false);
     setDialogOpen(false);
