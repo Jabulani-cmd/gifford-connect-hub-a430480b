@@ -217,7 +217,11 @@ export default function FinanceManagement() {
     fetchPettyCash();
   }
 
-  async function deletePettyCash(id: string) {
+  async function deletePettyCash(id: string, description?: string) {
+    if (isFinanceClerk) {
+      await requestApproval("delete_petty_cash", "petty_cash", id, `Delete petty cash: ${description || id}`);
+      return;
+    }
     await supabase.from("petty_cash").delete().eq("id", id);
     toast({ title: "Petty cash entry deleted" });
     fetchPettyCash();
