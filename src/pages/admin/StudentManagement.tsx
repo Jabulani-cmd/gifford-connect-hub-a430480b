@@ -614,6 +614,32 @@ export default function StudentManagement() {
               <Checkbox checked={formData.has_medical_alert} onCheckedChange={v => updateField("has_medical_alert", !!v)} id="medical-alert" />
               <Label htmlFor="medical-alert" className="text-sm text-destructive font-medium">Has Medical Alert</Label>
             </div>
+
+            {/* Sports Activities */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Sports & Extracurricular Activities</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-md border p-3">
+                {sportsOptions.map(sport => (
+                  <label key={sport} className="flex items-center gap-2 cursor-pointer hover:bg-muted rounded p-1">
+                    <Checkbox
+                      checked={(formData.sports_activities || []).includes(sport)}
+                      onCheckedChange={(checked) => {
+                        const current = formData.sports_activities || [];
+                        const updated = checked
+                          ? [...current, sport]
+                          : current.filter(s => s !== sport);
+                        updateField("sports_activities", updated);
+                      }}
+                    />
+                    <span className="text-sm">{sport}</span>
+                  </label>
+                ))}
+              </div>
+              {(formData.sports_activities || []).length > 0 && (
+                <p className="text-xs text-primary font-medium">{(formData.sports_activities || []).length} sport(s) selected</p>
+              )}
+            </div>
+
             <div className="space-y-1">
               <Label>Enrollment Date</Label>
               <Input type="date" value={formData.enrollment_date || ""} onChange={e => updateField("enrollment_date", e.target.value)} />
