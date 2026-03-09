@@ -16,8 +16,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   BookOpen, Plus, Pencil, Trash2, Users, Clock, Calendar,
   CheckCircle, XCircle, AlertCircle, Search, Loader2,
-  GraduationCap, FileText, BarChart3, Printer
+  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList
 } from "lucide-react";
+import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
+import TermReportsTab from "@/components/admin/TermReportsTab";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
