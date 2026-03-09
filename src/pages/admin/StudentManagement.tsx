@@ -325,6 +325,7 @@ export default function StudentManagement() {
       address: s.address || "",
       enrollment_date: s.enrollment_date || "",
       status: s.status,
+      sports_activities: s.sports_activities || [],
     });
     setPhotoUrl(s.profile_photo_url);
     setErrors({});
