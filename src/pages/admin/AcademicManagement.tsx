@@ -993,8 +993,8 @@ export default function AcademicManagement() {
 
       {/* Exam Dialog */}
       <Dialog open={examDialogOpen} onOpenChange={setExamDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editingExam ? "Edit Exam" : "Create Exam"}</DialogTitle><DialogDescription>Define exam details</DialogDescription></DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingExam ? "Edit Exam" : "Create Exam"}</DialogTitle><DialogDescription>Define exam details and select subjects</DialogDescription></DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Name</Label><Input value={examForm.name} onChange={e => setExamForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. End of Term 1 2026" /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -1023,6 +1023,38 @@ export default function AcademicManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Start Date</Label><Input type="date" value={examForm.start_date} onChange={e => setExamForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div className="space-y-2"><Label>End Date</Label><Input type="date" value={examForm.end_date} onChange={e => setExamForm(p => ({ ...p, end_date: e.target.value }))} /></div>
+            </div>
+            {/* Subjects Selection */}
+            <div className="space-y-2">
+              <Label>Exam Subjects ({examForm.subject_ids.length} selected)</Label>
+              <div className="flex gap-2 mb-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setExamForm(p => ({ ...p, subject_ids: subjects.filter(s => s.is_examinable).map(s => s.id) }))}>Select All</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setExamForm(p => ({ ...p, subject_ids: [] }))}>Clear All</Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto rounded-md border p-3">
+                {subjects.filter(s => s.is_examinable).map(s => (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`exam-subj-${s.id}`}
+                      checked={examForm.subject_ids.includes(s.id)}
+                      onCheckedChange={(checked) => {
+                        setExamForm(p => ({
+                          ...p,
+                          subject_ids: checked
+                            ? [...p.subject_ids, s.id]
+                            : p.subject_ids.filter(id => id !== s.id)
+                        }));
+                      }}
+                    />
+                    <Label htmlFor={`exam-subj-${s.id}`} className="text-sm cursor-pointer">
+                      {s.name} {s.code ? <span className="text-muted-foreground">({s.code})</span> : null}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {subjects.filter(s => s.is_examinable).length === 0 && (
+                <p className="text-xs text-muted-foreground">No examinable subjects found. Add subjects in the Subjects tab first.</p>
+              )}
             </div>
           </div>
           <DialogFooter>
