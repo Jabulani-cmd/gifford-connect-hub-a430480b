@@ -298,7 +298,7 @@ function TabContent({
   announcements, attendancePercent, upcomingAssessments, newMaterials, feeBalance,
   userId, onRefresh,
 }: TabContentProps) {
-  const [homeSubTab, setHomeSubTab] = useState<"overview" | "timetable" | "planner" | "fees" | "announcements" | "results">("overview");
+  const [homeSubTab, setHomeSubTab] = useState<"overview" | "timetable" | "planner" | "fees" | "announcements" | "results" | "exam-timetable" | "reports">("overview");
 
   if (activeTab === "home") {
     return (
