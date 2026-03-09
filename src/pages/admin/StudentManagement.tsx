@@ -451,7 +451,7 @@ export default function StudentManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Photo</TableHead>
-                <TableHead>Admission #</TableHead>
+                <TableHead>Student #</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Form/Stream</TableHead>
                 <TableHead>Guardian Phone</TableHead>
