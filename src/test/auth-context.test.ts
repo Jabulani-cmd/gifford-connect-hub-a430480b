@@ -41,7 +41,7 @@ describe("Role-Based Redirects", () => {
 });
 
 describe("App Role Types", () => {
-  const validRoles = ["student", "parent", "teacher", "admin", "finance"];
+  const validRoles = ["student", "parent", "teacher", "admin", "finance", "principal", "deputy_principal", "hod"];
 
   it("all portal roles are accounted for", () => {
     validRoles.forEach((role) => {
