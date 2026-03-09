@@ -137,14 +137,26 @@ export default function RegistrationDashboard() {
       const { data, error } = await supabase
         .from("students")
         .insert(payload)
-        .select("admission_number")
+        .select("id, admission_number")
         .single();
 
       if (error) throw error;
 
+      // Fetch auto-assigned class info
+      const { data: enrollment } = await supabase
+        .from("enrollments")
+        .select("class_id, classes(name, room)")
+        .eq("student_id", data.id)
+        .maybeSingle();
+
+      const className = enrollment?.classes?.name || null;
+      const room = enrollment?.classes?.room || null;
+
       toast({
         title: "Student registered successfully!",
-        description: `Student Number: ${data.admission_number}`,
+        description: className
+          ? `${data.admission_number} → Assigned to ${className}${room ? ` (${room})` : ""}`
+          : `Student Number: ${data.admission_number}. No matching class found - assign manually.`,
       });
       setShowRegister(false);
       setForm(emptyForm);
