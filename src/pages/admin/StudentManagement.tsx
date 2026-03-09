@@ -45,6 +45,7 @@ type Student = {
   profile_photo_url: string | null;
   deleted_at: string | null;
   created_at: string;
+  sports_activities: string[] | null;
 };
 
 const sportsOptions = ["Rugby", "Soccer", "Cricket", "Tennis", "Athletics", "Swimming", "Volleyball", "Basketball", "Hockey", "Netball", "Chess", "Table Tennis"];
