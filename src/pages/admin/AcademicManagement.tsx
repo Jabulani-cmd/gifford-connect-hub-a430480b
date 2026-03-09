@@ -342,12 +342,12 @@ export default function AcademicManagement() {
   // ═══ EXAM CRUD ═══
   function openAddExam() {
     setEditingExam(null);
-    setExamForm({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "" });
+    setExamForm({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "", subject_ids: [] });
     setExamDialogOpen(true);
   }
   function openEditExam(e: any) {
     setEditingExam(e);
-    setExamForm({ name: e.name, exam_type: e.exam_type, form_level: e.form_level, term: e.term, academic_year: e.academic_year, start_date: e.start_date || "", end_date: e.end_date || "" });
+    setExamForm({ name: e.name, exam_type: e.exam_type, form_level: e.form_level, term: e.term, academic_year: e.academic_year, start_date: e.start_date || "", end_date: e.end_date || "", subject_ids: e.subject_ids || [] });
     setExamDialogOpen(true);
   }
   async function saveExam() {
