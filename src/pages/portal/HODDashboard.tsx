@@ -15,6 +15,7 @@ import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
+import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 
 export default function HODDashboard() {
   const { signOut } = useAuth();
