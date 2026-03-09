@@ -182,10 +182,26 @@ export default function AcademicManagement() {
     fetchClasses();
   }
   async function deleteClass(id: string) {
-    if (!confirm("Delete this class?")) return;
-    await supabase.from("classes").delete().eq("id", id);
-    toast({ title: "Class deleted" });
-    fetchClasses();
+    if (!confirm("Delete this class? This will also remove all timetable entries, subject assignments, and enrollments for this class.")) return;
+    try {
+      // Delete related records first (foreign key dependencies)
+      await supabase.from("timetable_entries").delete().eq("class_id", id);
+      await supabase.from("class_subjects").delete().eq("class_id", id);
+      await supabase.from("student_classes").delete().eq("class_id", id);
+      await supabase.from("enrollments").delete().eq("class_id", id);
+      await supabase.from("attendance").delete().eq("class_id", id);
+      
+      // Now delete the class itself
+      const { error } = await supabase.from("classes").delete().eq("id", id);
+      if (error) throw error;
+      
+      toast({ title: "Class deleted successfully" });
+      fetchClasses();
+      fetchTimetable();
+      fetchClassSubjects();
+    } catch (err: any) {
+      toast({ title: "Failed to delete class", description: err.message, variant: "destructive" });
+    }
   }
 
   // ═══ SUBJECT CRUD ═══
