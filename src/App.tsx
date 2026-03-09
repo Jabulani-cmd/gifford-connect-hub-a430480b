@@ -25,6 +25,7 @@ import PrincipalDashboard from "./pages/portal/PrincipalDashboard";
 import DeputyPrincipalDashboard from "./pages/portal/DeputyPrincipalDashboard";
 import HODDashboard from "./pages/portal/HODDashboard";
 import AdminSupervisorDashboard from "./pages/portal/AdminSupervisorDashboard";
+import RegistrationDashboard from "./pages/portal/RegistrationDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
 import Facilities from "./pages/Facilities";
@@ -116,6 +117,11 @@ const App = () => (
             <Route path="/portal/admin-supervisor" element={
               <ProtectedRoute allowedRoles={["admin_supervisor"]}>
                 <AuthenticatedLayout><AdminSupervisorDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/registration" element={
+              <ProtectedRoute allowedRoles={["registration", "admin"]}>
+                <RegistrationDashboard />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

@@ -17,6 +17,7 @@ const roleRedirects: Record<string, string> = {
   deputy_principal: "/portal/deputy-principal",
   hod: "/portal/hod",
   admin_supervisor: "/portal/admin-supervisor",
+  registration: "/portal/registration",
 };
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
