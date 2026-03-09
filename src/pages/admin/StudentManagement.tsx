@@ -715,6 +715,7 @@ export default function StudentManagement() {
                       ["Address", selectedStudent.address],
                       ["Enrollment Date", selectedStudent.enrollment_date],
                       ["Status", selectedStudent.status],
+                      ["Sports/Activities", (selectedStudent.sports_activities || []).join(", ") || "None"],
                     ].map(([label, value]) => (
                       <div key={label as string}>
                         <p className="text-xs text-muted-foreground">{label}</p>
