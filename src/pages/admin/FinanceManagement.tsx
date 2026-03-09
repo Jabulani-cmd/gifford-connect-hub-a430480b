@@ -391,6 +391,15 @@ export default function FinanceManagement() {
 
   async function confirmDeleteFee() {
     if (!deleteTargetFee) return;
+
+    if (isFinanceClerk) {
+      const desc = `Delete fee structure: ${deleteTargetFee.form} ${deleteTargetFee.term} ${deleteTargetFee.academic_year} (${deleteTargetFee.boarding_status})`;
+      await requestApproval("delete_fee_structure", "fee_structures", deleteTargetFee.id, desc);
+      setDeleteImpactOpen(false);
+      setDeleteTargetFee(null);
+      return;
+    }
+
     setDeleteConfirmLoading(true);
     const id = deleteTargetFee.id;
 
