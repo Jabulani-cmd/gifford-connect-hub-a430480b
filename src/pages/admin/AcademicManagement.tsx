@@ -463,8 +463,10 @@ export default function AcademicManagement() {
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="exams"><GraduationCap className="mr-1 h-4 w-4" /> Exams</TabsTrigger>
+          <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
           <TabsTrigger value="marks"><FileText className="mr-1 h-4 w-4" /> Marks Entry</TabsTrigger>
           <TabsTrigger value="results"><BarChart3 className="mr-1 h-4 w-4" /> Results</TabsTrigger>
+          <TabsTrigger value="term-reports"><ClipboardList className="mr-1 h-4 w-4" /> Term Reports</TabsTrigger>
         </TabsList>
 
         {/* ═══ CLASSES ═══ */}
