@@ -1749,6 +1749,78 @@ export type Database = {
         }
         Relationships: []
       }
+      online_payments: {
+        Row: {
+          amount_usd: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          payer_email: string
+          payer_name: string
+          payer_phone: string | null
+          payment_type: string
+          project_id: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          student_id: string | null
+          student_number: string | null
+        }
+        Insert: {
+          amount_usd?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          payer_email: string
+          payer_name: string
+          payer_phone?: string | null
+          payment_type?: string
+          project_id?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          student_id?: string | null
+          student_number?: string | null
+        }
+        Update: {
+          amount_usd?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          payer_email?: string
+          payer_name?: string
+          payer_phone?: string | null
+          payment_type?: string
+          project_id?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          student_id?: string | null
+          student_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_payments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "school_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_students: {
         Row: {
           created_at: string

@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Heart } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,6 +13,7 @@ const fadeUp = {
 };
 
 export default function SchoolProjects() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -61,9 +65,19 @@ export default function SchoolProjects() {
                       {p.description && (
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
                       )}
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        {new Date(p.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(p.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1"
+                          onClick={() => navigate(`/pay-online?type=donation&project=${p.id}`)}
+                        >
+                          <Heart className="h-3 w-3" /> Donate
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>

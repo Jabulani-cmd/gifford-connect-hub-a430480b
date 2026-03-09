@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Fees() {
+  const navigate = useNavigate();
   const [docs, setDocs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -34,10 +36,21 @@ export default function Fees() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-8 text-center text-lg text-muted-foreground"
+            className="mb-4 text-center text-lg text-muted-foreground"
           >
             Download the latest fee schedules, payment information, and financial documents below.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-8 flex justify-center"
+          >
+            <Button size="lg" className="gap-2" onClick={() => navigate("/pay-online?type=fees")}>
+              <CreditCard className="h-5 w-5" /> Pay Fees Online
+            </Button>
+          </motion.div>
 
           {docs.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">

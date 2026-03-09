@@ -32,6 +32,7 @@ import Fees from "./pages/Fees";
 import Vacancies from "./pages/Vacancies";
 import SchoolProjects from "./pages/SchoolProjects";
 import Alumni from "./pages/Alumni";
+import PayOnline from "./pages/PayOnline";
 import Contact from "./pages/Contact";
 import Boarding from "./pages/Boarding";
 import SportsCulture from "./pages/SportsCulture";
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/facilities" element={<Facilities />} />
             <Route path="/downloads" element={<Downloads />} />
             <Route path="/fees" element={<Fees />} />
+            <Route path="/pay-online" element={<PayOnline />} />
             <Route path="/vacancies" element={<Vacancies />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="/school-projects" element={<SchoolProjects />} />
