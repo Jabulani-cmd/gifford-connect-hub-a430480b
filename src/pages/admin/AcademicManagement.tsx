@@ -352,7 +352,8 @@ export default function AcademicManagement() {
   }
   async function saveExam() {
     if (!examForm.name) { toast({ title: "Name required", variant: "destructive" }); return; }
-    const payload = { ...examForm, start_date: examForm.start_date || null, end_date: examForm.end_date || null };
+    if (examForm.subject_ids.length === 0) { toast({ title: "Select at least one subject", variant: "destructive" }); return; }
+    const payload = { ...examForm, start_date: examForm.start_date || null, end_date: examForm.end_date || null } as any;
     if (editingExam) {
       const { error } = await supabase.from("exams").update(payload).eq("id", editingExam.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
