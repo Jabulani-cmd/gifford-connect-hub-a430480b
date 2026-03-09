@@ -47,6 +47,8 @@ type Student = {
   created_at: string;
 };
 
+const sportsOptions = ["Rugby", "Soccer", "Cricket", "Tennis", "Athletics", "Swimming", "Volleyball", "Basketball", "Hockey", "Netball", "Chess", "Table Tennis"];
+
 const emptyForm: StudentFormData = {
   admission_number: "",
   full_name: "",
@@ -64,6 +66,7 @@ const emptyForm: StudentFormData = {
   address: "",
   enrollment_date: new Date().toISOString().split("T")[0],
   status: "active",
+  sports_activities: [],
 };
 
 function GenerateCodeButton({ studentId }: { studentId: string }) {
