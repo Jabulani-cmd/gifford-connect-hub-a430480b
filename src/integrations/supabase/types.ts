@@ -1070,6 +1070,51 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_approval_requests: {
+        Row: {
+          action_type: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          requested_by: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_id: string
+          target_table: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          requested_by: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id: string
+          target_table: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          requested_by?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id?: string
+          target_table?: string
+        }
+        Relationships: []
+      }
       gallery_images: {
         Row: {
           caption: string | null
@@ -2679,6 +2724,7 @@ export type Database = {
         | "principal"
         | "deputy_principal"
         | "hod"
+        | "admin_supervisor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2815,6 +2861,7 @@ export const Constants = {
         "principal",
         "deputy_principal",
         "hod",
+        "admin_supervisor",
       ],
     },
   },

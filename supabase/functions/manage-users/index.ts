@@ -46,7 +46,11 @@ Deno.serve(async (req) => {
         _user_id: user.id,
         _role: "principal",
       });
-      if (!isAdmin && !isPrincipal && action !== "get-students") {
+      const { data: isAdminSupervisor } = await supabaseAdmin.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin_supervisor",
+      });
+      if (!isAdmin && !isPrincipal && !isAdminSupervisor && action !== "get-students") {
         return new Response(JSON.stringify({ error: "Forbidden" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
