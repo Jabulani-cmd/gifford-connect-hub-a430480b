@@ -672,7 +672,11 @@ export default function FinanceManagement() {
     fetchExpenses();
   }
 
-  async function deleteExpense(id: string) {
+  async function deleteExpense(id: string, description?: string) {
+    if (isFinanceClerk) {
+      await requestApproval("delete_expense", "expenses", id, `Delete expense: ${description || id}`);
+      return;
+    }
     if (!confirm("Delete this expense?")) return;
     await supabase.from("expenses").delete().eq("id", id);
     toast({ title: "Expense deleted" });
