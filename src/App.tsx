@@ -95,6 +95,21 @@ const App = () => (
                 <AuthenticatedLayout><FinanceDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
+            <Route path="/portal/principal" element={
+              <ProtectedRoute allowedRoles={["principal"]}>
+                <AuthenticatedLayout><PrincipalDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/deputy-principal" element={
+              <ProtectedRoute allowedRoles={["deputy_principal"]}>
+                <AuthenticatedLayout><DeputyPrincipalDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/hod" element={
+              <ProtectedRoute allowedRoles={["hod"]}>
+                <AuthenticatedLayout><HODDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
