@@ -21,6 +21,9 @@ import ParentDashboard from "./pages/portal/ParentDashboard";
 import TeacherDashboard from "./pages/portal/TeacherDashboard";
 import AdminDashboard from "./pages/portal/AdminDashboard";
 import FinanceDashboard from "./pages/portal/FinanceDashboard";
+import PrincipalDashboard from "./pages/portal/PrincipalDashboard";
+import DeputyPrincipalDashboard from "./pages/portal/DeputyPrincipalDashboard";
+import HODDashboard from "./pages/portal/HODDashboard";
 import Downloads from "./pages/Downloads";
 import Staff from "./pages/Staff";
 import Facilities from "./pages/Facilities";
@@ -90,6 +93,21 @@ const App = () => (
             <Route path="/portal/finance" element={
               <ProtectedRoute allowedRoles={["finance", "admin"]}>
                 <AuthenticatedLayout><FinanceDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/principal" element={
+              <ProtectedRoute allowedRoles={["principal"]}>
+                <AuthenticatedLayout><PrincipalDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/deputy-principal" element={
+              <ProtectedRoute allowedRoles={["deputy_principal"]}>
+                <AuthenticatedLayout><DeputyPrincipalDashboard /></AuthenticatedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/portal/hod" element={
+              <ProtectedRoute allowedRoles={["hod"]}>
+                <AuthenticatedLayout><HODDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
