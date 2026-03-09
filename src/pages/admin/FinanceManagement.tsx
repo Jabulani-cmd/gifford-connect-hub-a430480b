@@ -50,7 +50,26 @@ function statusBadge(status: string) {
 export default function FinanceManagement() {
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const isFinanceOrAdmin = role === "finance" || role === "admin";
+  const isFinanceOrAdmin = role === "finance" || role === "admin" || role === "admin_supervisor" || role === "principal";
+  const isFinanceClerk = role === "finance"; // needs approval for destructive actions
+
+  // Helper: request supervisor approval instead of direct delete
+  async function requestApproval(actionType: string, targetTable: string, targetId: string, description: string, metadata?: any) {
+    const { error } = await supabase.from("finance_approval_requests").insert({
+      requested_by: user?.id,
+      action_type: actionType,
+      target_table: targetTable,
+      target_id: targetId,
+      description,
+      metadata: metadata || {},
+    });
+    if (error) {
+      toast({ title: "Error submitting request", description: error.message, variant: "destructive" });
+      return false;
+    }
+    toast({ title: "Approval requested", description: "Your request has been sent to the Admin Supervisor for approval." });
+    return true;
+  }
 
   // ─── Fee Structures ───
   const [feeStructures, setFeeStructures] = useState<any[]>([]);
