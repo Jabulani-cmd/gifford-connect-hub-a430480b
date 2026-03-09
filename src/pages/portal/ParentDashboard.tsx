@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   LogOut, Users, GraduationCap, Calendar, DollarSign, Bell,
-  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus
+  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
