@@ -109,7 +109,7 @@ export default function AcademicManagement() {
 
   const [examDialogOpen, setExamDialogOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<any>(null);
-  const [examForm, setExamForm] = useState({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "" });
+  const [examForm, setExamForm] = useState({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "", subject_ids: [] as string[] });
 
   const [marksExam, setMarksExam] = useState("");
   const [marksSubject, setMarksSubject] = useState("");
