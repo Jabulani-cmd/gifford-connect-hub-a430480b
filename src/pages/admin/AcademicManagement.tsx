@@ -182,23 +182,67 @@ export default function AcademicManagement() {
     fetchClasses();
   }
   async function deleteClass(id: string) {
-    if (!confirm("Delete this class? This will also remove all timetable entries, subject assignments, enrollments, attendance, and uploaded materials for this class.")) return;
+    if (!confirm("Delete this class? This will also remove all linked data (materials, timetable, subject assignments, enrollments, attendance, homework, assessments, and class conversations).")) return;
     try {
-      // Delete related records first (foreign key dependencies)
-      const deletions = [
+      // 1) Conversations (must delete messages/participants first)
+      const { data: convs, error: convErr } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("class_id", id);
+      if (convErr) throw convErr;
+      const conversationIds = (convs || []).map((c: any) => c.id);
+      if (conversationIds.length > 0) {
+        const convDeps = await Promise.all([
+          supabase.from("messages").delete().in("conversation_id", conversationIds),
+          supabase.from("conversation_participants").delete().in("conversation_id", conversationIds),
+        ]);
+        const convDepErr = convDeps.find((r) => (r as any).error)?.error;
+        if (convDepErr) throw convDepErr;
+
+        const { error: delConversationsErr } = await supabase
+          .from("conversations")
+          .delete()
+          .in("id", conversationIds);
+        if (delConversationsErr) throw delConversationsErr;
+      }
+
+      // 2) Assessments (must delete submissions/results first)
+      const { data: ass, error: assErr } = await supabase
+        .from("assessments")
+        .select("id")
+        .eq("class_id", id);
+      if (assErr) throw assErr;
+      const assessmentIds = (ass || []).map((a: any) => a.id);
+      if (assessmentIds.length > 0) {
+        const assDeps = await Promise.all([
+          supabase.from("assessment_results").delete().in("assessment_id", assessmentIds),
+          supabase.from("assessment_submissions").delete().in("assessment_id", assessmentIds),
+        ]);
+        const assDepErr = assDeps.find((r) => (r as any).error)?.error;
+        if (assDepErr) throw assDepErr;
+
+        const { error: delAssessmentsErr } = await supabase
+          .from("assessments")
+          .delete()
+          .in("id", assessmentIds);
+        if (delAssessmentsErr) throw delAssessmentsErr;
+      }
+
+      // 3) Direct class dependencies
+      const deletions = await Promise.all([
         supabase.from("study_materials").delete().eq("class_id", id),
+        supabase.from("homework").delete().eq("class_id", id),
         supabase.from("timetable_entries").delete().eq("class_id", id),
+        supabase.from("timetable").delete().eq("class_id", id),
         supabase.from("class_subjects").delete().eq("class_id", id),
         supabase.from("student_classes").delete().eq("class_id", id),
         supabase.from("enrollments").delete().eq("class_id", id),
         supabase.from("attendance").delete().eq("class_id", id),
-      ];
-
-      const results = await Promise.all(deletions);
-      const firstErr = results.find((r) => (r as any).error)?.error;
+      ]);
+      const firstErr = deletions.find((r) => (r as any).error)?.error;
       if (firstErr) throw firstErr;
 
-      // Now delete the class itself
+      // 4) Delete the class itself
       const { error } = await supabase.from("classes").delete().eq("id", id);
       if (error) throw error;
 
