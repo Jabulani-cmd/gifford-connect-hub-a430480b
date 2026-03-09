@@ -218,7 +218,7 @@ export default function StudentTermReportsTab() {
                       examName={`${report.term} ${report.academic_year}`}
                       term={report.term}
                       academicYear={report.academic_year}
-                      results={(report.exam_data || []).map((r: any) => ({
+                      results={(Array.isArray(report.exam_data) ? report.exam_data : []).map((r: any) => ({
                         subject_name: r.subjects?.name || "Unknown",
                         subject_code: null,
                         mark: r.mark || 0,
@@ -228,8 +228,8 @@ export default function StudentTermReportsTab() {
                         class_size: null
                       }))}
                       overallRank={report.class_rank && report.class_size ? { rank: report.class_rank, total: report.class_size } : null}
-                      averageMark={report.average_mark}
-                      averageGrade={report.overall_grade}
+                      averageMark={report.average_mark ?? 0}
+                      averageGrade={report.overall_grade ?? "U"}
                       studentId={studentInfo.id}
                     />
                   </div>
