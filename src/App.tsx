@@ -32,6 +32,7 @@ import Fees from "./pages/Fees";
 import Vacancies from "./pages/Vacancies";
 import SchoolProjects from "./pages/SchoolProjects";
 import Alumni from "./pages/Alumni";
+import PayOnline from "./pages/PayOnline";
 import Contact from "./pages/Contact";
 import Boarding from "./pages/Boarding";
 import SportsCulture from "./pages/SportsCulture";
