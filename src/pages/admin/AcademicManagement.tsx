@@ -713,6 +713,16 @@ export default function AcademicManagement() {
                           <TableCell className="font-medium">{e.name}</TableCell>
                           <TableCell><Badge variant="outline">{examTypes.find(t => t.value === e.exam_type)?.label || e.exam_type}</Badge></TableCell>
                           <TableCell>{e.form_level}</TableCell>
+                          <TableCell className="max-w-[200px]">
+                            <div className="flex flex-wrap gap-1">
+                              {(e.subject_ids || []).slice(0, 3).map((sid: string) => {
+                                const subj = subjects.find(s => s.id === sid);
+                                return subj ? <Badge key={sid} variant="secondary" className="text-[10px]">{subj.name}</Badge> : null;
+                              })}
+                              {(e.subject_ids || []).length > 3 && <Badge variant="secondary" className="text-[10px]">+{e.subject_ids.length - 3}</Badge>}
+                              {!(e.subject_ids || []).length && <span className="text-muted-foreground text-xs">—</span>}
+                            </div>
+                          </TableCell>
                           <TableCell>{e.term}</TableCell>
                           <TableCell>{e.academic_year}</TableCell>
                           <TableCell className="text-xs">{e.start_date || "—"} → {e.end_date || "—"}</TableCell>
