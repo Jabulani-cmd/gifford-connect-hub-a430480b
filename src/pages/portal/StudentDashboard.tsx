@@ -327,6 +327,8 @@ function TabContent({
             { id: "planner" as const, label: "My Planner" },
             { id: "announcements" as const, label: "Announcements" },
             { id: "results" as const, label: "Results" },
+            { id: "exam-timetable" as const, label: "Exam Timetable" },
+            { id: "reports" as const, label: "Term Reports" },
             { id: "fees" as const, label: "Fees" },
           ].map((t) => (
             <button
