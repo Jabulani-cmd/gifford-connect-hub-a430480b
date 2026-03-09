@@ -102,6 +102,7 @@ export default function PrincipalDashboard() {
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
+            <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
@@ -114,6 +115,7 @@ export default function PrincipalDashboard() {
           <TabsContent value="reports"><EMISReports /></TabsContent>
           <TabsContent value="finance"><FinanceManagement /></TabsContent>
           <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
+          <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
         </Tabs>
       </div>
     </div>

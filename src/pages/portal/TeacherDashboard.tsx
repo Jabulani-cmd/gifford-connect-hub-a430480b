@@ -459,6 +459,11 @@ export default function TeacherDashboard() {
           <TabsContent value="schedule">
             <PersonalTimetableEditor />
           </TabsContent>
+
+          {/* LEAVE REQUESTS */}
+          <TabsContent value="leave">
+            <StaffLeaveRequest />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
