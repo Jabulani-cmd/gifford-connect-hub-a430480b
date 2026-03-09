@@ -2770,6 +2770,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_class_cascade: { Args: { _class_id: string }; Returns: undefined }
       get_exam_rankings: {
         Args: { p_exam_id: string; p_student_id: string }
         Returns: Json
