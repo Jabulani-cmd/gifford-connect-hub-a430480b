@@ -23,7 +23,7 @@ import AssessmentsTab from "@/components/teacher/AssessmentsTab";
 import EnhancedMaterialsTab from "@/components/teacher/EnhancedMaterialsTab";
 import EnhancedAnnouncementsTab from "@/components/teacher/EnhancedAnnouncementsTab";
 import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
-
+import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
