@@ -8,6 +8,7 @@ import { Download, FileText, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Fees() {
+  const navigate = useNavigate();
   const [docs, setDocs] = useState<any[]>([]);
 
   useEffect(() => {
