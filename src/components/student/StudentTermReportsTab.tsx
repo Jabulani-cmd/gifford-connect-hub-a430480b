@@ -21,8 +21,8 @@ interface TermReport {
   class_size: number | null;
   form_rank: number | null;
   form_size: number | null;
-  assessment_data: any[];
-  exam_data: any[];
+  assessment_data: unknown;
+  exam_data: unknown;
   class_teacher_comment: string | null;
   head_comment: string | null;
   generated_at: string;
