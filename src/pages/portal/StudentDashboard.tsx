@@ -380,6 +380,8 @@ function TabContent({
           />
         )}
         {homeSubTab === "fees" && <StudentFeeTab studentId={student?.id} />}
+        {homeSubTab === "exam-timetable" && <StudentExamTimetableTab />}
+        {homeSubTab === "reports" && <StudentTermReportsTab />}
       </motion.div>
     );
   }
