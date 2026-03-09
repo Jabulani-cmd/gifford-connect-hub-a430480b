@@ -15,8 +15,8 @@ interface TermReport {
   academic_year: string;
   term: string;
   form_level: string;
-  average_mark: number;
-  overall_grade: string;
+  average_mark: number | null;
+  overall_grade: string | null;
   class_rank: number | null;
   class_size: number | null;
   form_rank: number | null;
