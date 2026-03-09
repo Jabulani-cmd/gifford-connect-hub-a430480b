@@ -16,8 +16,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   BookOpen, Plus, Pencil, Trash2, Users, Clock, Calendar,
   CheckCircle, XCircle, AlertCircle, Search, Loader2,
-  GraduationCap, FileText, BarChart3, Printer
+  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList
 } from "lucide-react";
+import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
+import TermReportsTab from "@/components/admin/TermReportsTab";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
@@ -461,8 +463,10 @@ export default function AcademicManagement() {
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="exams"><GraduationCap className="mr-1 h-4 w-4" /> Exams</TabsTrigger>
+          <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
           <TabsTrigger value="marks"><FileText className="mr-1 h-4 w-4" /> Marks Entry</TabsTrigger>
           <TabsTrigger value="results"><BarChart3 className="mr-1 h-4 w-4" /> Results</TabsTrigger>
+          <TabsTrigger value="term-reports"><ClipboardList className="mr-1 h-4 w-4" /> Term Reports</TabsTrigger>
         </TabsList>
 
         {/* ═══ CLASSES ═══ */}
@@ -852,6 +856,16 @@ export default function AcademicManagement() {
               ) : null}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ═══ EXAM TIMETABLE ═══ */}
+        <TabsContent value="exam-timetable">
+          <ExamTimetableTab />
+        </TabsContent>
+
+        {/* ═══ TERM REPORTS ═══ */}
+        <TabsContent value="term-reports">
+          <TermReportsTab />
         </TabsContent>
       </Tabs>
 

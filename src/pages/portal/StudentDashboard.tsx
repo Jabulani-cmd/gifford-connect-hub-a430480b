@@ -19,6 +19,8 @@ import StudentAnnouncementsSection from "@/components/student/StudentAnnouncemen
 import StudentTimetableTab from "@/components/student/StudentTimetableTab";
 import StudentFeeTab from "@/components/student/StudentFeeTab";
 import StudentExamResultsTab from "@/components/student/StudentExamResultsTab";
+import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 
 type TabId = "home" | "materials" | "assessments" | "attendance" | "profile";
 
@@ -296,7 +298,7 @@ function TabContent({
   announcements, attendancePercent, upcomingAssessments, newMaterials, feeBalance,
   userId, onRefresh,
 }: TabContentProps) {
-  const [homeSubTab, setHomeSubTab] = useState<"overview" | "timetable" | "planner" | "fees" | "announcements" | "results">("overview");
+  const [homeSubTab, setHomeSubTab] = useState<"overview" | "timetable" | "planner" | "fees" | "announcements" | "results" | "exam-timetable" | "reports">("overview");
 
   if (activeTab === "home") {
     return (
@@ -325,6 +327,8 @@ function TabContent({
             { id: "planner" as const, label: "My Planner" },
             { id: "announcements" as const, label: "Announcements" },
             { id: "results" as const, label: "Results" },
+            { id: "exam-timetable" as const, label: "Exam Timetable" },
+            { id: "reports" as const, label: "Term Reports" },
             { id: "fees" as const, label: "Fees" },
           ].map((t) => (
             <button
@@ -376,6 +380,8 @@ function TabContent({
           />
         )}
         {homeSubTab === "fees" && <StudentFeeTab studentId={student?.id} />}
+        {homeSubTab === "exam-timetable" && <StudentExamTimetableTab />}
+        {homeSubTab === "reports" && <StudentTermReportsTab />}
       </motion.div>
     );
   }

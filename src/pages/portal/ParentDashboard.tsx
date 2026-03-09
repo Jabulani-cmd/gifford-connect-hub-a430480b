@@ -10,17 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   LogOut, Users, GraduationCap, Calendar, DollarSign, Bell,
-  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus
+  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements";
+type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
@@ -181,6 +183,8 @@ export default function ParentDashboard() {
   const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "overview", label: "Overview", icon: Users },
     { id: "grades", label: "Grades", icon: GraduationCap },
+    { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
+    { id: "reports", label: "Term Reports", icon: FileText },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -809,6 +813,24 @@ function TabContent(props: TabContentProps) {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Announcements</h2>
         <StudentAnnouncementsSection announcements={announcements} />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "exam-timetable") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Exam Timetable — {child.full_name}</h2>
+        <StudentExamTimetableTab />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "reports") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Term Reports — {child.full_name}</h2>
+        <StudentTermReportsTab />
       </motion.div>
     );
   }
