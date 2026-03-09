@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Bell, BarChart3, Calendar, ClipboardList,
-  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle
+  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
