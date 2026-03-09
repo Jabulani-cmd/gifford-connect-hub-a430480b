@@ -36,10 +36,21 @@ export default function Fees() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-8 text-center text-lg text-muted-foreground"
+            className="mb-4 text-center text-lg text-muted-foreground"
           >
             Download the latest fee schedules, payment information, and financial documents below.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-8 flex justify-center"
+          >
+            <Button size="lg" className="gap-2" onClick={() => navigate("/pay-online?type=fees")}>
+              <CreditCard className="h-5 w-5" /> Pay Fees Online
+            </Button>
+          </motion.div>
 
           {docs.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
