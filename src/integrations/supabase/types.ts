@@ -923,6 +923,60 @@ export type Database = {
           },
         ]
       }
+      exam_timetable_entries: {
+        Row: {
+          created_at: string
+          end_time: string
+          exam_date: string
+          exam_id: string
+          id: string
+          invigilators: string[] | null
+          notes: string | null
+          start_time: string
+          subject_id: string
+          venue: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          exam_date: string
+          exam_id: string
+          id?: string
+          invigilators?: string[] | null
+          notes?: string | null
+          start_time: string
+          subject_id: string
+          venue?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          exam_date?: string
+          exam_id?: string
+          id?: string
+          invigilators?: string[] | null
+          notes?: string | null
+          start_time?: string
+          subject_id?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_timetable_entries_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_timetable_entries_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           academic_year: string
@@ -2583,6 +2637,93 @@ export type Database = {
             columns: ["supplier_invoice_id"]
             isOneToOne: false
             referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      term_reports: {
+        Row: {
+          academic_year: string
+          assessment_data: Json | null
+          average_mark: number | null
+          class_id: string | null
+          class_rank: number | null
+          class_size: number | null
+          class_teacher_comment: string | null
+          created_at: string
+          exam_data: Json | null
+          form_level: string
+          form_rank: number | null
+          form_size: number | null
+          generated_at: string | null
+          generated_by: string | null
+          head_comment: string | null
+          id: string
+          is_published: boolean | null
+          overall_grade: string | null
+          student_id: string
+          term: string
+          total_marks: number | null
+        }
+        Insert: {
+          academic_year: string
+          assessment_data?: Json | null
+          average_mark?: number | null
+          class_id?: string | null
+          class_rank?: number | null
+          class_size?: number | null
+          class_teacher_comment?: string | null
+          created_at?: string
+          exam_data?: Json | null
+          form_level: string
+          form_rank?: number | null
+          form_size?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          head_comment?: string | null
+          id?: string
+          is_published?: boolean | null
+          overall_grade?: string | null
+          student_id: string
+          term: string
+          total_marks?: number | null
+        }
+        Update: {
+          academic_year?: string
+          assessment_data?: Json | null
+          average_mark?: number | null
+          class_id?: string | null
+          class_rank?: number | null
+          class_size?: number | null
+          class_teacher_comment?: string | null
+          created_at?: string
+          exam_data?: Json | null
+          form_level?: string
+          form_rank?: number | null
+          form_size?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          head_comment?: string | null
+          id?: string
+          is_published?: boolean | null
+          overall_grade?: string | null
+          student_id?: string
+          term?: string
+          total_marks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_reports_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_reports_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
