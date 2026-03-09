@@ -182,19 +182,26 @@ export default function AcademicManagement() {
     fetchClasses();
   }
   async function deleteClass(id: string) {
-    if (!confirm("Delete this class? This will also remove all timetable entries, subject assignments, and enrollments for this class.")) return;
+    if (!confirm("Delete this class? This will also remove all timetable entries, subject assignments, enrollments, attendance, and uploaded materials for this class.")) return;
     try {
       // Delete related records first (foreign key dependencies)
-      await supabase.from("timetable_entries").delete().eq("class_id", id);
-      await supabase.from("class_subjects").delete().eq("class_id", id);
-      await supabase.from("student_classes").delete().eq("class_id", id);
-      await supabase.from("enrollments").delete().eq("class_id", id);
-      await supabase.from("attendance").delete().eq("class_id", id);
-      
+      const deletions = [
+        supabase.from("study_materials").delete().eq("class_id", id),
+        supabase.from("timetable_entries").delete().eq("class_id", id),
+        supabase.from("class_subjects").delete().eq("class_id", id),
+        supabase.from("student_classes").delete().eq("class_id", id),
+        supabase.from("enrollments").delete().eq("class_id", id),
+        supabase.from("attendance").delete().eq("class_id", id),
+      ];
+
+      const results = await Promise.all(deletions);
+      const firstErr = results.find((r) => (r as any).error)?.error;
+      if (firstErr) throw firstErr;
+
       // Now delete the class itself
       const { error } = await supabase.from("classes").delete().eq("id", id);
       if (error) throw error;
-      
+
       toast({ title: "Class deleted successfully" });
       fetchClasses();
       fetchTimetable();
