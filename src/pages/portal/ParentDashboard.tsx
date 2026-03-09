@@ -817,5 +817,23 @@ function TabContent(props: TabContentProps) {
     );
   }
 
+  if (activeTab === "exam-timetable") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Exam Timetable — {child.full_name}</h2>
+        <StudentExamTimetableTab />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "reports") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Term Reports — {child.full_name}</h2>
+        <StudentTermReportsTab />
+      </motion.div>
+    );
+  }
+
   return null;
 }
