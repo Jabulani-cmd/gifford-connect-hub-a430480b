@@ -84,6 +84,7 @@ export default function HODDashboard() {
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
+            <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
@@ -92,6 +93,7 @@ export default function HODDashboard() {
           <TabsContent value="communication"><CommunicationModule /></TabsContent>
           <TabsContent value="reports"><EMISReports /></TabsContent>
           <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
+          <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
         </Tabs>
       </div>
     </div>
