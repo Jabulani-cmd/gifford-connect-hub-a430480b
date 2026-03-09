@@ -345,9 +345,11 @@ export default function StudentManagement() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Student updated!" });
     } else {
-      const { error } = await supabase.from("students").insert(payload as any);
+      // Remove admission_number so the database trigger auto-generates GHS#####
+      const { admission_number, ...insertPayload } = payload;
+      const { data: newStudent, error } = await supabase.from("students").insert(insertPayload as any).select("admission_number").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      toast({ title: "Student added!" });
+      toast({ title: "Student added!", description: `Student number: ${newStudent?.admission_number}` });
     }
     setSaving(false);
     setDialogOpen(false);
@@ -449,7 +451,7 @@ export default function StudentManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Photo</TableHead>
-                <TableHead>Admission #</TableHead>
+                <TableHead>Student #</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Form/Stream</TableHead>
                 <TableHead>Guardian Phone</TableHead>
@@ -534,9 +536,14 @@ export default function StudentManagement() {
             </div>
 
             <div className="space-y-1">
-              <Label>Admission Number *</Label>
-              <Input value={formData.admission_number} onChange={e => updateField("admission_number", e.target.value)} />
-              {errors.admission_number && <p className="text-xs text-destructive">{errors.admission_number}</p>}
+              <Label>Student Number {editingId ? "" : "(Auto-generated)"}</Label>
+              {editingId ? (
+                <Input value={formData.admission_number} readOnly className="bg-muted" />
+              ) : (
+                <p className="text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted">
+                  Will be auto-generated as <strong>GHS#####</strong> on save
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <Label>Full Name *</Label>

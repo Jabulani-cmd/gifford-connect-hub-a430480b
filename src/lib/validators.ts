@@ -9,7 +9,7 @@ export const zimNationalIdRegex = /^\d{2}-\d{6,7}[A-Z]-\d{2}$/;
 export const zimNationalIdSchema = z.string().regex(zimNationalIdRegex, "Invalid National ID format (XX-XXXXXXX-X-XX)").or(z.literal(""));
 
 export const studentFormSchema = z.object({
-  admission_number: z.string().min(1, "Admission number is required"),
+  admission_number: z.string().optional().default(""),
   full_name: z.string().min(2, "Full name is required"),
   date_of_birth: z.string().optional(),
   form: z.string().min(1, "Form is required"),
