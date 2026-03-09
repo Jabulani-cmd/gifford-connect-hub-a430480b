@@ -13,6 +13,7 @@ const fadeUp = {
 };
 
 export default function SchoolProjects() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
