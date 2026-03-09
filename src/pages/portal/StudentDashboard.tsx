@@ -363,7 +363,7 @@ function TabContent({
           </div>
         )}
 
-        {homeSubTab === "timetable" && <StudentTimetableTab studentClassId={studentClassId} />}
+        {homeSubTab === "timetable" && <StudentTimetableTab studentClassId={studentClassId} studentId={student?.id} />}
         {homeSubTab === "planner" && <PersonalTimetableEditor title="My Personal Planner" />}
         {homeSubTab === "announcements" && <StudentAnnouncementsSection announcements={announcements} />}
         {homeSubTab === "results" && (
