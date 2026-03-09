@@ -705,7 +705,7 @@ export default function AcademicManagement() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Form</TableHead><TableHead>Term</TableHead><TableHead>Year</TableHead><TableHead>Dates</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
+                      <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Form</TableHead><TableHead>Subjects</TableHead><TableHead>Term</TableHead><TableHead>Year</TableHead><TableHead>Dates</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {exams.map(e => (
