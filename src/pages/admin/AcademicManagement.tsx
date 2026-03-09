@@ -109,7 +109,7 @@ export default function AcademicManagement() {
 
   const [examDialogOpen, setExamDialogOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<any>(null);
-  const [examForm, setExamForm] = useState({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "" });
+  const [examForm, setExamForm] = useState({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "", subject_ids: [] as string[] });
 
   const [marksExam, setMarksExam] = useState("");
   const [marksSubject, setMarksSubject] = useState("");
@@ -342,17 +342,18 @@ export default function AcademicManagement() {
   // ═══ EXAM CRUD ═══
   function openAddExam() {
     setEditingExam(null);
-    setExamForm({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "" });
+    setExamForm({ name: "", exam_type: "end_of_term", form_level: "Form 1", term: "Term 1", academic_year: "2026", start_date: "", end_date: "", subject_ids: [] });
     setExamDialogOpen(true);
   }
   function openEditExam(e: any) {
     setEditingExam(e);
-    setExamForm({ name: e.name, exam_type: e.exam_type, form_level: e.form_level, term: e.term, academic_year: e.academic_year, start_date: e.start_date || "", end_date: e.end_date || "" });
+    setExamForm({ name: e.name, exam_type: e.exam_type, form_level: e.form_level, term: e.term, academic_year: e.academic_year, start_date: e.start_date || "", end_date: e.end_date || "", subject_ids: e.subject_ids || [] });
     setExamDialogOpen(true);
   }
   async function saveExam() {
     if (!examForm.name) { toast({ title: "Name required", variant: "destructive" }); return; }
-    const payload = { ...examForm, start_date: examForm.start_date || null, end_date: examForm.end_date || null };
+    if (examForm.subject_ids.length === 0) { toast({ title: "Select at least one subject", variant: "destructive" }); return; }
+    const payload = { ...examForm, start_date: examForm.start_date || null, end_date: examForm.end_date || null } as any;
     if (editingExam) {
       const { error } = await supabase.from("exams").update(payload).eq("id", editingExam.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -704,7 +705,7 @@ export default function AcademicManagement() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
-                      <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Form</TableHead><TableHead>Term</TableHead><TableHead>Year</TableHead><TableHead>Dates</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
+                      <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Form</TableHead><TableHead>Subjects</TableHead><TableHead>Term</TableHead><TableHead>Year</TableHead><TableHead>Dates</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {exams.map(e => (
@@ -712,6 +713,16 @@ export default function AcademicManagement() {
                           <TableCell className="font-medium">{e.name}</TableCell>
                           <TableCell><Badge variant="outline">{examTypes.find(t => t.value === e.exam_type)?.label || e.exam_type}</Badge></TableCell>
                           <TableCell>{e.form_level}</TableCell>
+                          <TableCell className="max-w-[200px]">
+                            <div className="flex flex-wrap gap-1">
+                              {(e.subject_ids || []).slice(0, 3).map((sid: string) => {
+                                const subj = subjects.find(s => s.id === sid);
+                                return subj ? <Badge key={sid} variant="secondary" className="text-[10px]">{subj.name}</Badge> : null;
+                              })}
+                              {(e.subject_ids || []).length > 3 && <Badge variant="secondary" className="text-[10px]">+{e.subject_ids.length - 3}</Badge>}
+                              {!(e.subject_ids || []).length && <span className="text-muted-foreground text-xs">—</span>}
+                            </div>
+                          </TableCell>
                           <TableCell>{e.term}</TableCell>
                           <TableCell>{e.academic_year}</TableCell>
                           <TableCell className="text-xs">{e.start_date || "—"} → {e.end_date || "—"}</TableCell>
@@ -754,7 +765,7 @@ export default function AcademicManagement() {
                 </Select>
                 <Select value={marksSubject} onValueChange={setMarksSubject}>
                   <SelectTrigger className="w-48"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                  <SelectContent>{subjects.filter(s => s.is_examinable).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{subjects.filter(s => s.is_examinable && (!selectedExam?.subject_ids?.length || selectedExam.subject_ids.includes(s.id))).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
 
@@ -982,8 +993,8 @@ export default function AcademicManagement() {
 
       {/* Exam Dialog */}
       <Dialog open={examDialogOpen} onOpenChange={setExamDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editingExam ? "Edit Exam" : "Create Exam"}</DialogTitle><DialogDescription>Define exam details</DialogDescription></DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingExam ? "Edit Exam" : "Create Exam"}</DialogTitle><DialogDescription>Define exam details and select subjects</DialogDescription></DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Name</Label><Input value={examForm.name} onChange={e => setExamForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. End of Term 1 2026" /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -1012,6 +1023,38 @@ export default function AcademicManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Start Date</Label><Input type="date" value={examForm.start_date} onChange={e => setExamForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div className="space-y-2"><Label>End Date</Label><Input type="date" value={examForm.end_date} onChange={e => setExamForm(p => ({ ...p, end_date: e.target.value }))} /></div>
+            </div>
+            {/* Subjects Selection */}
+            <div className="space-y-2">
+              <Label>Exam Subjects ({examForm.subject_ids.length} selected)</Label>
+              <div className="flex gap-2 mb-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setExamForm(p => ({ ...p, subject_ids: subjects.filter(s => s.is_examinable).map(s => s.id) }))}>Select All</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setExamForm(p => ({ ...p, subject_ids: [] }))}>Clear All</Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto rounded-md border p-3">
+                {subjects.filter(s => s.is_examinable).map(s => (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`exam-subj-${s.id}`}
+                      checked={examForm.subject_ids.includes(s.id)}
+                      onCheckedChange={(checked) => {
+                        setExamForm(p => ({
+                          ...p,
+                          subject_ids: checked
+                            ? [...p.subject_ids, s.id]
+                            : p.subject_ids.filter(id => id !== s.id)
+                        }));
+                      }}
+                    />
+                    <Label htmlFor={`exam-subj-${s.id}`} className="text-sm cursor-pointer">
+                      {s.name} {s.code ? <span className="text-muted-foreground">({s.code})</span> : null}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {subjects.filter(s => s.is_examinable).length === 0 && (
+                <p className="text-xs text-muted-foreground">No examinable subjects found. Add subjects in the Subjects tab first.</p>
+              )}
             </div>
           </div>
           <DialogFooter>

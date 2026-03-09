@@ -934,6 +934,7 @@ export type Database = {
           is_published: boolean
           name: string
           start_date: string | null
+          subject_ids: string[] | null
           term: string
         }
         Insert: {
@@ -946,6 +947,7 @@ export type Database = {
           is_published?: boolean
           name: string
           start_date?: string | null
+          subject_ids?: string[] | null
           term?: string
         }
         Update: {
@@ -958,6 +960,7 @@ export type Database = {
           is_published?: boolean
           name?: string
           start_date?: string | null
+          subject_ids?: string[] | null
           term?: string
         }
         Relationships: []
