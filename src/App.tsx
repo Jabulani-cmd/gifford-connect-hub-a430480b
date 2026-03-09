@@ -119,6 +119,11 @@ const App = () => (
                 <AuthenticatedLayout><AdminSupervisorDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
+            <Route path="/portal/registration" element={
+              <ProtectedRoute allowedRoles={["registration", "admin"]}>
+                <RegistrationDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
