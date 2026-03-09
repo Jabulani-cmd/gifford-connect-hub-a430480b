@@ -275,8 +275,14 @@ export default function StudentManagement() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
+  const [dbSubjects, setDbSubjects] = useState<{ id: string; name: string; department: string | null }[]>([]);
 
-  useEffect(() => { fetchStudents(); }, []);
+  useEffect(() => { fetchStudents(); fetchSubjects(); }, []);
+
+  const fetchSubjects = async () => {
+    const { data } = await supabase.from("subjects").select("id, name, department").order("name");
+    if (data) setDbSubjects(data);
+  };
 
   const fetchStudents = async () => {
     setLoading(true);
