@@ -534,9 +534,14 @@ export default function StudentManagement() {
             </div>
 
             <div className="space-y-1">
-              <Label>Admission Number *</Label>
-              <Input value={formData.admission_number} onChange={e => updateField("admission_number", e.target.value)} />
-              {errors.admission_number && <p className="text-xs text-destructive">{errors.admission_number}</p>}
+              <Label>Student Number {editingId ? "" : "(Auto-generated)"}</Label>
+              {editingId ? (
+                <Input value={formData.admission_number} readOnly className="bg-muted" />
+              ) : (
+                <p className="text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted">
+                  Will be auto-generated as <strong>GHS#####</strong> on save
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <Label>Full Name *</Label>
