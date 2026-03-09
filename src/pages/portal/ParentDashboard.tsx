@@ -20,7 +20,7 @@ import StudentAnnouncementsSection from "@/components/student/StudentAnnouncemen
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements";
+type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
