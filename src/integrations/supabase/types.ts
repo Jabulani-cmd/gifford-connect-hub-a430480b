@@ -2373,6 +2373,7 @@ export type Database = {
         Row: {
           address: string | null
           admission_number: string
+          boarding_status: string | null
           created_at: string
           date_of_birth: string | null
           deleted_at: string | null
@@ -2397,6 +2398,7 @@ export type Database = {
         Insert: {
           address?: string | null
           admission_number: string
+          boarding_status?: string | null
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
@@ -2421,6 +2423,7 @@ export type Database = {
         Update: {
           address?: string | null
           admission_number?: string
+          boarding_status?: string | null
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
