@@ -362,27 +362,30 @@ export default function StudentManagement() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Student updated!" });
     } else {
-      // Generate admission number in app code since trigger may not be active
-      const { data: maxRow } = await supabase.from("students")
-        .select("admission_number")
-        .like("admission_number", "GHS%")
-        .order("admission_number", { ascending: false })
-        .limit(1);
-      
-      const lastNum = maxRow && maxRow.length > 0 
-        ? parseInt(maxRow[0].admission_number.replace("GHS", ""), 10) || 1000
-        : 1000;
-      const nextAdmissionNumber = "GHS" + String(lastNum + 1).padStart(5, "0");
+      // Generate a guaranteed-unique admission number using timestamp
+      const timestamp = Date.now().toString().slice(-6);
+      const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, "0");
+      const nextAdmissionNumber = `GHS${timestamp}${randomSuffix}`;
 
       const { admission_number, ...rest } = payload;
       const insertPayload = { ...rest, admission_number: nextAdmissionNumber };
-      const { data: newStudent, error } = await supabase.from("students").insert(insertPayload as any).select("id, admission_number").single();
+      
+      console.log("Attempting student insert with admission:", nextAdmissionNumber);
+      console.log("Full payload keys:", Object.keys(insertPayload));
+      
+      const { data: newStudent, error } = await supabase
+        .from("students")
+        .insert(insertPayload as any)
+        .select("id, admission_number")
+        .single();
+      
       if (error) {
-        console.error("Student insert error:", error.code, error.message, error.details, error.hint);
-        const desc = error.message.includes("students_admission_number_key")
-          ? "A student with this admission number already exists. The system will auto-generate a unique number — please try again."
-          : error.message;
-        toast({ title: "Error", description: desc, variant: "destructive" });
+        console.error("STUDENT INSERT ERROR:", JSON.stringify(error));
+        toast({ 
+          title: "Error", 
+          description: `Insert failed: ${error.message} (code: ${error.code})`, 
+          variant: "destructive" 
+        });
         setSaving(false);
         return;
       }
