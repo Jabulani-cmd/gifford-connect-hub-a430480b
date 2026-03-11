@@ -364,8 +364,10 @@ export default function StudentManagement() {
     } else {
       // Remove admission_number so the database trigger auto-generates GHS#####
       const { admission_number, ...insertPayload } = payload;
+      console.error("Insert payload:", JSON.stringify(insertPayload));
       const { data: newStudent, error } = await supabase.from("students").insert(insertPayload as any).select("id, admission_number").single();
       if (error) {
+        console.error("Student insert error:", error.code, error.message, error.details, error.hint);
         const desc = error.message.includes("students_admission_number_key")
           ? "A student with this admission number already exists. The system will auto-generate a unique number — please try again."
           : error.message;
