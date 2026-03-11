@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,11 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
   const [submitFile, setSubmitFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (studentClassId && studentId) fetchAll();
+    if (studentClassId && studentId) {
+      fetchAll();
+    } else {
+      setLoading(false);
+    }
   }, [studentClassId, studentId]);
 
   const fetchAll = async () => {

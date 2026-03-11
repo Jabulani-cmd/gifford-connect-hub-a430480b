@@ -37,7 +37,11 @@ import PayOnline from "./pages/PayOnline";
 import Contact from "./pages/Contact";
 import Boarding from "./pages/Boarding";
 import SportsCulture from "./pages/SportsCulture";
+import Awards from "./pages/Awards";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ForceChangePassword from "./pages/ForceChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +71,11 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/boarding" element={<Boarding />} />
             <Route path="/sports-culture" element={<SportsCulture />} />
+            <Route path="/awards" element={<Awards />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/change-password" element={<ForceChangePassword />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/portal/student" element={

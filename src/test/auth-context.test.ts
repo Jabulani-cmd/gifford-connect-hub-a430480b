@@ -10,6 +10,8 @@ function getRedirectPath(role: string): string {
   if (role === "principal") return "/portal/principal";
   if (role === "deputy_principal") return "/portal/deputy-principal";
   if (role === "hod") return "/portal/hod";
+  if (role === "admin_supervisor") return "/portal/admin-supervisor";
+  if (role === "registration") return "/portal/registration";
   return "/";
 }
 
@@ -41,7 +43,7 @@ describe("Role-Based Redirects", () => {
 });
 
 describe("App Role Types", () => {
-  const validRoles = ["student", "parent", "teacher", "admin", "finance", "principal", "deputy_principal", "hod"];
+  const validRoles = ["student", "parent", "teacher", "admin", "finance", "principal", "deputy_principal", "hod", "admin_supervisor", "registration"];
 
   it("all portal roles are accounted for", () => {
     validRoles.forEach((role) => {

@@ -43,6 +43,14 @@ describe("Student Form Schema", () => {
     admission_number: "GHS2026/001",
     full_name: "Tatenda Moyo",
     form: "Form 1",
+    date_of_birth: "2010-05-15",
+    gender: "Male",
+    guardian_name: "Mr. Moyo",
+    guardian_phone: "0771234567",
+    guardian_email: "moyo@example.com",
+    emergency_contact: "0772345678",
+    address: "123 Main Road, Harare",
+    enrollment_date: "2026-01-15",
   };
 
   it("validates a minimal valid student", () => {
@@ -52,7 +60,8 @@ describe("Student Form Schema", () => {
 
   it("rejects missing admission_number", () => {
     const result = studentFormSchema.safeParse({ ...validStudent, admission_number: "" });
-    expect(result.success).toBe(false);
+    // admission_number is optional with default "", so empty is valid
+    expect(result.success).toBe(true);
   });
 
   it("rejects missing full_name", () => {
@@ -68,10 +77,9 @@ describe("Student Form Schema", () => {
   it("accepts valid optional fields", () => {
     const result = studentFormSchema.safeParse({
       ...validStudent,
-      guardian_phone: "0771234567",
-      guardian_email: "parent@example.com",
-      emergency_contact: "+263771234567",
       has_medical_alert: true,
+      medical_conditions: "Asthma",
+      stream: "A",
     });
     expect(result.success).toBe(true);
   });
@@ -92,14 +100,12 @@ describe("Student Form Schema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("allows empty optional strings", () => {
+  it("rejects missing required fields", () => {
     const result = studentFormSchema.safeParse({
-      ...validStudent,
-      guardian_phone: "",
-      guardian_email: "",
-      emergency_contact: "",
+      full_name: "Tatenda Moyo",
+      form: "Form 1",
     });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 

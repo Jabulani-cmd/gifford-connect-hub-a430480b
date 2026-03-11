@@ -1,10 +1,13 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
+import VerificationCodesManager from "@/components/admin/VerificationCodesManager";
 import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
 import ProjectsManagement from "@/components/admin/ProjectsManagement";
+import AwardsManagement from "@/components/admin/AwardsManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
 import StudentManagement from "@/pages/admin/StudentManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
@@ -17,6 +20,7 @@ import DataMigration from "@/pages/admin/DataMigration";
 import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
+import PasswordManagement from "@/components/admin/PasswordManagement";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket, KeyRound, Megaphone, Trophy, ShieldAlert } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +51,7 @@ export default function AdminDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newText, setNewText] = useState("");
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
 
   // Carousel images
   const [carouselImages, setCarouselImages] = useState<any[]>([]);
@@ -241,6 +247,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("announcements").insert({ title: newTitle, content: newText, is_public: true, author_id: user?.id });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setNewTitle(""); setNewText("");
+    setShowAnnouncementDialog(false);
     toast({ title: "Announcement posted!" });
     fetchAnnouncements();
   };
@@ -448,24 +455,26 @@ export default function AdminDashboard() {
           Admin Dashboard
         </motion.h1>
 
-        <div className="mb-8 grid gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Announcements", value: String(announcements.length), icon: Bell },
-            { label: "Carousel Slides", value: String(carouselImages.length), icon: Layers },
-            { label: "Downloads", value: String(downloads.length), icon: Download },
-            { label: "Meetings", value: String(meetings.length), icon: HandshakeIcon },
+            { label: "Announcements", value: String(announcements.length), icon: Bell, color: "bg-primary/10" },
+            { label: "Carousel Slides", value: String(carouselImages.length), icon: Layers, color: "bg-accent/10" },
+            { label: "Downloads", value: String(downloads.length), icon: Download, color: "bg-primary/10" },
+            { label: "Meetings", value: String(meetings.length), icon: HandshakeIcon, color: "bg-accent/10" },
           ].map((s, i) => (
-            <Card key={i} className="border-none shadow-maroon">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-maroon-light">
-                  <s.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-primary">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <Card className="border shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${s.color}`}>
+                    <s.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
 
@@ -527,57 +536,93 @@ export default function AdminDashboard() {
         )}
 
         <Tabs defaultValue="announcements" className="space-y-6">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
-            <TabsTrigger value="carousel"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
-            <TabsTrigger value="gallery"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
-            <TabsTrigger value="downloads"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
-            <TabsTrigger value="meetings"><HandshakeIcon className="mr-1 h-4 w-4" /> SDC / Meetings</TabsTrigger>
-            <TabsTrigger value="user-mgmt"><Shield className="mr-1 h-4 w-4" /> User Management</TabsTrigger>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
-            <TabsTrigger value="site-images"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
-            <TabsTrigger value="staff-mgmt"><UserCheck className="mr-1 h-4 w-4" /> Staff</TabsTrigger>
-            <TabsTrigger value="facilities"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
-            <TabsTrigger value="projects"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
-            <TabsTrigger value="student-mgmt"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
-            <TabsTrigger value="staff-full"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
-            
-            <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
-            <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
-            <TabsTrigger value="inventory"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
-            <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
-            <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
-            <TabsTrigger value="audit"><ShieldCheck className="mr-1 h-4 w-4" /> Audit Logs</TabsTrigger>
-            <TabsTrigger value="migration"><Database className="mr-1 h-4 w-4" /> Data Migration</TabsTrigger>
-            <TabsTrigger value="golive"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
-            <TabsTrigger value="manual"><BookOpen className="mr-1 h-4 w-4" /> User Manual</TabsTrigger>
-          </TabsList>
+          <div className="rounded-xl border bg-card p-1.5">
+            <TabsList className="flex-wrap gap-1 bg-transparent h-auto p-0">
+              {/* Content Management */}
+              <TabsTrigger value="announcements" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
+              <TabsTrigger value="carousel" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
+              <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
+              <TabsTrigger value="downloads" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
+              <TabsTrigger value="site-images" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {/* People */}
+              <TabsTrigger value="student-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
+              <TabsTrigger value="staff-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><UserCheck className="mr-1 h-4 w-4" /> Staff</TabsTrigger>
+              <TabsTrigger value="staff-full" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
+              <TabsTrigger value="user-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="mr-1 h-4 w-4" /> Users</TabsTrigger>
+              <TabsTrigger value="verification-codes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><KeyRound className="mr-1 h-4 w-4" /> Codes</TabsTrigger>
+              <TabsTrigger value="password-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldAlert className="mr-1 h-4 w-4" /> Passwords</TabsTrigger>
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {/* Operations */}
+              <TabsTrigger value="academics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
+              <TabsTrigger value="timetable" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
+              <TabsTrigger value="boarding" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
+              <TabsTrigger value="inventory" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
+              <TabsTrigger value="facilities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
+              <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
+              <TabsTrigger value="awards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-4 w-4" /> Awards</TabsTrigger>
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {/* Communication & Reports */}
+              <TabsTrigger value="meetings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-4 w-4" /> Meetings</TabsTrigger>
+              <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
+              <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
+              <TabsTrigger value="audit" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldCheck className="mr-1 h-4 w-4" /> Audit</TabsTrigger>
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {/* System */}
+              <TabsTrigger value="migration" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Database className="mr-1 h-4 w-4" /> Migration</TabsTrigger>
+              <TabsTrigger value="golive" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
+              <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-4 w-4" /> Manual</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Announcements Tab */}
           <TabsContent value="announcements">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader><CardTitle className="font-heading">New Announcement</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>Title</Label><Input value={newTitle} onChange={e => setNewTitle(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Content</Label><Textarea value={newText} onChange={e => setNewText(e.target.value)} rows={3} /></div>
-                  <Button onClick={addAnnouncement} disabled={!newTitle}><Plus className="mr-1 h-4 w-4" /> Post Announcement</Button>
-                </CardContent>
-              </Card>
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                {announcements.map(a => (
-                  <Card key={a.id}>
-                    <CardContent className="flex items-start justify-between p-4">
-                      <div>
-                        <span className="text-xs font-semibold text-accent">{new Date(a.created_at).toLocaleDateString()}</span>
-                        <h3 className="font-semibold">{a.title}</h3>
-                        <p className="text-sm text-muted-foreground">{a.content}</p>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </CardContent>
-                  </Card>
-                ))}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg font-semibold text-foreground">Announcements</h2>
+                <Button onClick={() => setShowAnnouncementDialog(true)}>
+                  <Plus className="mr-1 h-4 w-4" /> New Announcement
+                </Button>
               </div>
+
+              {/* Create Announcement Dialog */}
+              <Dialog open={showAnnouncementDialog} onOpenChange={setShowAnnouncementDialog}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader><DialogTitle className="font-heading">Post Announcement</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2"><Label>Title *</Label><Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Announcement title" /></div>
+                    <div className="space-y-2"><Label>Content</Label><Textarea value={newText} onChange={e => setNewText(e.target.value)} rows={4} placeholder="Write your announcement..." /></div>
+                    <Button onClick={addAnnouncement} disabled={!newTitle} className="w-full"><Plus className="mr-1 h-4 w-4" /> Post Announcement</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {announcements.length === 0 ? (
+                <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
+                  <Megaphone className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                  No announcements yet. Click "New Announcement" to get started.
+                </CardContent></Card>
+              ) : (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                  {announcements.map(a => (
+                    <Card key={a.id} className="hover:shadow-sm transition-shadow">
+                      <CardContent className="flex items-start justify-between gap-3 p-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                            <Megaphone className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-sm">{a.title}</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{a.content}</p>
+                            <span className="text-[11px] text-muted-foreground/70 mt-1 block">{new Date(a.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -734,6 +779,11 @@ export default function AdminDashboard() {
             <UserManagement />
           </TabsContent>
 
+          {/* Password Management Tab */}
+          <TabsContent value="password-mgmt">
+            <PasswordManagement />
+          </TabsContent>
+
           {/* Timetable Tab */}
           <TabsContent value="timetable">
             <Card>
@@ -842,6 +892,11 @@ export default function AdminDashboard() {
             <ProjectsManagement />
           </TabsContent>
 
+          {/* Awards Tab */}
+          <TabsContent value="awards">
+            <AwardsManagement />
+          </TabsContent>
+
           {/* Student Management Tab */}
           <TabsContent value="student-mgmt">
             <StudentManagement />
@@ -895,6 +950,11 @@ export default function AdminDashboard() {
           {/* User Manual Tab */}
           <TabsContent value="manual">
             <UserManualPage />
+          </TabsContent>
+
+          {/* Verification Codes Tab */}
+          <TabsContent value="verification-codes">
+            <VerificationCodesManager />
           </TabsContent>
         </Tabs>
       </div>

@@ -19,35 +19,41 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Verify caller is admin (except for seed actions which bootstrap)
-    if (action !== "seed-admin" && action !== "seed-teacher") {
+    // Verify caller is admin (except for seed/public actions)
+    if (action !== "seed-admin" && action !== "seed-teacher" && action !== "register-parent") {
       const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const token = authHeader.replace("Bearer ", "");
-      const {
-        data: { user },
-      } = await supabaseAdmin.auth.getUser(token);
-      if (!user) {
+      
+      // Use getClaims for faster validation, fall back to getUser
+      const supabaseAuth = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims?.sub) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const userId = claimsData.claims.sub;
       const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-        _user_id: user.id,
+        _user_id: userId,
         _role: "admin",
       });
       const { data: isPrincipal } = await supabaseAdmin.rpc("has_role", {
-        _user_id: user.id,
+        _user_id: userId,
         _role: "principal",
       });
       const { data: isAdminSupervisor } = await supabaseAdmin.rpc("has_role", {
-        _user_id: user.id,
+        _user_id: userId,
         _role: "admin_supervisor",
       });
       if (!isAdmin && !isPrincipal && !isAdminSupervisor && action !== "get-students") {
@@ -144,7 +150,7 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
-        user_metadata: { full_name },
+        user_metadata: { full_name, must_change_password: true },
       });
       if (createError) throw createError;
 
@@ -154,10 +160,18 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: portal_role });
 
       // Update profile
-      await supabaseAdmin.from("profiles").update({ phone: phone || null, grade: grade || null, class_name: class_name ? `${grade || ""}${class_name}` : null }).eq("id", userId);
-
-      // If staff role (not student or parent), add to staff table
-      if (portal_role !== "student" && portal_role !== "parent") {
+      await supabaseAdmin.from("profiles").update({ phone: phone || null }).eq("user_id", userId);
+      if (portal_role === "student") {
+        // Create student record linked to auth user
+        await supabaseAdmin.from("students").insert({
+          full_name,
+          user_id: userId,
+          form: grade || null,
+          stream: class_name || null,
+          guardian_phone: phone || null,
+          status: "active",
+        });
+      } else if (portal_role !== "parent") {
         // Determine proper category
         let staffCategory = "teaching";
         if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
@@ -188,7 +202,7 @@ Deno.serve(async (req) => {
     // ==================== LIST USERS ====================
     if (action === "list-users") {
       const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
-      const { data: allProfiles } = await supabaseAdmin.from("profiles").select("id, full_name, email");
+      const { data: allProfiles } = await supabaseAdmin.from("profiles").select("id, user_id, full_name, email");
       const { data: allStaff } = await supabaseAdmin.from("staff").select("user_id, role, department");
 
       const roleMap: Record<string, string> = {};
@@ -199,15 +213,18 @@ Deno.serve(async (req) => {
         if (s.user_id) staffMap[s.user_id] = { role: s.role || "", department: s.department };
       });
 
-      const users = (allProfiles || []).map((p) => ({
-        id: p.id,
-        email: p.email || "",
-        full_name: p.full_name || "",
-        portal_role: roleMap[p.id] || "unknown",
-        staff_role: staffMap[p.id]?.role || null,
-        department: staffMap[p.id]?.department || null,
-        created_at: "",
-      }));
+      const users = (allProfiles || []).map((p) => {
+        const uid = p.user_id || p.id;
+        return {
+          id: uid,
+          email: p.email || "",
+          full_name: p.full_name || "",
+          portal_role: roleMap[uid] || "unknown",
+          staff_role: staffMap[uid]?.role || null,
+          department: staffMap[uid]?.department || null,
+          created_at: "",
+        };
+      });
 
       return new Response(JSON.stringify({ users }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -216,13 +233,17 @@ Deno.serve(async (req) => {
 
     // ==================== RESET PASSWORD ====================
     if (action === "reset-password") {
-      const { user_id, password: newPassword } = payload;
+      const { user_id, password: newPassword, force_change } = payload;
       if (!user_id || !newPassword) {
         return new Response(JSON.stringify({ error: "user_id and password required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password: newPassword });
+      const updatePayload: any = { password: newPassword };
+      if (force_change) {
+        updatePayload.user_metadata = { must_change_password: true };
+      }
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, updatePayload);
       if (error) throw error;
       return new Response(JSON.stringify({ message: "Password reset successfully" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -297,12 +318,28 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("user_roles").update({ role: portal_role }).eq("user_id", user_id);
       }
 
-      // Update profile name if provided
-      if (full_name) {
-        await supabaseAdmin.from("profiles").update({ full_name }).eq("id", user_id);
+      // Update Auth email if provided
+      const newAuthEmail = payload.new_email;
+      if (newAuthEmail) {
+        const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          email: newAuthEmail,
+          email_confirm: true,
+        });
+        if (emailError) throw emailError;
+        // Also update profile email
+        await supabaseAdmin.from("profiles").update({ email: newAuthEmail }).eq("user_id", user_id);
       }
 
-      // Update staff record if staff_role or department provided
+      // Update profile name if provided
+      if (full_name) {
+        await supabaseAdmin.from("profiles").update({ full_name }).eq("user_id", user_id);
+        // Also update auth user metadata
+        await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          user_metadata: { full_name },
+        });
+      }
+
+      // Update staff record if staff_role or departmentuser_ provided
       if (staff_role || department !== undefined || phone !== undefined || staffEmail !== undefined ||
           address !== undefined || emergency_contact !== undefined || qualifications !== undefined ||
           bio !== undefined || title !== undefined || subjects_taught !== undefined ||
@@ -345,7 +382,7 @@ Deno.serve(async (req) => {
             }
           }
         } else if (portal_role === "teacher" || portal_role === "admin") {
-          const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("id", user_id).maybeSingle();
+          const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, email").eq("user_id", user_id).maybeSingle();
           let staffCategory = "teaching";
           if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
           else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
@@ -382,6 +419,86 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ==================== REGISTER PARENT (public, post-signup) ====================
+    if (action === "register-parent") {
+      const { user_id, phone, children } = payload;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify user exists
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user_id);
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Invalid user" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update phone on profile
+      if (phone) {
+        await supabaseAdmin.from("profiles").update({ phone }).eq("user_id", user_id);
+      }
+
+      // Assign parent role (ignore if already exists)
+      await supabaseAdmin.from("user_roles").upsert(
+        { user_id, role: "parent" },
+        { onConflict: "user_id,role" }
+      );
+
+      // Link children via verification codes
+      const linkResults: string[] = [];
+      if (children && Array.isArray(children)) {
+        for (const child of children) {
+          if (!child.admissionNumber || !child.verificationCode) continue;
+          try {
+            const { data: student } = await supabaseAdmin
+              .from("students")
+              .select("id, full_name, form")
+              .eq("admission_number", child.admissionNumber.trim())
+              .eq("status", "active")
+              .maybeSingle();
+
+            if (!student) { linkResults.push(`No student found: ${child.admissionNumber}`); continue; }
+
+            const { data: codeRecord } = await supabaseAdmin
+              .from("student_verification_codes")
+              .select("*")
+              .eq("student_id", student.id)
+              .eq("code", child.verificationCode.trim().toUpperCase())
+              .is("used_at", null)
+              .gt("expires_at", new Date().toISOString())
+              .maybeSingle();
+
+            if (!codeRecord) { linkResults.push(`Invalid/expired code for ${child.admissionNumber}`); continue; }
+
+            const { data: existing } = await supabaseAdmin
+              .from("parent_students")
+              .select("id")
+              .eq("parent_id", user_id)
+              .eq("student_id", student.id)
+              .maybeSingle();
+
+            if (existing) { linkResults.push(`${student.full_name} already linked`); continue; }
+
+            await supabaseAdmin.from("parent_students").insert({ parent_id: user_id, student_id: student.id });
+            await supabaseAdmin.from("student_verification_codes")
+              .update({ used_at: new Date().toISOString(), used_by: user_id })
+              .eq("id", codeRecord.id);
+
+            linkResults.push(student.full_name);
+          } catch {
+            linkResults.push(`Failed to link ${child.admissionNumber}`);
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ message: "Parent registered", linkResults }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ==================== LEGACY: register-student ====================
     if (action === "register-student") {
       const { email, password, full_name, grade, class_name, phone } = payload;
@@ -411,6 +528,72 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ==================== PROVISION STUDENT ====================
+    if (action === "provision-student") {
+      const { student_id, full_name, admission_number, guardian_email } = payload;
+      if (!student_id || !full_name || !admission_number) {
+        return new Response(JSON.stringify({ error: "student_id, full_name, and admission_number are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check if student already has a user_id
+      const { data: existingStudent } = await supabaseAdmin
+        .from("students")
+        .select("user_id")
+        .eq("id", student_id)
+        .single();
+      if (existingStudent?.user_id) {
+        return new Response(JSON.stringify({ error: "Student already has an account" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Generate email and temporary password
+      const studentEmail = `${admission_number.toLowerCase()}@giffordhigh.ac.zw`;
+      const tempPassword = `${admission_number}@Ghs2026`;
+
+      // Check if email already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const emailExists = existingUsers?.users?.some((u) => u.email === studentEmail);
+      if (emailExists) {
+        return new Response(JSON.stringify({ error: `Email ${studentEmail} already exists` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create auth user with must_change_password flag
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: studentEmail,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { full_name, must_change_password: true },
+      });
+      if (createError) throw createError;
+
+      const userId = newUser.user.id;
+
+      // Assign student role
+      await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: "student" });
+
+      // Link student record to auth user
+      await supabaseAdmin.from("students").update({ user_id: userId }).eq("id", student_id);
+
+      // Update profile with guardian email if available
+      if (guardian_email) {
+        await supabaseAdmin.from("profiles").update({ email: guardian_email }).eq("user_id", userId);
+      }
+
+      return new Response(JSON.stringify({
+        message: "Student account provisioned",
+        user_id: userId,
+        email: studentEmail,
+        temp_password: tempPassword,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ==================== LEGACY: get-students ====================
     if (action === "get-students") {
       const { data: studentRoles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "student");
@@ -430,8 +613,9 @@ Deno.serve(async (req) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

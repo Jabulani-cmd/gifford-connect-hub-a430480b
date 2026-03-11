@@ -42,6 +42,7 @@ const navLinks: NavItem[] = [
     path: "/sports-culture",
     children: [
       { label: "School Life", path: "/school-life" },
+      { label: "Awards & Prize-Giving", path: "/awards" },
     ],
   },
   {

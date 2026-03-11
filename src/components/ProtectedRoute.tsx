@@ -43,6 +43,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     );
   }
 
+  // Force password change for admin-created accounts
+  if (user.user_metadata?.must_change_password) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   if (!allowedRoles.includes(role)) {
     const redirect = roleRedirects[role] || "/login";
     return <Navigate to={redirect} replace />;
