@@ -780,8 +780,13 @@ function TabContent(props: TabContentProps) {
           <CardContent className="p-4 flex items-center gap-4">
             <DollarSign className={`h-8 w-8 ${feeBalance > 0 ? "text-red-600" : "text-emerald-600"}`} />
             <div>
-              <p className="text-2xl font-bold">${feeBalance.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">{feeBalance > 0 ? "Outstanding Balance" : "No Outstanding Balance"}</p>
+              <p className="text-2xl font-bold">
+                {feeBalance > 0 ? `$${feeBalance.toFixed(2)} owing` : feeBalance < 0 ? `$${Math.abs(feeBalance).toFixed(2)} credit` : "$0.00"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {feeBalance > 0 ? "Outstanding Balance" : feeBalance < 0 ? "Credit Balance" : "No Outstanding Balance"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Total Invoiced: ${totalInvoiced.toFixed(2)} · Total Paid: ${totalPaidAll.toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
