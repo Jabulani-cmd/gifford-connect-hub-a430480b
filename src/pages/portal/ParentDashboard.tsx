@@ -266,7 +266,10 @@ export default function ParentDashboard() {
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
+            childPayments={childPayments}
             feeBalance={feeBalance}
+            totalInvoiced={totalInvoiced}
+            totalPaidAll={totalPaidAll}
             exams={exams}
             examResults={examResults}
             selectedExamId={selectedExamId}
