@@ -86,6 +86,21 @@ export default function ParentDashboard() {
     if (selectedChildId) fetchChildData(selectedChildId);
   }, [selectedChildId]);
 
+  // Realtime payment updates
+  useEffect(() => {
+    if (!selectedChildId) return;
+    const channel = supabase
+      .channel(`parent-payments-${selectedChildId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `student_id=eq.${selectedChildId}` }, () => {
+        fetchChildData(selectedChildId);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `student_id=eq.${selectedChildId}` }, () => {
+        fetchChildData(selectedChildId);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedChildId]);
+
   useEffect(() => {
     if (selectedExamId && selectedChildId) fetchExamResults();
   }, [selectedExamId]);
