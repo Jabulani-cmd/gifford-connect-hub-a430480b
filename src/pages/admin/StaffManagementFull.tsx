@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar, Camera } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar, Camera, Copy, KeyRound } from "lucide-react";
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
