@@ -276,7 +276,7 @@ export function buildReceiptHtml(input: ReceiptPrintInput) {
     body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; max-width: 700px; margin: 0 auto; }
     .header { display:flex; justify-content:space-between; align-items:center; }
     .brand { display:flex; gap:14px; align-items:center; }
-    .brand img { width:60px; height:60px; object-fit:contain; }
+    .brand img { width:48px; height:64px; object-fit:contain; }
     .brand-text h1 { font-size: 18px; margin: 0; }
     .brand-text .motto { color: #555; font-style: italic; font-size: 10px; margin: 2px 0; }
     .brand-text .address { color: #666; font-size: 9px; }
