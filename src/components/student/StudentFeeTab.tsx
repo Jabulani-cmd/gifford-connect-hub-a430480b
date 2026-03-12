@@ -2,9 +2,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Receipt, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Receipt, FileText, Printer, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { openPrintWindow } from "@/lib/finance/print";
 
 interface Props {
   studentId: string | null;
@@ -13,24 +16,77 @@ interface Props {
 export default function StudentFeeTab({ studentId }: Props) {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (studentId) fetchFeeData();
   }, [studentId]);
 
+  // Realtime subscription for payments
+  useEffect(() => {
+    if (!studentId) return;
+    const channel = supabase
+      .channel(`student-payments-${studentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `student_id=eq.${studentId}` }, () => {
+        fetchFeeData();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `student_id=eq.${studentId}` }, () => {
+        fetchFeeData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [studentId]);
+
   const fetchFeeData = async () => {
     setLoading(true);
-    const [{ data: inv }, { data: pay }] = await Promise.all([
+    const [{ data: inv }, { data: pay }, { data: stu }] = await Promise.all([
       supabase.from("invoices").select("*").eq("student_id", studentId!).order("created_at", { ascending: false }),
-      supabase.from("payments").select("*").eq("student_id", studentId!).order("payment_date", { ascending: false }),
+      supabase.from("payments").select("*, invoices(invoice_number)").eq("student_id", studentId!).order("payment_date", { ascending: false }),
+      supabase.from("students").select("full_name, admission_number, form").eq("id", studentId!).single(),
     ]);
     setInvoices(inv || []);
     setPayments(pay || []);
+    setStudent(stu);
     setLoading(false);
   };
 
   const totalOwed = invoices.reduce((sum, i) => sum + (i.total_usd - i.paid_usd), 0);
+
+  function handlePrintReceipt(p: any) {
+    const html = buildReceiptHtml({
+      logoUrl: SCHOOL_LOGO_URL,
+      receiptNumber: p.receipt_number,
+      paymentDate: p.payment_date,
+      student: {
+        fullName: student?.full_name || "—",
+        admissionNumber: student?.admission_number || "—",
+        form: student?.form,
+      },
+      invoiceNumber: p.invoices?.invoice_number,
+      amounts: { usd: Number(p.amount_usd || 0), zig: Number(p.amount_zig || 0) },
+      paymentMethod: p.payment_method,
+      referenceNumber: p.reference_number,
+    });
+    openPrintWindow(html);
+  }
+
+  function handlePrintStatement() {
+    if (!student) return;
+    const html = buildStatementHtml({
+      logoUrl: SCHOOL_LOGO_URL,
+      student: { fullName: student.full_name, admissionNumber: student.admission_number, form: student.form },
+      invoices: invoices.map(i => ({
+        invoice_number: i.invoice_number, term: i.term, academic_year: i.academic_year,
+        total_usd: i.total_usd, total_zig: i.total_zig, paid_usd: i.paid_usd, paid_zig: i.paid_zig, status: i.status,
+      })),
+      payments: payments.map(p => ({
+        receipt_number: p.receipt_number, payment_date: p.payment_date,
+        amount_usd: p.amount_usd, amount_zig: p.amount_zig, payment_method: p.payment_method,
+      })),
+    });
+    openPrintWindow(html);
+  }
 
   if (loading) {
     return <div className="space-y-3">{[1, 2].map((i) => <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />)}</div>;
@@ -47,6 +103,15 @@ export default function StudentFeeTab({ studentId }: Props) {
           </p>
         </CardContent>
       </Card>
+
+      {/* Action Buttons */}
+      {(invoices.length > 0 || payments.length > 0) && (
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={handlePrintStatement}>
+            <FileText className="mr-1 h-4 w-4" /> View / Print Statement
+          </Button>
+        </div>
+      )}
 
       {/* Invoices */}
       {invoices.length > 0 && (
@@ -95,7 +160,12 @@ export default function StudentFeeTab({ studentId }: Props) {
                       {format(new Date(p.payment_date), "MMM d, yyyy")} · {p.payment_method}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-green-600">${p.amount_usd}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-green-600">${p.amount_usd}</p>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePrintReceipt(p)} title="Print Receipt">
+                      <Printer className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
