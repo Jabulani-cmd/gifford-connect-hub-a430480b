@@ -628,6 +628,89 @@ export default function FinanceManagement() {
     setBulkLoading(false);
   }
 
+  // ═══ SINGLE STUDENT INVOICE ═══
+  async function searchSingleInvStudents(query: string) {
+    if (query.length < 2) { setSingleInvStudentResults([]); return; }
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
+      .eq("status", "active").is("deleted_at", null).limit(10);
+    if (data) setSingleInvStudentResults(data);
+  }
+
+  function selectSingleInvStudent(student: any) {
+    setSingleInvSelectedStudent(student);
+    setSingleInvStudentResults([]);
+    setSingleInvForm(f => ({ ...f, student_search: student.full_name, student_id: student.id }));
+  }
+
+  async function createSingleInvoice() {
+    if (!singleInvSelectedStudent) { toast({ title: "Select a student", variant: "destructive" }); return; }
+    const usd = parseFloat(singleInvForm.amount_usd) || 0;
+    const zig = parseFloat(singleInvForm.amount_zig) || 0;
+    if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+    setSingleInvLoading(true);
+    try {
+      const invoiceNumber = genInvoiceNum();
+      const { data: inv, error } = await supabase.from("invoices").insert({
+        invoice_number: invoiceNumber,
+        student_id: singleInvSelectedStudent.id,
+        academic_year: singleInvForm.academic_year,
+        term: singleInvForm.term,
+        total_usd: usd,
+        total_zig: zig,
+        due_date: singleInvForm.due_date || null,
+        status: "unpaid",
+      }).select().single();
+      if (error) throw error;
+      await supabase.from("invoice_items").insert({
+        invoice_id: inv.id,
+        description: singleInvForm.description || `${singleInvForm.term} ${singleInvForm.academic_year} Fees`,
+        amount_usd: usd,
+        amount_zig: zig,
+      });
+      toast({ title: "Invoice created", description: `Invoice ${invoiceNumber} created for ${singleInvSelectedStudent.full_name}` });
+      downloadInvoicePdf(inv, singleInvSelectedStudent, [{ description: singleInvForm.description || `${singleInvForm.term} ${singleInvForm.academic_year} Fees`, amount_usd: usd, amount_zig: zig }]);
+      setSingleInvOpen(false);
+      setSingleInvSelectedStudent(null);
+      setSingleInvForm({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" });
+      fetchInvoices();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSingleInvLoading(false);
+  }
+
+  async function downloadInvoicePdf(inv: any, student?: any, items?: any[]) {
+    setPdfLoading(true);
+    try {
+      let logoDataUrl: string | undefined;
+      try { logoDataUrl = await urlToDataUrl(SCHOOL_LOGO_URL); } catch {}
+      let invoiceItems = items;
+      if (!invoiceItems) {
+        const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
+        invoiceItems = data || [];
+      }
+      const doc = buildInvoicePdf({
+        logoDataUrl,
+        invoiceNumber: inv.invoice_number,
+        academicYear: inv.academic_year,
+        term: inv.term,
+        dueDate: inv.due_date,
+        student: {
+          fullName: student?.full_name || inv.students?.full_name || "—",
+          admissionNumber: student?.admission_number || inv.students?.admission_number || "—",
+          form: student?.form || inv.students?.form,
+        },
+        items: invoiceItems.map((it: any) => ({ description: it.description, amount_usd: it.amount_usd, amount_zig: it.amount_zig })),
+        totals: { total_usd: inv.total_usd, total_zig: inv.total_zig, paid_usd: inv.paid_usd, paid_zig: inv.paid_zig },
+      });
+      doc.save(`${inv.invoice_number}.pdf`);
+    } catch (err: any) {
+      toast({ title: "Error generating PDF", description: err.message, variant: "destructive" });
+    }
+    setPdfLoading(false);
+  }
+
   // ═══ PAYMENT PROCESSING ═══
   async function searchStudents(query: string) {
     if (query.length < 2) { setStudentResults([]); return; }
