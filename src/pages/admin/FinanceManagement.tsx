@@ -1034,6 +1034,9 @@ export default function FinanceManagement() {
                 <CardDescription>{invoices.length} total invoices</CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" onClick={() => { setSingleInvOpen(true); setSingleInvSelectedStudent(null); setSingleInvForm({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" }); }}>
+                  <Plus className="mr-1 h-4 w-4" /> Create Invoice
+                </Button>
                 <Button onClick={() => setBulkInvoiceOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   <Plus className="mr-1 h-4 w-4" /> Bulk Generate
                 </Button>
