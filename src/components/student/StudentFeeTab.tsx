@@ -51,7 +51,9 @@ export default function StudentFeeTab({ studentId }: Props) {
     setLoading(false);
   };
 
-  const totalOwed = invoices.reduce((sum, i) => sum + (i.total_usd - i.paid_usd), 0);
+  const totalInvoiced = invoices.reduce((sum, i) => sum + Number(i.total_usd || 0), 0);
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_usd || 0), 0);
+  const balance = totalInvoiced - totalPaid; // positive = owing, negative = credit
 
   function handlePrintReceipt(p: any) {
     const html = buildReceiptHtml({
@@ -95,12 +97,13 @@ export default function StudentFeeTab({ studentId }: Props) {
   return (
     <div className="space-y-4">
       {/* Balance Summary */}
-      <Card className={totalOwed > 0 ? "border-destructive/30 bg-destructive/5" : "bg-green-50 border-green-200"}>
+      <Card className={balance > 0 ? "border-destructive/30 bg-destructive/5" : "bg-green-50 border-green-200"}>
         <CardContent className="p-4 text-center">
-          <p className="text-sm text-muted-foreground">Outstanding Balance</p>
-          <p className={`text-3xl font-bold ${totalOwed > 0 ? "text-destructive" : "text-green-600"}`}>
-            ${totalOwed.toFixed(2)}
+          <p className="text-sm text-muted-foreground">{balance > 0 ? "Outstanding Balance" : balance < 0 ? "Credit Balance" : "Account Balance"}</p>
+          <p className={`text-3xl font-bold ${balance > 0 ? "text-destructive" : "text-green-600"}`}>
+            {balance > 0 ? `$${balance.toFixed(2)} owing` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : "$0.00"}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">Total Invoiced: ${totalInvoiced.toFixed(2)} · Total Paid: ${totalPaid.toFixed(2)}</p>
         </CardContent>
       </Card>
 

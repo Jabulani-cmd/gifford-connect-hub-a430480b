@@ -766,7 +766,6 @@ export default function FinanceManagement() {
     const { data } = await supabase.from("invoices").select("*").eq("student_id", student.id).neq("status", "paid").order("created_at");
     if (data) {
       setStudentInvoices(data);
-      // Auto-select if only one invoice
       if (data.length === 1) {
         setPayForm(p => ({ ...p, student_search: student.full_name, invoice_id: data[0].id }));
       }
@@ -776,7 +775,6 @@ export default function FinanceManagement() {
   async function recordPayment() {
     if (!selectedStudent) { toast({ title: "Please select a student", variant: "destructive" }); return; }
     if (!payForm.invoice_id && studentInvoices.length > 0) { toast({ title: "Please select an invoice", variant: "destructive" }); return; }
-    if (!payForm.invoice_id && studentInvoices.length === 0) { toast({ title: "This student has no outstanding invoices", variant: "destructive" }); return; }
     const usd = parseFloat(payForm.amount_usd) || 0;
     const zig = parseFloat(payForm.amount_zig) || 0;
     if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
@@ -784,9 +782,40 @@ export default function FinanceManagement() {
     setPayLoading(true);
     try {
       const receiptNumber = genReceiptNum();
+      let invoiceId = payForm.invoice_id || null;
+      let invoiceNumber: string | null = null;
+
+      // If no invoice selected (advance payment), auto-create one
+      if (!invoiceId) {
+        const invNum = genInvoiceNum();
+        const { data: newInv, error: invErr } = await supabase.from("invoices").insert({
+          invoice_number: invNum,
+          student_id: selectedStudent.id,
+          academic_year: new Date().getFullYear().toString(),
+          term: "Term 1",
+          total_usd: usd,
+          total_zig: zig,
+          due_date: null,
+          status: "paid",
+          paid_usd: usd,
+          paid_zig: zig,
+          notes: "Auto-generated for advance payment",
+        }).select().single();
+        if (invErr) throw invErr;
+        invoiceId = newInv.id;
+        invoiceNumber = invNum;
+        // Create invoice item
+        await supabase.from("invoice_items").insert({
+          invoice_id: newInv.id,
+          description: "Advance Payment",
+          amount_usd: usd,
+          amount_zig: zig,
+        });
+      }
+
       const { error } = await supabase.from("payments").insert({
         receipt_number: receiptNumber,
-        invoice_id: payForm.invoice_id,
+        invoice_id: invoiceId,
         student_id: selectedStudent.id,
         amount_usd: usd,
         amount_zig: zig,
@@ -798,20 +827,22 @@ export default function FinanceManagement() {
       });
       if (error) throw error;
 
-      // Update invoice paid amounts
-      const invoice = studentInvoices.find(i => i.id === payForm.invoice_id);
-      if (invoice) {
-        const newPaidUsd = parseFloat(invoice.paid_usd) + usd;
-        const newPaidZig = parseFloat(invoice.paid_zig) + zig;
-        const totalUsd = parseFloat(invoice.total_usd);
-        const totalZig = parseFloat(invoice.total_zig);
-        let newStatus = "partial";
-        if (newPaidUsd >= totalUsd && newPaidZig >= totalZig) newStatus = "paid";
-        else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
-
-        await supabase.from("invoices").update({
-          paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus,
-        }).eq("id", payForm.invoice_id);
+      // Update invoice paid amounts (if paying against existing invoice)
+      if (payForm.invoice_id) {
+        const invoice = studentInvoices.find(i => i.id === payForm.invoice_id);
+        if (invoice) {
+          const newPaidUsd = parseFloat(invoice.paid_usd) + usd;
+          const newPaidZig = parseFloat(invoice.paid_zig) + zig;
+          const totalUsd = parseFloat(invoice.total_usd);
+          const totalZig = parseFloat(invoice.total_zig);
+          let newStatus = "partial";
+          if (newPaidUsd >= totalUsd && newPaidZig >= totalZig) newStatus = "paid";
+          else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
+          await supabase.from("invoices").update({
+            paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus,
+          }).eq("id", payForm.invoice_id);
+          invoiceNumber = invoice.invoice_number;
+        }
       }
 
       toast({ title: "Payment recorded", description: `Receipt: ${receiptNumber}` });
@@ -826,12 +857,11 @@ export default function FinanceManagement() {
           admissionNumber: selectedStudent.admission_number,
           form: selectedStudent.form,
         },
-        invoiceNumber: invoice?.invoice_number,
+        invoiceNumber,
         amounts: { usd, zig },
         paymentMethod: payForm.payment_method,
         referenceNumber: payForm.reference_number,
       });
-      // Open receipt in new window for print/download
       const w = window.open("", "_blank");
       if (w) { w.document.open(); w.document.write(receiptHtml); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); }
       
@@ -841,7 +871,6 @@ export default function FinanceManagement() {
       setPayForm({ student_search: "", invoice_id: "", amount_usd: "", amount_zig: "", payment_method: "Cash", reference_number: "", payment_date: new Date().toISOString().split("T")[0], notes: "" });
       fetchInvoices();
       fetchPayments();
-      // Auto-refresh statement if viewing one
       if (stmtStudent) selectStmtStudent(stmtStudent);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -2004,7 +2033,7 @@ export default function FinanceManagement() {
               {selectedStudent && <p className="text-sm text-accent font-medium">Selected: {selectedStudent.full_name}</p>}
             </div>
 
-            {studentInvoices.length > 0 && (
+            {selectedStudent && studentInvoices.length > 0 && (
               <div className="space-y-2">
                 <Label>Select Invoice</Label>
                 <Select value={payForm.invoice_id} onValueChange={v => setPayForm(p => ({ ...p, invoice_id: v }))}>
@@ -2017,6 +2046,13 @@ export default function FinanceManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {selectedStudent && studentInvoices.length === 0 && (
+              <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
+                <p className="text-sm text-accent font-medium">No outstanding invoices — this will be recorded as an advance payment.</p>
+                <p className="text-xs text-muted-foreground mt-1">An invoice and receipt will be auto-generated.</p>
               </div>
             )}
 
