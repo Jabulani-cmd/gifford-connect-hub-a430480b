@@ -16,6 +16,7 @@ import InventoryManagement from "@/pages/admin/InventoryManagement";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import AuditLogs from "@/pages/admin/AuditLogs";
+import FinanceManagement from "@/pages/admin/FinanceManagement";
 import DataMigration from "@/pages/admin/DataMigration";
 import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
