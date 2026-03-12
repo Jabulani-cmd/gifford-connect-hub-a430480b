@@ -184,7 +184,11 @@ export default function StaffManagementFull() {
     setErrors({});
     setSaving(true);
 
-    const payload = { ...result.data, photo_url: photoUrl };
+    const parsed = { ...result.data, photo_url: photoUrl };
+    // Convert empty strings to null for date and optional fields to avoid "invalid input syntax for type date"
+    const payload = Object.fromEntries(
+      Object.entries(parsed).map(([k, v]) => [k, v === "" ? null : v])
+    );
 
     if (editingId) {
       const { error } = await supabase.from("staff").update(payload).eq("id", editingId);
