@@ -764,11 +764,19 @@ export default function FinanceManagement() {
     setStudentResults([]);
     setPayForm(p => ({ ...p, student_search: student.full_name }));
     const { data } = await supabase.from("invoices").select("*").eq("student_id", student.id).neq("status", "paid").order("created_at");
-    if (data) setStudentInvoices(data);
+    if (data) {
+      setStudentInvoices(data);
+      // Auto-select if only one invoice
+      if (data.length === 1) {
+        setPayForm(p => ({ ...p, student_search: student.full_name, invoice_id: data[0].id }));
+      }
+    }
   }
 
   async function recordPayment() {
-    if (!selectedStudent || !payForm.invoice_id) { toast({ title: "Select student and invoice", variant: "destructive" }); return; }
+    if (!selectedStudent) { toast({ title: "Please select a student", variant: "destructive" }); return; }
+    if (!payForm.invoice_id && studentInvoices.length > 0) { toast({ title: "Please select an invoice", variant: "destructive" }); return; }
+    if (!payForm.invoice_id && studentInvoices.length === 0) { toast({ title: "This student has no outstanding invoices", variant: "destructive" }); return; }
     const usd = parseFloat(payForm.amount_usd) || 0;
     const zig = parseFloat(payForm.amount_zig) || 0;
     if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
@@ -2031,10 +2039,12 @@ export default function FinanceManagement() {
                   <SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Reference #</Label>
-                <Input value={payForm.reference_number} onChange={e => setPayForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="e.g. TXN123" />
-              </div>
+              {payForm.payment_method !== "Cash" && (
+                <div className="space-y-2">
+                  <Label>Reference #</Label>
+                  <Input value={payForm.reference_number} onChange={e => setPayForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="e.g. TXN123" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
