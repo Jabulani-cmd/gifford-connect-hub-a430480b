@@ -2493,4 +2493,3 @@ export default function FinanceManagement() {
     </div>
   );
 }
-}
