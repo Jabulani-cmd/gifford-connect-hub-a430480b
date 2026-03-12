@@ -16,6 +16,7 @@ import InventoryManagement from "@/pages/admin/InventoryManagement";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
 import AuditLogs from "@/pages/admin/AuditLogs";
+import FinanceManagement from "@/pages/admin/FinanceManagement";
 import DataMigration from "@/pages/admin/DataMigration";
 import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
@@ -562,6 +563,9 @@ export default function AdminDashboard() {
               <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
               <TabsTrigger value="awards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-4 w-4" /> Awards</TabsTrigger>
               <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {/* Finance */}
+              <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
               {/* Communication & Reports */}
               <TabsTrigger value="meetings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-4 w-4" /> Meetings</TabsTrigger>
               <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
@@ -945,6 +949,11 @@ export default function AdminDashboard() {
           {/* Go-Live Checklist Tab */}
           <TabsContent value="golive">
             <GoLiveChecklist />
+          </TabsContent>
+
+          {/* Finance Tab */}
+          <TabsContent value="finance">
+            <FinanceManagement />
           </TabsContent>
 
           {/* User Manual Tab */}
