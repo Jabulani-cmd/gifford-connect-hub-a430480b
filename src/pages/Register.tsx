@@ -98,9 +98,14 @@ export default function Register() {
       if (!res.ok) throw new Error(result.error);
 
       const linkResults: string[] = result.linkResults || [];
+
+      // Sign out so the stale session (with no role) is cleared,
+      // then redirect to login for a clean sign-in that will pick up the role.
+      await supabase.auth.signOut();
+
       const description = linkResults.length > 0
-        ? `Linked: ${linkResults.join(", ")}. You can now sign in.`
-        : "You can now sign in.";
+        ? `Linked: ${linkResults.join(", ")}. Please sign in.`
+        : "Please sign in with your new account.";
 
       toast({ title: "Registration successful!", description });
       navigate("/login");
