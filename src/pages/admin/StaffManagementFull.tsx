@@ -817,6 +817,51 @@ export default function StaffManagementFull() {
         onCapture={(blob) => { setCropSrc(URL.createObjectURL(blob)); setCropOpen(true); }}
         title="Take Staff Photo"
       />
+      {/* Staff Account Credentials Dialog */}
+      <Dialog open={provisionDialogOpen} onOpenChange={setProvisionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Staff Portal Account Created
+            </DialogTitle>
+          </DialogHeader>
+          {provisionResult && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                A portal account has been created for this staff member. Please share these credentials securely — they will be prompted to change their password on first login.
+              </p>
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="font-mono text-sm font-semibold">{provisionResult.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Temporary Password</p>
+                  <p className="font-mono text-sm font-semibold">{provisionResult.temp_password}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Portal Role</p>
+                  <Badge className="capitalize">{provisionResult.portal_role}</Badge>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`Email: ${provisionResult.email}\nPassword: ${provisionResult.temp_password}`);
+                    toast({ title: "Credentials copied to clipboard" });
+                  }}
+                >
+                  <Copy className="mr-1 h-3.5 w-3.5" /> Copy Credentials
+                </Button>
+                <Button size="sm" onClick={() => setProvisionDialogOpen(false)}>Done</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
