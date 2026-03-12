@@ -182,7 +182,9 @@ export default function ParentDashboard() {
     ? Math.round((attendanceData.filter((a) => a.status === "present" || a.status === "late").length / attendanceData.length) * 100)
     : 0;
 
-  const feeBalance = invoices.reduce((sum, inv) => sum + ((inv.total_usd || 0) - (inv.paid_usd || 0)), 0);
+  const totalInvoiced = invoices.reduce((sum, inv) => sum + Number(inv.total_usd || 0), 0);
+  const totalPaidAll = childPayments.reduce((sum, p) => sum + Number(p.amount_usd || 0), 0);
+  const feeBalance = totalInvoiced - totalPaidAll; // positive = owing, negative = credit
 
   const avgMark = examResults.length > 0
     ? Math.round(examResults.reduce((s, r: any) => s + r.mark, 0) / examResults.length)
