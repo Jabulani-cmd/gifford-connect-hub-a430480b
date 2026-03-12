@@ -1144,7 +1144,9 @@ export default function FinanceManagement() {
                           {isFinanceOrAdmin && (
                             <TableCell>
                               <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => openViewInvoice(inv)} title="View Invoice"><FileText className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(inv)} title="Download PDF"><Download className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => printInvoice(inv)} title="Print Invoice"><Printer className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                               </div>
                             </TableCell>
