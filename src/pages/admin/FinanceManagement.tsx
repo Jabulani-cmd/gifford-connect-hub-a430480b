@@ -179,6 +179,16 @@ export default function FinanceManagement() {
       fetchSupplierPayments(),
       fetchRestrictionSettings(),
     ]).finally(() => setLoading(false));
+
+    // Realtime subscription for payments
+    const channel = supabase
+      .channel("finance-payments-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
+        fetchPayments();
+        fetchInvoices();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // ═══ FETCH FUNCTIONS ═══

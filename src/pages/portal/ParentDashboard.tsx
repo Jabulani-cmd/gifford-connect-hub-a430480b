@@ -762,6 +762,28 @@ function TabContent(props: TabContentProps) {
           </CardContent>
         </Card>
 
+        {/* Action Buttons */}
+        {invoices.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => {
+              const { buildStatementHtml, SCHOOL_LOGO_URL } = require("@/lib/finance/pdf");
+              const { openPrintWindow } = require("@/lib/finance/print");
+              const html = buildStatementHtml({
+                logoUrl: SCHOOL_LOGO_URL,
+                student: { fullName: child.full_name, admissionNumber: child.admission_number, form: child.form },
+                invoices: invoices.map((i: any) => ({
+                  invoice_number: i.invoice_number, term: i.term, academic_year: i.academic_year,
+                  total_usd: i.total_usd, total_zig: i.total_zig, paid_usd: i.paid_usd, paid_zig: i.paid_zig, status: i.status,
+                })),
+                payments: [],
+              });
+              openPrintWindow(html);
+            }}>
+              <FileText className="mr-1 h-4 w-4" /> View / Print Statement
+            </Button>
+          </div>
+        )}
+
         {/* Invoices */}
         <Card>
           <CardHeader><CardTitle className="text-sm">Invoices</CardTitle></CardHeader>
@@ -809,6 +831,9 @@ function TabContent(props: TabContentProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* Payments with receipt download */}
+        <ParentPaymentHistory childId={child.id} childName={child.full_name} admissionNumber={child.admission_number} form={child.form} />
       </motion.div>
     );
   }
