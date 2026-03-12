@@ -950,6 +950,11 @@ export default function AdminDashboard() {
             <GoLiveChecklist />
           </TabsContent>
 
+          {/* Finance Tab */}
+          <TabsContent value="finance">
+            <FinanceManagement />
+          </TabsContent>
+
           {/* User Manual Tab */}
           <TabsContent value="manual">
             <UserManualPage />
