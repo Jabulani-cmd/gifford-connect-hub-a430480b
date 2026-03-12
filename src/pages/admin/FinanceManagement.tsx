@@ -774,7 +774,9 @@ export default function FinanceManagement() {
   }
 
   async function recordPayment() {
-    if (!selectedStudent || !payForm.invoice_id) { toast({ title: "Select student and invoice", variant: "destructive" }); return; }
+    if (!selectedStudent) { toast({ title: "Please select a student", variant: "destructive" }); return; }
+    if (!payForm.invoice_id && studentInvoices.length > 0) { toast({ title: "Please select an invoice", variant: "destructive" }); return; }
+    if (!payForm.invoice_id && studentInvoices.length === 0) { toast({ title: "This student has no outstanding invoices", variant: "destructive" }); return; }
     const usd = parseFloat(payForm.amount_usd) || 0;
     const zig = parseFloat(payForm.amount_zig) || 0;
     if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
