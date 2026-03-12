@@ -541,8 +541,10 @@ function TabContent(props: TabContentProps) {
                 <DollarSign className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-lg font-bold text-red-700">${feeBalance}</p>
-                <p className="text-[11px] text-muted-foreground">Fee Balance</p>
+                <p className={`text-lg font-bold ${feeBalance > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                  {feeBalance > 0 ? `$${feeBalance.toFixed(2)}` : feeBalance < 0 ? `$${Math.abs(feeBalance).toFixed(2)} credit` : "$0.00"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">{feeBalance > 0 ? "Fee Balance" : feeBalance < 0 ? "Credit Balance" : "Fees Settled"}</p>
               </div>
             </CardContent>
           </Card>
