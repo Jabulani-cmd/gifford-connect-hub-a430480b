@@ -46,7 +46,11 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   const topY = 14;
   if (input.logoDataUrl) {
     try {
-      doc.addImage(input.logoDataUrl, "PNG", 14, 8, 18, 26);
+      const props = doc.getImageProperties(input.logoDataUrl);
+      const aspectRatio = props.width && props.height ? props.width / props.height : 0.75;
+      const logoHeight = 26;
+      const logoWidth = logoHeight * aspectRatio;
+      doc.addImage(input.logoDataUrl, "PNG", 14, 8, logoWidth, logoHeight);
     } catch {
       // Ignore logo rendering errors
     }
@@ -175,7 +179,7 @@ export function buildInvoiceHtml(input: InvoicePdfInput): string {
     body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; max-width: 700px; margin: 0 auto; }
     .header { display:flex; justify-content:space-between; align-items:center; }
     .brand { display:flex; gap:14px; align-items:center; }
-    .brand img { width:48px; height:64px; object-fit:contain; }
+    .brand img { height:64px; width:auto; max-width:56px; object-fit:contain; aspect-ratio:3 / 4; display:block; }
     .brand-text h1 { font-size: 18px; margin: 0; }
     .brand-text .motto { color: #555; font-style: italic; font-size: 10px; margin: 2px 0; }
     .brand-text .address { color: #666; font-size: 9px; }
@@ -276,7 +280,7 @@ export function buildReceiptHtml(input: ReceiptPrintInput) {
     body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; max-width: 700px; margin: 0 auto; }
     .header { display:flex; justify-content:space-between; align-items:center; }
     .brand { display:flex; gap:14px; align-items:center; }
-    .brand img { width:48px; height:64px; object-fit:contain; }
+    .brand img { height:64px; width:auto; max-width:56px; object-fit:contain; aspect-ratio:3 / 4; display:block; }
     .brand-text h1 { font-size: 18px; margin: 0; }
     .brand-text .motto { color: #555; font-style: italic; font-size: 10px; margin: 2px 0; }
     .brand-text .address { color: #666; font-size: 9px; }
@@ -393,7 +397,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
   <style>
     body { font-family: Arial, sans-serif; padding: 24px; font-size: 11px; max-width: 800px; margin: 0 auto; }
     .header { display:flex; gap:14px; align-items:center; margin-bottom: 6px; }
-    .header img { width:48px; height:64px; object-fit:contain; }
+    .header img { height:64px; width:auto; max-width:56px; object-fit:contain; aspect-ratio:3 / 4; display:block; }
     .header h1 { font-size: 18px; margin: 0; }
     .header .motto { color: #555; font-style: italic; font-size: 10px; }
     .header .address { color: #666; font-size: 9px; }
