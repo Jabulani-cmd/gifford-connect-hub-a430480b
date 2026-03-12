@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   LogOut, Users, GraduationCap, Calendar, DollarSign, Bell,
-  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText
+  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText, Printer
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +22,8 @@ import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { openPrintWindow } from "@/lib/finance/print";
 
 type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
@@ -82,6 +84,21 @@ export default function ParentDashboard() {
 
   useEffect(() => {
     if (selectedChildId) fetchChildData(selectedChildId);
+  }, [selectedChildId]);
+
+  // Realtime payment updates
+  useEffect(() => {
+    if (!selectedChildId) return;
+    const channel = supabase
+      .channel(`parent-payments-${selectedChildId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `student_id=eq.${selectedChildId}` }, () => {
+        fetchChildData(selectedChildId);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `student_id=eq.${selectedChildId}` }, () => {
+        fetchChildData(selectedChildId);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [selectedChildId]);
 
   useEffect(() => {
@@ -762,6 +779,26 @@ function TabContent(props: TabContentProps) {
           </CardContent>
         </Card>
 
+        {/* Action Buttons */}
+        {invoices.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => {
+              const html = buildStatementHtml({
+                logoUrl: SCHOOL_LOGO_URL,
+                student: { fullName: child.full_name, admissionNumber: child.admission_number, form: child.form },
+                invoices: invoices.map((i: any) => ({
+                  invoice_number: i.invoice_number, term: i.term, academic_year: i.academic_year,
+                  total_usd: i.total_usd, total_zig: i.total_zig, paid_usd: i.paid_usd, paid_zig: i.paid_zig, status: i.status,
+                })),
+                payments: [],
+              });
+              openPrintWindow(html);
+            }}>
+              <FileText className="mr-1 h-4 w-4" /> View / Print Statement
+            </Button>
+          </div>
+        )}
+
         {/* Invoices */}
         <Card>
           <CardHeader><CardTitle className="text-sm">Invoices</CardTitle></CardHeader>
@@ -809,6 +846,9 @@ function TabContent(props: TabContentProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* Payments with receipt download */}
+        <ParentPaymentHistory childId={child.id} childName={child.full_name} admissionNumber={child.admission_number} form={child.form} />
       </motion.div>
     );
   }
@@ -841,4 +881,83 @@ function TabContent(props: TabContentProps) {
   }
 
   return null;
+}
+
+function ParentPaymentHistory({ childId, childName, admissionNumber, form }: { childId: string; childName: string; admissionNumber: string; form: string }) {
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPayments();
+    const channel = supabase
+      .channel(`parent-pay-hist-${childId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `student_id=eq.${childId}` }, () => fetchPayments())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [childId]);
+
+  async function fetchPayments() {
+    const { data } = await supabase
+      .from("payments")
+      .select("*, invoices(invoice_number)")
+      .eq("student_id", childId)
+      .order("payment_date", { ascending: false });
+    setPayments(data || []);
+    setLoading(false);
+  }
+
+  function handlePrintReceipt(p: any) {
+    const html = buildReceiptHtml({
+      logoUrl: SCHOOL_LOGO_URL,
+      receiptNumber: p.receipt_number,
+      paymentDate: p.payment_date,
+      student: { fullName: childName, admissionNumber, form },
+      invoiceNumber: p.invoices?.invoice_number,
+      amounts: { usd: Number(p.amount_usd || 0), zig: Number(p.amount_zig || 0) },
+      paymentMethod: p.payment_method,
+      referenceNumber: p.reference_number,
+    });
+    openPrintWindow(html);
+  }
+
+  if (loading) return <div className="h-20 animate-pulse rounded-lg bg-muted" />;
+  if (payments.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Payment History</CardTitle></CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Receipt</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date</th>
+                <th className="px-3 py-2 text-center font-medium text-muted-foreground">USD</th>
+                <th className="px-3 py-2 text-center font-medium text-muted-foreground">ZiG</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Method</th>
+                <th className="px-3 py-2 text-center font-medium text-muted-foreground">Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p: any) => (
+                <tr key={p.id} className="border-b last:border-0">
+                  <td className="px-3 py-2 font-mono text-xs">{p.receipt_number}</td>
+                  <td className="px-3 py-2">{format(new Date(p.payment_date), "dd MMM yyyy")}</td>
+                  <td className="px-3 py-2 text-center text-emerald-600">${Number(p.amount_usd).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-center">{Number(p.amount_zig).toFixed(2)}</td>
+                  <td className="px-3 py-2">{p.payment_method}</td>
+                  <td className="px-3 py-2 text-center">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePrintReceipt(p)} title="Print Receipt">
+                      <Printer className="h-3.5 w-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

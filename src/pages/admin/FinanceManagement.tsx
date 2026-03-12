@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import schoolLogo from "@/assets/school-logo.png";
-import { buildInvoicePdf, urlToDataUrl, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { buildInvoicePdf, urlToDataUrl, buildStatementHtml, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
 import { printReceipt } from "@/lib/finance/print";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
@@ -178,6 +179,16 @@ export default function FinanceManagement() {
       fetchSupplierPayments(),
       fetchRestrictionSettings(),
     ]).finally(() => setLoading(false));
+
+    // Realtime subscription for payments
+    const channel = supabase
+      .channel("finance-payments-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
+        fetchPayments();
+        fetchInvoices();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // ═══ FETCH FUNCTIONS ═══
@@ -668,6 +679,26 @@ export default function FinanceManagement() {
       }
 
       toast({ title: "Payment recorded", description: `Receipt: ${receiptNumber}` });
+      
+      // Auto-generate receipt for printing
+      const receiptHtml = buildReceiptHtml({
+        logoUrl: SCHOOL_LOGO_URL,
+        receiptNumber,
+        paymentDate: payForm.payment_date,
+        student: {
+          fullName: selectedStudent.full_name,
+          admissionNumber: selectedStudent.admission_number,
+          form: selectedStudent.form,
+        },
+        invoiceNumber: invoice?.invoice_number,
+        amounts: { usd, zig },
+        paymentMethod: payForm.payment_method,
+        referenceNumber: payForm.reference_number,
+      });
+      // Open receipt in new window for print/download
+      const w = window.open("", "_blank");
+      if (w) { w.document.open(); w.document.write(receiptHtml); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); }
+      
       setPayDialogOpen(false);
       setSelectedStudent(null);
       setStudentInvoices([]);
@@ -837,6 +868,7 @@ export default function FinanceManagement() {
           <TabsTrigger value="fee-structures"><DollarSign className="mr-1 h-4 w-4" /> Fee Structures</TabsTrigger>
           <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" /> Invoices</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="mr-1 h-4 w-4" /> Payments</TabsTrigger>
+          <TabsTrigger value="receipts"><Receipt className="mr-1 h-4 w-4" /> Receipts</TabsTrigger>
           <TabsTrigger value="debtors"><AlertTriangle className="mr-1 h-4 w-4" /> Debtors</TabsTrigger>
           <TabsTrigger value="petty-cash"><DollarSign className="mr-1 h-4 w-4" /> Petty Cash</TabsTrigger>
           <TabsTrigger value="supplier-payables"><Ban className="mr-1 h-4 w-4" /> Supplier Payables</TabsTrigger>
@@ -1063,6 +1095,11 @@ export default function FinanceManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ═══════ RECEIPTS TAB ═══════ */}
+        <TabsContent value="receipts">
+          <ReceiptSearchTab />
         </TabsContent>
 
         {/* ═══════ DEBTORS TAB ═══════ */}
