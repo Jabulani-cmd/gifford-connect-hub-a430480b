@@ -471,7 +471,10 @@ interface TabContentProps {
   attendanceData: any[];
   attendancePercent: number;
   invoices: any[];
+  childPayments: any[];
   feeBalance: number;
+  totalInvoiced: number;
+  totalPaidAll: number;
   exams: any[];
   examResults: any[];
   selectedExamId: string | null;
@@ -482,7 +485,7 @@ interface TabContentProps {
 }
 
 function TabContent(props: TabContentProps) {
-  const { activeTab, setActiveTab, child, attendanceData, attendancePercent, invoices, feeBalance, exams, examResults, selectedExamId, setSelectedExamId, rankings, avgMark, announcements } = props;
+  const { activeTab, setActiveTab, child, attendanceData, attendancePercent, invoices, childPayments, feeBalance, totalInvoiced, totalPaidAll, exams, examResults, selectedExamId, setSelectedExamId, rankings, avgMark, announcements } = props;
 
   if (!child) return null;
 
