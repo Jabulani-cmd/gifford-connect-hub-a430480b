@@ -2033,7 +2033,7 @@ export default function FinanceManagement() {
               {selectedStudent && <p className="text-sm text-accent font-medium">Selected: {selectedStudent.full_name}</p>}
             </div>
 
-            {studentInvoices.length > 0 && (
+            {selectedStudent && studentInvoices.length > 0 && (
               <div className="space-y-2">
                 <Label>Select Invoice</Label>
                 <Select value={payForm.invoice_id} onValueChange={v => setPayForm(p => ({ ...p, invoice_id: v }))}>
@@ -2046,6 +2046,13 @@ export default function FinanceManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {selectedStudent && studentInvoices.length === 0 && (
+              <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
+                <p className="text-sm text-accent font-medium">No outstanding invoices — this will be recorded as an advance payment.</p>
+                <p className="text-xs text-muted-foreground mt-1">An invoice and receipt will be auto-generated.</p>
               </div>
             )}
 
