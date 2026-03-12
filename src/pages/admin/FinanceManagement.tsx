@@ -101,6 +101,12 @@ export default function FinanceManagement() {
   const [bulkTerm, setBulkTerm] = useState("Term 1");
   const [bulkDueDate, setBulkDueDate] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  // Single invoice
+  const [singleInvOpen, setSingleInvOpen] = useState(false);
+  const [singleInvForm, setSingleInvForm] = useState({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" });
+  const [singleInvStudentResults, setSingleInvStudentResults] = useState<any[]>([]);
+  const [singleInvSelectedStudent, setSingleInvSelectedStudent] = useState<any>(null);
+  const [singleInvLoading, setSingleInvLoading] = useState(false);
 
   // ─── Payments ───
   const [payments, setPayments] = useState<any[]>([]);
@@ -622,6 +628,89 @@ export default function FinanceManagement() {
     setBulkLoading(false);
   }
 
+  // ═══ SINGLE STUDENT INVOICE ═══
+  async function searchSingleInvStudents(query: string) {
+    if (query.length < 2) { setSingleInvStudentResults([]); return; }
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
+      .eq("status", "active").is("deleted_at", null).limit(10);
+    if (data) setSingleInvStudentResults(data);
+  }
+
+  function selectSingleInvStudent(student: any) {
+    setSingleInvSelectedStudent(student);
+    setSingleInvStudentResults([]);
+    setSingleInvForm(f => ({ ...f, student_search: student.full_name, student_id: student.id }));
+  }
+
+  async function createSingleInvoice() {
+    if (!singleInvSelectedStudent) { toast({ title: "Select a student", variant: "destructive" }); return; }
+    const usd = parseFloat(singleInvForm.amount_usd) || 0;
+    const zig = parseFloat(singleInvForm.amount_zig) || 0;
+    if (usd === 0 && zig === 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+    setSingleInvLoading(true);
+    try {
+      const invoiceNumber = genInvoiceNum();
+      const { data: inv, error } = await supabase.from("invoices").insert({
+        invoice_number: invoiceNumber,
+        student_id: singleInvSelectedStudent.id,
+        academic_year: singleInvForm.academic_year,
+        term: singleInvForm.term,
+        total_usd: usd,
+        total_zig: zig,
+        due_date: singleInvForm.due_date || null,
+        status: "unpaid",
+      }).select().single();
+      if (error) throw error;
+      await supabase.from("invoice_items").insert({
+        invoice_id: inv.id,
+        description: singleInvForm.description || `${singleInvForm.term} ${singleInvForm.academic_year} Fees`,
+        amount_usd: usd,
+        amount_zig: zig,
+      });
+      toast({ title: "Invoice created", description: `Invoice ${invoiceNumber} created for ${singleInvSelectedStudent.full_name}` });
+      downloadInvoicePdf(inv, singleInvSelectedStudent, [{ description: singleInvForm.description || `${singleInvForm.term} ${singleInvForm.academic_year} Fees`, amount_usd: usd, amount_zig: zig }]);
+      setSingleInvOpen(false);
+      setSingleInvSelectedStudent(null);
+      setSingleInvForm({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" });
+      fetchInvoices();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSingleInvLoading(false);
+  }
+
+  async function downloadInvoicePdf(inv: any, student?: any, items?: any[]) {
+    setPdfLoading(true);
+    try {
+      let logoDataUrl: string | undefined;
+      try { logoDataUrl = await urlToDataUrl(SCHOOL_LOGO_URL); } catch {}
+      let invoiceItems = items;
+      if (!invoiceItems) {
+        const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
+        invoiceItems = data || [];
+      }
+      const doc = buildInvoicePdf({
+        logoDataUrl,
+        invoiceNumber: inv.invoice_number,
+        academicYear: inv.academic_year,
+        term: inv.term,
+        dueDate: inv.due_date,
+        student: {
+          fullName: student?.full_name || inv.students?.full_name || "—",
+          admissionNumber: student?.admission_number || inv.students?.admission_number || "—",
+          form: student?.form || inv.students?.form,
+        },
+        items: invoiceItems.map((it: any) => ({ description: it.description, amount_usd: it.amount_usd, amount_zig: it.amount_zig })),
+        totals: { total_usd: inv.total_usd, total_zig: inv.total_zig, paid_usd: inv.paid_usd, paid_zig: inv.paid_zig },
+      });
+      doc.save(`${inv.invoice_number}.pdf`);
+    } catch (err: any) {
+      toast({ title: "Error generating PDF", description: err.message, variant: "destructive" });
+    }
+    setPdfLoading(false);
+  }
+
   // ═══ PAYMENT PROCESSING ═══
   async function searchStudents(query: string) {
     if (query.length < 2) { setStudentResults([]); return; }
@@ -945,6 +1034,9 @@ export default function FinanceManagement() {
                 <CardDescription>{invoices.length} total invoices</CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" onClick={() => { setSingleInvOpen(true); setSingleInvSelectedStudent(null); setSingleInvForm({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" }); }}>
+                  <Plus className="mr-1 h-4 w-4" /> Create Invoice
+                </Button>
                 <Button onClick={() => setBulkInvoiceOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   <Plus className="mr-1 h-4 w-4" /> Bulk Generate
                 </Button>
@@ -1012,7 +1104,10 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(inv.total_usd - inv.paid_usd)}</TableCell>
                           {isFinanceOrAdmin && (
                             <TableCell>
-                              <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(inv)} title="Download PDF"><Download className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>
@@ -2317,6 +2412,80 @@ export default function FinanceManagement() {
             <Button onClick={saveCodPayment} disabled={codLoading || !codForm.supplier_name || (!codForm.amount_usd && !codForm.amount_zig)}>
               {codLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Record COD Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ SINGLE INVOICE DIALOG ═══ */}
+      <Dialog open={singleInvOpen} onOpenChange={setSingleInvOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Invoice for Student</DialogTitle>
+            <DialogDescription>Generate an invoice for a specific student</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Search Student *</Label>
+              <Input placeholder="Type student name or admission #..." value={singleInvForm.student_search}
+                onChange={e => { setSingleInvForm(f => ({ ...f, student_search: e.target.value })); searchSingleInvStudents(e.target.value); }} />
+              {singleInvStudentResults.length > 0 && (
+                <div className="border rounded-md max-h-32 overflow-y-auto">
+                  {singleInvStudentResults.map(s => (
+                    <div key={s.id} className="px-3 py-2 hover:bg-muted cursor-pointer text-sm" onClick={() => selectSingleInvStudent(s)}>
+                      {s.full_name} — {s.admission_number} ({s.form})
+                    </div>
+                  ))}
+                </div>
+              )}
+              {singleInvSelectedStudent && (
+                <Badge variant="outline" className="mt-1">{singleInvSelectedStudent.full_name} — {singleInvSelectedStudent.admission_number}</Badge>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Academic Year</Label>
+                <Select value={singleInvForm.academic_year} onValueChange={v => setSingleInvForm(f => ({ ...f, academic_year: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["2024", "2025", "2026", "2027"].map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Term</Label>
+                <Select value={singleInvForm.term} onValueChange={v => setSingleInvForm(f => ({ ...f, term: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description</Label>
+              <Input placeholder="e.g. Term 1 School Fees" value={singleInvForm.description} onChange={e => setSingleInvForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={singleInvForm.amount_usd} onChange={e => setSingleInvForm(f => ({ ...f, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={singleInvForm.amount_zig} onChange={e => setSingleInvForm(f => ({ ...f, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Due Date</Label>
+              <Input type="date" value={singleInvForm.due_date} onChange={e => setSingleInvForm(f => ({ ...f, due_date: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSingleInvOpen(false)}>Cancel</Button>
+            <Button onClick={createSingleInvoice} disabled={singleInvLoading || !singleInvSelectedStudent}>
+              {singleInvLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Create Invoice
             </Button>
           </DialogFooter>
         </DialogContent>
