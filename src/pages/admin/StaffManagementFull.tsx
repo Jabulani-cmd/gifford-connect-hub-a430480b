@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar, Camera } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, User, Calendar, Camera, Copy, KeyRound } from "lucide-react";
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
@@ -103,6 +103,10 @@ export default function StaffManagementFull() {
   const [teachingClassesMap, setTeachingClassesMap] = useState<Record<string, { className: string; subjectName: string }[]>>({});
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ leave_type: "annual", start_date: "", end_date: "", reason: "" });
+
+  // Provision result dialog
+  const [provisionResult, setProvisionResult] = useState<{ email: string; temp_password: string; portal_role: string } | null>(null);
+  const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
 
   // Photo
   const photoRef = useRef<HTMLInputElement>(null);
@@ -230,9 +234,46 @@ export default function StaffManagementFull() {
     } else {
       // Remove staff_number so the DB trigger auto-generates it
       const { staff_number, ...insertPayload } = payload;
-      const { error } = await supabase.from("staff").insert(insertPayload as any);
+      const { data: newStaff, error } = await supabase.from("staff").insert(insertPayload as any).select("id, staff_number, full_name, email, role").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      toast({ title: "Staff member added!" });
+
+      // Auto-provision auth account for the new staff member
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session?.access_token}`,
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              action: "provision-staff",
+              staff_id: newStaff.id,
+              full_name: newStaff.full_name,
+              email: newStaff.email,
+              role: newStaff.role,
+            }),
+          }
+        );
+        const provData = await res.json();
+        if (res.ok) {
+          setProvisionResult({
+            email: provData.email,
+            temp_password: provData.temp_password,
+            portal_role: provData.portal_role,
+          });
+          setProvisionDialogOpen(true);
+        } else {
+          toast({ title: "Staff added but account creation failed", description: provData.error, variant: "destructive" });
+        }
+      } catch (provErr: any) {
+        toast({ title: "Staff added but account creation failed", description: provErr?.message, variant: "destructive" });
+      }
+
+      toast({ title: "Staff member added!", description: `Staff number: ${newStaff?.staff_number}` });
     }
     setSaving(false);
     setDialogOpen(false);
@@ -776,6 +817,51 @@ export default function StaffManagementFull() {
         onCapture={(blob) => { setCropSrc(URL.createObjectURL(blob)); setCropOpen(true); }}
         title="Take Staff Photo"
       />
+      {/* Staff Account Credentials Dialog */}
+      <Dialog open={provisionDialogOpen} onOpenChange={setProvisionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Staff Portal Account Created
+            </DialogTitle>
+          </DialogHeader>
+          {provisionResult && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                A portal account has been created for this staff member. Please share these credentials securely — they will be prompted to change their password on first login.
+              </p>
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="font-mono text-sm font-semibold">{provisionResult.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Temporary Password</p>
+                  <p className="font-mono text-sm font-semibold">{provisionResult.temp_password}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Portal Role</p>
+                  <Badge className="capitalize">{provisionResult.portal_role}</Badge>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`Email: ${provisionResult.email}\nPassword: ${provisionResult.temp_password}`);
+                    toast({ title: "Credentials copied to clipboard" });
+                  }}
+                >
+                  <Copy className="mr-1 h-3.5 w-3.5" /> Copy Credentials
+                </Button>
+                <Button size="sm" onClick={() => setProvisionDialogOpen(false)}>Done</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
