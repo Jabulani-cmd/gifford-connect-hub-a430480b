@@ -6,7 +6,7 @@ export const zimPhoneSchemaRequired = z.string().regex(zimPhoneRegex, "Invalid Z
 export const zimPhoneSchema = zimPhoneSchemaRequired.or(z.literal(""));
 
 // Zimbabwe National ID: XX-XXXXXXX-X-XX
-export const zimNationalIdRegex = /^\d{2}-\d{6,7}[A-Z]-\d{2}$/;
+export const zimNationalIdRegex = /^\d{2}-\d{6,7}-?[A-Z]-\d{2}$/;
 export const zimNationalIdSchema = z.string().regex(zimNationalIdRegex, "Invalid National ID format (XX-XXXXXXX-X-XX)").or(z.literal(""));
 
 export const studentFormSchema = z.object({

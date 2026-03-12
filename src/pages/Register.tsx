@@ -59,15 +59,22 @@ export default function Register() {
     setLoading(true);
     try {
       const { data, error } = await signUp(email, password, fullName);
-      if (error) throw error;
+      
+      if (error) {
+        // Handle specific Supabase auth errors
+        if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
+          throw new Error("An account with this email already exists. Please sign in on the Login page instead.");
+        }
+        throw error;
+      }
 
       const userId = data?.user?.id;
-      if (!userId) throw new Error("Registration failed");
+      if (!userId) throw new Error("Registration failed — please try again.");
 
       // Detect repeated signup (Supabase returns fake user with empty identities)
       const identities = data?.user?.identities;
       if (!identities || identities.length === 0) {
-        throw new Error("An account with this email already exists. Please sign in instead.");
+        throw new Error("An account with this email already exists. Please sign in on the Login page instead, or check your inbox for a confirmation email if you registered recently.");
       }
 
       // Use edge function to assign role + link children (service role, no session needed)
