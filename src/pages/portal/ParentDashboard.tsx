@@ -22,6 +22,8 @@ import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { openPrintWindow } from "@/lib/finance/print";
 
 type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
