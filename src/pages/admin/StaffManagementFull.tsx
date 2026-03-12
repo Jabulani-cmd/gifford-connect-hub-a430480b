@@ -99,6 +99,8 @@ export default function StaffManagementFull() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [classTeacherMap, setClassTeacherMap] = useState<Record<string, string[]>>({});
+  const [teachingClassesMap, setTeachingClassesMap] = useState<Record<string, { className: string; subjectName: string }[]>>({});
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ leave_type: "annual", start_date: "", end_date: "", reason: "" });
 
