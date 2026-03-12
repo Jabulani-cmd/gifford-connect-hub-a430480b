@@ -12,9 +12,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import schoolLogo from "@/assets/school-logo.png";
+import { buildInvoicePdf, urlToDataUrl } from "@/lib/finance/pdf";
+import { printReceipt } from "@/lib/finance/print";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
@@ -106,6 +110,16 @@ export default function FinanceManagement() {
   const [studentInvoices, setStudentInvoices] = useState<any[]>([]);
   const [payLoading, setPayLoading] = useState(false);
 
+  // ─── Printing / PDFs ───
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<any>(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+
+  // ─── Debtor Restriction Settings ───
+  const [restrictReportCards, setRestrictReportCards] = useState(false);
+  const [restrictExamResults, setRestrictExamResults] = useState(false);
+  const [restrictLoading, setRestrictLoading] = useState(false);
+
   // ─── Expenses ───
   const [expenses, setExpenses] = useState<any[]>([]);
   const [expDialogOpen, setExpDialogOpen] = useState(false);
@@ -154,8 +168,16 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices(), fetchSupplierPayments()])
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetchFeeStructures(),
+      fetchInvoices(),
+      fetchPayments(),
+      fetchExpenses(),
+      fetchPettyCash(),
+      fetchSupplierInvoices(),
+      fetchSupplierPayments(),
+      fetchRestrictionSettings(),
+    ]).finally(() => setLoading(false));
   }, []);
 
   // ═══ FETCH FUNCTIONS ═══
