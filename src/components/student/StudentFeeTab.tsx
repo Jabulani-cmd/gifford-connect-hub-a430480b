@@ -51,7 +51,9 @@ export default function StudentFeeTab({ studentId }: Props) {
     setLoading(false);
   };
 
-  const totalOwed = invoices.reduce((sum, i) => sum + (i.total_usd - i.paid_usd), 0);
+  const totalInvoiced = invoices.reduce((sum, i) => sum + Number(i.total_usd || 0), 0);
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_usd || 0), 0);
+  const balance = totalInvoiced - totalPaid; // positive = owing, negative = credit
 
   function handlePrintReceipt(p: any) {
     const html = buildReceiptHtml({
