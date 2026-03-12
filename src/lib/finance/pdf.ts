@@ -144,6 +144,108 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   return doc;
 }
 
+// ═══ INVOICE HTML (for view/print) ═══
+
+export function buildInvoiceHtml(input: InvoicePdfInput): string {
+  const safe = (s: any) => String(s ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const name = input.schoolName || SCHOOL_NAME;
+  const motto = input.motto || SCHOOL_MOTTO;
+  const logoUrl = input.logoDataUrl || SCHOOL_LOGO_URL;
+
+  const totalUsd = Number(input.totals.total_usd || 0);
+  const totalZig = Number(input.totals.total_zig || 0);
+  const paidUsd = Number(input.totals.paid_usd || 0);
+  const paidZig = Number(input.totals.paid_zig || 0);
+  const balUsd = Math.max(0, totalUsd - paidUsd);
+  const balZig = Math.max(0, totalZig - paidZig);
+
+  const itemRows = input.items.map(it => `
+    <tr>
+      <td>${safe(it.description)}</td>
+      <td class="right mono">${Number(it.amount_usd || 0).toFixed(2)}</td>
+      <td class="right mono">${Number(it.amount_zig || 0).toFixed(2)}</td>
+    </tr>`).join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice ${safe(input.invoiceNumber)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; max-width: 700px; margin: 0 auto; }
+    .header { display:flex; justify-content:space-between; align-items:center; }
+    .brand { display:flex; gap:14px; align-items:center; }
+    .brand img { width:60px; height:60px; object-fit:contain; }
+    .brand-text h1 { font-size: 18px; margin: 0; }
+    .brand-text .motto { color: #555; font-style: italic; font-size: 10px; margin: 2px 0; }
+    .brand-text .address { color: #666; font-size: 9px; }
+    .invoice-title { text-align: right; }
+    .invoice-title strong { font-size: 14px; display: block; }
+    .invoice-title .num { font-family: monospace; font-size: 12px; }
+    .row { display:flex; justify-content:space-between; gap: 12px; }
+    .muted { color: #444; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .right { text-align: right; }
+    .divider { border-top: 2px solid #800000; margin: 14px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; font-size: 11px; }
+    th { background: #800000; color: #fff; }
+    .totals { margin-top: 14px; font-size: 12px; }
+    .totals .balance { font-size: 14px; font-weight: bold; margin-top: 8px; border-top: 2px solid #800000; padding-top: 8px; }
+    .footer { margin-top: 24px; font-size: 9px; color: #888; text-align: center; }
+    @media print { body { padding: 12px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <img src="${safe(logoUrl)}" alt="School Logo" />
+      <div class="brand-text">
+        <h1>${safe(name)}</h1>
+        <div class="motto">"${safe(motto)}"</div>
+        <div class="address">${safe(SCHOOL_ADDRESS)} | Tel: ${safe(SCHOOL_PHONE)}</div>
+      </div>
+    </div>
+    <div class="invoice-title">
+      <strong>INVOICE</strong>
+      <div class="num">${safe(input.invoiceNumber)}</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="row">
+    <div>
+      <div><strong>Student:</strong> ${safe(input.student.fullName)}</div>
+      <div><strong>Admission #:</strong> <span class="mono">${safe(input.student.admissionNumber)}</span></div>
+      ${input.student.form ? `<div><strong>Form:</strong> ${safe(input.student.form)}</div>` : ""}
+    </div>
+    <div class="right">
+      <div><strong>Term:</strong> ${safe(input.term)} | <strong>Year:</strong> ${safe(input.academicYear)}</div>
+      <div><strong>Due Date:</strong> ${input.dueDate ? new Date(input.dueDate).toLocaleDateString() : "—"}</div>
+      <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Description</th><th class="right">USD</th><th class="right">ZiG</th></tr></thead>
+    <tbody>${itemRows || "<tr><td colspan='3'>No items</td></tr>"}</tbody>
+  </table>
+
+  <div class="totals">
+    <div><strong>Total:</strong> USD ${totalUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${totalZig.toFixed(2)}</div>
+    <div><strong>Paid:</strong> USD ${paidUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${paidZig.toFixed(2)}</div>
+    <div class="balance">Balance Due: USD ${balUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${balZig.toFixed(2)}</div>
+  </div>
+
+  <div class="footer">
+    <p>Generated: ${new Date().toLocaleString()} | This is a computer-generated document.</p>
+    <p>${safe(name)} | ${safe(SCHOOL_ADDRESS)}</p>
+  </div>
+</body>
+</html>`;
+}
+
 // ═══ RECEIPT HTML ═══
 
 export type ReceiptPrintInput = {

@@ -17,9 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import schoolLogo from "@/assets/school-logo.png";
-import { buildInvoicePdf, urlToDataUrl, buildStatementHtml, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { buildInvoicePdf, buildInvoiceHtml, urlToDataUrl, buildStatementHtml, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
-import { printReceipt } from "@/lib/finance/print";
+import { printReceipt, openPrintWindow } from "@/lib/finance/print";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
@@ -711,6 +711,45 @@ export default function FinanceManagement() {
     setPdfLoading(false);
   }
 
+  async function viewInvoiceHtml(inv: any) {
+    try {
+      let invoiceItems: any[] = [];
+      const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
+      invoiceItems = data || [];
+      const html = buildInvoiceHtml({
+        logoDataUrl: SCHOOL_LOGO_URL,
+        invoiceNumber: inv.invoice_number,
+        academicYear: inv.academic_year,
+        term: inv.term,
+        dueDate: inv.due_date,
+        student: {
+          fullName: inv.students?.full_name || "—",
+          admissionNumber: inv.students?.admission_number || "—",
+          form: inv.students?.form,
+        },
+        items: invoiceItems.map((it: any) => ({ description: it.description, amount_usd: it.amount_usd, amount_zig: it.amount_zig })),
+        totals: { total_usd: inv.total_usd, total_zig: inv.total_zig, paid_usd: inv.paid_usd, paid_zig: inv.paid_zig },
+      });
+      return html;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      return null;
+    }
+  }
+
+  async function openViewInvoice(inv: any) {
+    const html = await viewInvoiceHtml(inv);
+    if (html) {
+      const w = window.open("", "_blank");
+      if (w) { w.document.open(); w.document.write(html); w.document.close(); }
+    }
+  }
+
+  async function printInvoice(inv: any) {
+    const html = await viewInvoiceHtml(inv);
+    if (html) openPrintWindow(html);
+  }
+
   // ═══ PAYMENT PROCESSING ═══
   async function searchStudents(query: string) {
     if (query.length < 2) { setStudentResults([]); return; }
@@ -1105,7 +1144,9 @@ export default function FinanceManagement() {
                           {isFinanceOrAdmin && (
                             <TableCell>
                               <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => openViewInvoice(inv)} title="View Invoice"><FileText className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(inv)} title="Download PDF"><Download className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => printInvoice(inv)} title="Print Invoice"><Printer className="h-4 w-4" /></Button>
                                 <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                               </div>
                             </TableCell>
