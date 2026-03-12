@@ -1,11 +1,22 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageSquare, Send, Plus, Users, User, Search, ArrowLeft, Megaphone, AlertCircle, X, Loader2 } from "lucide-react";
+import {
+  MessageSquare, Send, Plus, Users, User, Search, ArrowLeft,
+  Megaphone, AlertCircle, X, Loader2, ShieldAlert, Ban, Flag, MoreVertical
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +49,13 @@ interface Message {
   sender_name?: string;
 }
 
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string | null;
+  role?: string;
+}
+
 export default function MessagingPanel() {
   const { user, role } = useAuth();
   const { toast } = useToast();
@@ -57,12 +75,32 @@ export default function MessagingPanel() {
   const [newConvName, setNewConvName] = useState("");
   const [newConvMessage, setNewConvMessage] = useState("");
   const [userSearch, setUserSearch] = useState("");
-  const [userResults, setUserResults] = useState<any[]>([]);
-  const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
+  const [userResults, setUserResults] = useState<UserProfile[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [creating, setCreating] = useState(false);
+
+  // Block & report
+  const [blockedIds, setBlockedIds] = useState<string[]>([]);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null);
+  const [reportTargetName, setReportTargetName] = useState("");
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const profileCache = useRef<Record<string, string>>({});
+  const roleCache = useRef<Record<string, string>>({});
+
+  // Fetch blocked users
+  const fetchBlocked = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user.id);
+    if (data) setBlockedIds(data.map(b => b.blocked_id));
+  }, [user]);
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -93,18 +131,15 @@ export default function MessagingPanel() {
 
     if (!convs) { setLoading(false); return; }
 
-    // Get participants for each conv
     const { data: allParticipants } = await supabase
       .from("conversation_participants")
       .select("conversation_id, user_id")
       .in("conversation_id", convIds);
 
-    // Get last message for each conversation
     let unreadTotal = 0;
     const enriched: Conversation[] = [];
 
     for (const conv of convs) {
-      // Get last message
       const { data: lastMsgs } = await supabase
         .from("messages")
         .select("content, created_at, sender_id")
@@ -114,7 +149,6 @@ export default function MessagingPanel() {
 
       const lastMsg = lastMsgs?.[0];
 
-      // Count unread
       const lastRead = lastReadMap[conv.id] || conv.created_at;
       const { count } = await supabase
         .from("messages")
@@ -126,7 +160,6 @@ export default function MessagingPanel() {
       const unread = count || 0;
       unreadTotal += unread;
 
-      // Get participant names for display
       const convParticipants = (allParticipants || []).filter(p => p.conversation_id === conv.id);
       const otherUserIds = convParticipants.filter(p => p.user_id !== user.id).map(p => p.user_id);
 
@@ -134,7 +167,7 @@ export default function MessagingPanel() {
       if (!displayName && conv.type === "direct" && otherUserIds.length > 0) {
         const otherId = otherUserIds[0];
         if (!profileCache.current[otherId]) {
-          const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_user_id", otherId).single();
+          const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", otherId).single();
           profileCache.current[otherId] = profile?.full_name || "Unknown";
         }
         displayName = profileCache.current[otherId];
@@ -165,11 +198,12 @@ export default function MessagingPanel() {
       .limit(100);
 
     if (data) {
-      // Enrich with sender names
       const enriched: Message[] = [];
       for (const msg of data) {
+        // Filter out messages from blocked users
+        if (blockedIds.includes(msg.sender_id)) continue;
         if (!profileCache.current[msg.sender_id]) {
-          const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", msg.sender_id).single();
+          const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", msg.sender_id).single();
           profileCache.current[msg.sender_id] = profile?.full_name || "Unknown";
         }
         enriched.push({ ...msg, sender_name: profileCache.current[msg.sender_id] });
@@ -177,7 +211,6 @@ export default function MessagingPanel() {
       setMessages(enriched);
     }
 
-    // Mark as read
     if (user) {
       await supabase
         .from("conversation_participants")
@@ -185,12 +218,13 @@ export default function MessagingPanel() {
         .eq("conversation_id", convId)
         .eq("user_id", user.id);
     }
-  }, [user]);
+  }, [user, blockedIds]);
 
-  // Real-time subscription for new messages
+  // Real-time subscription
   useEffect(() => {
     if (!user) return;
     fetchConversations();
+    fetchBlocked();
 
     const channel = supabase
       .channel("user-messages")
@@ -200,37 +234,34 @@ export default function MessagingPanel() {
         table: "messages",
       }, (payload) => {
         const newMsg = payload.new as Message;
-        // If in active conv, add message
+        // Skip messages from blocked users
+        if (blockedIds.includes(newMsg.sender_id)) return;
         if (activeConv && newMsg.conversation_id === activeConv.id) {
           const senderName = profileCache.current[newMsg.sender_id] || "Unknown";
           setMessages(prev => [...prev, { ...newMsg, sender_name: senderName }]);
-          // Mark as read
           supabase
             .from("conversation_participants")
             .update({ last_read_at: new Date().toISOString() })
             .eq("conversation_id", newMsg.conversation_id)
             .eq("user_id", user.id);
         }
-        // Refresh conversation list
         fetchConversations();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, activeConv, fetchConversations]);
+  }, [user, activeConv, fetchConversations, fetchBlocked, blockedIds]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Open conversation
   const openConversation = async (conv: Conversation) => {
     setActiveConv(conv);
     await fetchMessages(conv.id);
   };
 
-  // Send message
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConv || !user) return;
     setSendingMessage(true);
@@ -244,26 +275,47 @@ export default function MessagingPanel() {
       toast({ title: "Failed to send", description: error.message, variant: "destructive" });
     } else {
       setNewMessage("");
-      // Update conversation timestamp
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", activeConv.id);
     }
     setSendingMessage(false);
   };
 
-  // Search users for new conversation
+  // Search users with role info
   const searchUsers = async (query: string) => {
     setUserSearch(query);
     if (query.length < 2) { setUserResults([]); return; }
-    const { data } = await supabase
+
+    const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name, email")
       .ilike("full_name", `%${query}%`)
       .neq("id", user?.id || "")
-      .limit(10);
-    if (data) setUserResults(data);
+      .limit(15);
+
+    if (!profiles) { setUserResults([]); return; }
+
+    // Fetch roles for these users
+    const userIds = profiles.map(p => p.id);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("user_id", userIds);
+
+    const roleMap: Record<string, string> = {};
+    roles?.forEach(r => { roleMap[r.user_id] = r.role; });
+
+    // Filter out blocked users
+    const results: UserProfile[] = profiles
+      .filter(p => !blockedIds.includes(p.id))
+      .map(p => ({
+        ...p,
+        role: roleMap[p.id] || "user",
+      }));
+
+    setUserResults(results);
   };
 
-  const addUserToSelection = (u: any) => {
+  const addUserToSelection = (u: UserProfile) => {
     if (!selectedUsers.find(s => s.id === u.id)) {
       setSelectedUsers(prev => [...prev, u]);
     }
@@ -281,10 +333,9 @@ export default function MessagingPanel() {
     setCreating(true);
 
     try {
-      // For direct messages, check if conversation already exists
+      // For direct messages, check existing
       if (newConvType === "direct" && selectedUsers.length === 1) {
         const targetId = selectedUsers[0].id;
-        // Check existing direct convs
         const { data: myConvs } = await supabase
           .from("conversation_participants")
           .select("conversation_id")
@@ -307,7 +358,6 @@ export default function MessagingPanel() {
                 .eq("user_id", targetId);
 
               if (otherPart && otherPart.length > 0) {
-                // Existing conversation found, send message there
                 await supabase.from("messages").insert({
                   conversation_id: conv.id,
                   sender_id: user.id,
@@ -339,7 +389,6 @@ export default function MessagingPanel() {
 
       if (convErr || !conv) throw convErr || new Error("Failed to create conversation");
 
-      // Add participants (creator + selected users)
       const participants = [
         { conversation_id: conv.id, user_id: user.id },
         ...selectedUsers.map(u => ({ conversation_id: conv.id, user_id: u.id })),
@@ -348,7 +397,6 @@ export default function MessagingPanel() {
       const { error: partErr } = await supabase.from("conversation_participants").insert(participants);
       if (partErr) throw partErr;
 
-      // Send first message
       const { error: msgErr } = await supabase.from("messages").insert({
         conversation_id: conv.id,
         sender_id: user.id,
@@ -376,6 +424,66 @@ export default function MessagingPanel() {
     setUserResults([]);
   };
 
+  // Block a user
+  const blockUser = async (targetId: string, targetName: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("user_blocks").insert({
+      blocker_id: user.id,
+      blocked_id: targetId,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        toast({ title: "Already blocked", description: `${targetName} is already blocked.` });
+      } else {
+        toast({ title: "Error blocking user", description: error.message, variant: "destructive" });
+      }
+    } else {
+      toast({ title: "User blocked", description: `${targetName} has been blocked. You will no longer see their messages.` });
+      setBlockedIds(prev => [...prev, targetId]);
+      // Re-filter messages
+      if (activeConv) fetchMessages(activeConv.id);
+    }
+  };
+
+  const unblockUser = async (targetId: string, targetName: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("user_blocks").delete()
+      .eq("blocker_id", user.id)
+      .eq("blocked_id", targetId);
+    if (!error) {
+      toast({ title: "User unblocked", description: `${targetName} has been unblocked.` });
+      setBlockedIds(prev => prev.filter(id => id !== targetId));
+      if (activeConv) fetchMessages(activeConv.id);
+    }
+  };
+
+  // Report a user
+  const openReportDialog = (targetId: string, targetName: string) => {
+    setReportTargetId(targetId);
+    setReportTargetName(targetName);
+    setReportReason("");
+    setReportDetails("");
+    setReportDialogOpen(true);
+  };
+
+  const submitReport = async () => {
+    if (!user || !reportTargetId || !reportReason) return;
+    setSubmittingReport(true);
+    const { error } = await supabase.from("user_reports").insert({
+      reporter_id: user.id,
+      reported_id: reportTargetId,
+      reason: reportReason,
+      details: reportDetails || null,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Report submitted", description: "An administrator will review this report." });
+      setReportDialogOpen(false);
+    }
+    setSubmittingReport(false);
+  };
+
   const filteredConversations = conversations.filter(c => {
     if (!search) return true;
     return c.name?.toLowerCase().includes(search.toLowerCase());
@@ -388,6 +496,29 @@ export default function MessagingPanel() {
   };
 
   const canCreateBroadcast = role === "admin" || role === "teacher";
+  // Only teachers (and admins) can create group chats
+  const canCreateGroup = role === "teacher" || role === "admin";
+
+  const roleBadgeColor = (r: string) => {
+    switch (r) {
+      case "admin": return "bg-destructive/10 text-destructive border-destructive/20";
+      case "teacher": return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+      case "parent": return "bg-green-500/10 text-green-700 border-green-500/20";
+      case "student": return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  // Get other participant info from active conversation for block/report
+  const getOtherParticipants = () => {
+    if (!activeConv?.participants || !user) return [];
+    return activeConv.participants
+      .filter(p => p.user_id !== user.id)
+      .map(p => ({
+        user_id: p.user_id,
+        name: profileCache.current[p.user_id] || "Unknown",
+      }));
+  };
 
   return (
     <>
@@ -433,6 +564,62 @@ export default function MessagingPanel() {
                 )}
               </div>
               <div className="flex items-center gap-1">
+                {/* Actions menu in conversation view */}
+                {activeConv && activeConv.type === "direct" && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {getOtherParticipants().map(p => (
+                        <div key={p.user_id}>
+                          {blockedIds.includes(p.user_id) ? (
+                            <DropdownMenuItem onClick={() => unblockUser(p.user_id, p.name)}>
+                              <Ban className="mr-2 h-4 w-4" /> Unblock {p.name}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => blockUser(p.user_id, p.name)}>
+                              <Ban className="mr-2 h-4 w-4" /> Block {p.name}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => openReportDialog(p.user_id, p.name)}>
+                            <Flag className="mr-2 h-4 w-4 text-destructive" /> Report {p.name}
+                          </DropdownMenuItem>
+                        </div>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {/* Group chat actions */}
+                {activeConv && activeConv.type === "group" && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {getOtherParticipants().map(p => (
+                        <div key={p.user_id}>
+                          {blockedIds.includes(p.user_id) ? (
+                            <DropdownMenuItem onClick={() => unblockUser(p.user_id, p.name)}>
+                              <Ban className="mr-2 h-4 w-4" /> Unblock {p.name}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => blockUser(p.user_id, p.name)}>
+                              <Ban className="mr-2 h-4 w-4" /> Block {p.name}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => openReportDialog(p.user_id, p.name)}>
+                            <Flag className="mr-2 h-4 w-4 text-destructive" /> Report {p.name}
+                          </DropdownMenuItem>
+                        </div>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 {!activeConv && (
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20" onClick={() => setNewConvOpen(true)}>
                     <Plus className="h-4 w-4" />
@@ -570,7 +757,7 @@ export default function MessagingPanel() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
-            <DialogDescription>Start a direct message, group chat, or broadcast announcement.</DialogDescription>
+            <DialogDescription>Send a direct message or start a group chat.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -579,10 +766,13 @@ export default function MessagingPanel() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="direct">Direct Message</SelectItem>
-                  <SelectItem value="group">Group Chat</SelectItem>
+                  {canCreateGroup && <SelectItem value="group">Group Chat</SelectItem>}
                   {canCreateBroadcast && <SelectItem value="broadcast">Broadcast Announcement</SelectItem>}
                 </SelectContent>
               </Select>
+              {!canCreateGroup && newConvType === "direct" && (
+                <p className="text-xs text-muted-foreground">Only teachers can create group chats.</p>
+              )}
             </div>
 
             {newConvType !== "direct" && (
@@ -599,6 +789,9 @@ export default function MessagingPanel() {
                   {selectedUsers.map(u => (
                     <Badge key={u.id} variant="secondary" className="gap-1 pr-1">
                       {u.full_name}
+                      <span className={`text-[9px] ml-1 px-1 py-0 rounded border ${roleBadgeColor(u.role || "")}`}>
+                        {u.role || "user"}
+                      </span>
                       <button onClick={() => removeUserFromSelection(u.id)} className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5">
                         <X className="h-3 w-3" />
                       </button>
@@ -616,14 +809,28 @@ export default function MessagingPanel() {
                 />
               </div>
               {userResults.length > 0 && (
-                <div className="border rounded-md max-h-32 overflow-y-auto divide-y">
+                <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
                   {userResults.map(u => (
-                    <button key={u.id} className="w-full text-left px-3 py-2 hover:bg-muted/50 text-sm flex justify-between" onClick={() => addUserToSelection(u)}>
-                      <span>{u.full_name}</span>
-                      <span className="text-xs text-muted-foreground">{u.email}</span>
+                    <button
+                      key={u.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/50 text-sm flex items-center justify-between gap-2"
+                      onClick={() => addUserToSelection(u)}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{u.full_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${roleBadgeColor(u.role || "")}`}>
+                          {u.role || "user"}
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>
+              )}
+              {userSearch.length >= 2 && userResults.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">No users found</p>
               )}
             </div>
 
@@ -642,6 +849,53 @@ export default function MessagingPanel() {
             <Button onClick={createConversation} disabled={creating || selectedUsers.length === 0 || !newConvMessage.trim()}>
               {creating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               {newConvType === "broadcast" ? "Send Broadcast" : "Send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report User Dialog */}
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              Report {reportTargetName}
+            </DialogTitle>
+            <DialogDescription>
+              Report this user for abusive or inappropriate behaviour in messaging.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Reason</Label>
+              <Select value={reportReason} onValueChange={setReportReason}>
+                <SelectTrigger><SelectValue placeholder="Select a reason..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="harassment">Harassment</SelectItem>
+                  <SelectItem value="inappropriate_content">Inappropriate Content</SelectItem>
+                  <SelectItem value="spam">Spam</SelectItem>
+                  <SelectItem value="bullying">Bullying</SelectItem>
+                  <SelectItem value="threats">Threats</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Additional details (optional)</Label>
+              <Textarea
+                value={reportDetails}
+                onChange={e => setReportDetails(e.target.value)}
+                placeholder="Provide any additional context..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={submitReport} disabled={!reportReason || submittingReport}>
+              {submittingReport && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Submit Report
             </Button>
           </DialogFooter>
         </DialogContent>
