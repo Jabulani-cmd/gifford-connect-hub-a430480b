@@ -40,6 +40,9 @@ export default function Login() {
     seedAdmin();
   }, []);
 
+  // Track whether a manual login was just performed
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
@@ -49,15 +52,13 @@ export default function Login() {
           navigate("/change-password");
           return;
         }
+        if (justLoggedIn) {
+          toast({ title: "Logged in successfully!" });
+        }
         redirectByRole(role);
-      } else if (!loading) {
-        // User is logged in but has no role assigned
-        toast({
-          title: "Account not configured",
-          description: "Your account has no role assigned. Please contact the school administrator.",
-          variant: "destructive",
-        });
       }
+      // Only show "no role" error if user explicitly just logged in and role is confirmed null
+      // (not during initial page load or redirect from registration)
     }
   }, [authLoading, user, role]);
 
