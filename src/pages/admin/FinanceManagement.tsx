@@ -347,6 +347,15 @@ export default function FinanceManagement() {
     fetchSupplierPayments();
   }
 
+  async function fetchRestrictionSettings() {
+    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["restrict_report_cards", "restrict_exam_results"]);
+    if (data) {
+      data.forEach((s: any) => {
+        if (s.setting_key === "restrict_report_cards") setRestrictReportCards(s.setting_value === "true");
+        if (s.setting_key === "restrict_exam_results") setRestrictExamResults(s.setting_value === "true");
+      });
+    }
+  }
 
   function openAddFee() {
     setEditingFee(null);
