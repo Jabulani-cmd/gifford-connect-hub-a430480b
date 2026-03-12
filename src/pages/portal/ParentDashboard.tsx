@@ -768,8 +768,6 @@ function TabContent(props: TabContentProps) {
         {invoices.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => {
-              const { buildStatementHtml, SCHOOL_LOGO_URL } = require("@/lib/finance/pdf");
-              const { openPrintWindow } = require("@/lib/finance/print");
               const html = buildStatementHtml({
                 logoUrl: SCHOOL_LOGO_URL,
                 student: { fullName: child.full_name, admissionNumber: child.admission_number, form: child.form },
