@@ -436,9 +436,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update phone on profile
+      // Update phone on profile (profiles.id = auth user id)
       if (phone) {
-        await supabaseAdmin.from("profiles").update({ phone }).eq("user_id", user_id);
+        await supabaseAdmin.from("profiles").update({ phone }).eq("id", user_id);
       }
 
       // Assign parent role (ignore if already exists)

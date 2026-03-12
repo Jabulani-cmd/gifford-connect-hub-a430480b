@@ -29,6 +29,7 @@ describe("Zimbabwe National ID Validation", () => {
   it("accepts valid format", () => {
     expect(zimNationalIdRegex.test("63-123456A-42")).toBe(true);
     expect(zimNationalIdRegex.test("08-1234567Z-01")).toBe(true);
+    expect(zimNationalIdRegex.test("63-768982-C-03")).toBe(true); // dash before letter
   });
 
   it("rejects invalid format", () => {
