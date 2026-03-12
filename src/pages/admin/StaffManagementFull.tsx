@@ -362,6 +362,7 @@ export default function StaffManagementFull() {
                 <TableHead>Staff #</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Class Teacher</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Status</TableHead>
@@ -370,9 +371,9 @@ export default function StaffManagementFull() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No staff found. Click "Add Staff" to get started.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No staff found. Click "Add Staff" to get started.</TableCell></TableRow>
               ) : filtered.map(s => (
                 <TableRow key={s.id}>
                   <TableCell>
@@ -385,6 +386,17 @@ export default function StaffManagementFull() {
                   <TableCell className="font-mono text-sm">{s.staff_number || "—"}</TableCell>
                   <TableCell className="font-medium">{s.full_name}</TableCell>
                   <TableCell className="capitalize">{s.role || "—"}</TableCell>
+                  <TableCell>
+                    {classTeacherMap[s.id] ? (
+                      <div className="flex flex-wrap gap-1">
+                        {classTeacherMap[s.id].map(cn => (
+                          <Badge key={cn} className="bg-blue-100 text-blue-800 text-xs">{cn}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>{s.department || "—"}</TableCell>
                   <TableCell>{s.phone || "—"}</TableCell>
                   <TableCell><Badge className={statusColor(s.status || "active")}>{s.status || "active"}</Badge></TableCell>
