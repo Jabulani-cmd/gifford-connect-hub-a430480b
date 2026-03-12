@@ -2039,10 +2039,12 @@ export default function FinanceManagement() {
                   <SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Reference #</Label>
-                <Input value={payForm.reference_number} onChange={e => setPayForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="e.g. TXN123" />
-              </div>
+              {payForm.payment_method !== "Cash" && (
+                <div className="space-y-2">
+                  <Label>Reference #</Label>
+                  <Input value={payForm.reference_number} onChange={e => setPayForm(p => ({ ...p, reference_number: e.target.value }))} placeholder="e.g. TXN123" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
