@@ -220,11 +220,22 @@ export default function MessagingPanel() {
     }
   }, [user, blockedIds]);
 
-  // Real-time subscription
+  // Refs to avoid stale closures in realtime callback
+  const activeConvRef = useRef(activeConv);
+  activeConvRef.current = activeConv;
+  const blockedIdsRef = useRef(blockedIds);
+  blockedIdsRef.current = blockedIds;
+
+  // Initial data fetch
   useEffect(() => {
     if (!user) return;
     fetchConversations();
     fetchBlocked();
+  }, [user?.id]);
+
+  // Real-time subscription (stable, no dependency on callbacks)
+  useEffect(() => {
+    if (!user) return;
 
     const channel = supabase
       .channel("user-messages")
@@ -234,9 +245,9 @@ export default function MessagingPanel() {
         table: "messages",
       }, (payload) => {
         const newMsg = payload.new as Message;
-        // Skip messages from blocked users
-        if (blockedIds.includes(newMsg.sender_id)) return;
-        if (activeConv && newMsg.conversation_id === activeConv.id) {
+        if (blockedIdsRef.current.includes(newMsg.sender_id)) return;
+        const currentConv = activeConvRef.current;
+        if (currentConv && newMsg.conversation_id === currentConv.id) {
           const senderName = profileCache.current[newMsg.sender_id] || "Unknown";
           setMessages(prev => [...prev, { ...newMsg, sender_name: senderName }]);
           supabase
@@ -250,7 +261,7 @@ export default function MessagingPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, activeConv, fetchConversations, fetchBlocked, blockedIds]);
+  }, [user?.id]);
 
   // Scroll to bottom
   useEffect(() => {
