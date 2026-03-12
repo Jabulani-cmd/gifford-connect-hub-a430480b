@@ -669,6 +669,26 @@ export default function FinanceManagement() {
       }
 
       toast({ title: "Payment recorded", description: `Receipt: ${receiptNumber}` });
+      
+      // Auto-generate receipt for printing
+      const receiptHtml = buildReceiptHtml({
+        logoUrl: SCHOOL_LOGO_URL,
+        receiptNumber,
+        paymentDate: payForm.payment_date,
+        student: {
+          fullName: selectedStudent.full_name,
+          admissionNumber: selectedStudent.admission_number,
+          form: selectedStudent.form,
+        },
+        invoiceNumber: invoice?.invoice_number,
+        amounts: { usd, zig },
+        paymentMethod: payForm.payment_method,
+        referenceNumber: payForm.reference_number,
+      });
+      // Open receipt in new window for print/download
+      const w = window.open("", "_blank");
+      if (w) { w.document.open(); w.document.write(receiptHtml); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); }
+      
       setPayDialogOpen(false);
       setSelectedStudent(null);
       setStudentInvoices([]);
