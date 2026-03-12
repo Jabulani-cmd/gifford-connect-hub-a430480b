@@ -764,7 +764,13 @@ export default function FinanceManagement() {
     setStudentResults([]);
     setPayForm(p => ({ ...p, student_search: student.full_name }));
     const { data } = await supabase.from("invoices").select("*").eq("student_id", student.id).neq("status", "paid").order("created_at");
-    if (data) setStudentInvoices(data);
+    if (data) {
+      setStudentInvoices(data);
+      // Auto-select if only one invoice
+      if (data.length === 1) {
+        setPayForm(p => ({ ...p, student_search: student.full_name, invoice_id: data[0].id }));
+      }
+    }
   }
 
   async function recordPayment() {
