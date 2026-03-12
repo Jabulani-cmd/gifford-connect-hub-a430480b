@@ -234,9 +234,46 @@ export default function StaffManagementFull() {
     } else {
       // Remove staff_number so the DB trigger auto-generates it
       const { staff_number, ...insertPayload } = payload;
-      const { error } = await supabase.from("staff").insert(insertPayload as any);
+      const { data: newStaff, error } = await supabase.from("staff").insert(insertPayload as any).select("id, staff_number, full_name, email, role").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
-      toast({ title: "Staff member added!" });
+
+      // Auto-provision auth account for the new staff member
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session?.access_token}`,
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              action: "provision-staff",
+              staff_id: newStaff.id,
+              full_name: newStaff.full_name,
+              email: newStaff.email,
+              role: newStaff.role,
+            }),
+          }
+        );
+        const provData = await res.json();
+        if (res.ok) {
+          setProvisionResult({
+            email: provData.email,
+            temp_password: provData.temp_password,
+            portal_role: provData.portal_role,
+          });
+          setProvisionDialogOpen(true);
+        } else {
+          toast({ title: "Staff added but account creation failed", description: provData.error, variant: "destructive" });
+        }
+      } catch (provErr: any) {
+        toast({ title: "Staff added but account creation failed", description: provErr?.message, variant: "destructive" });
+      }
+
+      toast({ title: "Staff member added!", description: `Staff number: ${newStaff?.staff_number}` });
     }
     setSaving(false);
     setDialogOpen(false);
