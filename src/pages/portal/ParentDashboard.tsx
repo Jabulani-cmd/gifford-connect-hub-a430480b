@@ -72,6 +72,7 @@ export default function ParentDashboard() {
   // Child-specific data
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [childPayments, setChildPayments] = useState<any[]>([]);
   const [examResults, setExamResults] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -135,14 +136,16 @@ export default function ParentDashboard() {
   };
 
   const fetchChildData = async (studentId: string) => {
-    const [{ data: att }, { data: inv }, { data: exm }] = await Promise.all([
+    const [{ data: att }, { data: inv }, { data: pay }, { data: exm }] = await Promise.all([
       supabase.from("attendance").select("*").eq("student_id", studentId).order("attendance_date", { ascending: false }),
       supabase.from("invoices").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
+      supabase.from("payments").select("*, invoices(invoice_number)").eq("student_id", studentId).order("payment_date", { ascending: false }),
       supabase.from("exams").select("*").eq("is_published", true).order("academic_year", { ascending: false }).order("term", { ascending: false }),
     ]);
 
     setAttendanceData(att || []);
     setInvoices(inv || []);
+    setChildPayments(pay || []);
     setExams(exm || []);
 
     if (exm && exm.length > 0) {
@@ -179,7 +182,9 @@ export default function ParentDashboard() {
     ? Math.round((attendanceData.filter((a) => a.status === "present" || a.status === "late").length / attendanceData.length) * 100)
     : 0;
 
-  const feeBalance = invoices.reduce((sum, inv) => sum + ((inv.total_usd || 0) - (inv.paid_usd || 0)), 0);
+  const totalInvoiced = invoices.reduce((sum, inv) => sum + Number(inv.total_usd || 0), 0);
+  const totalPaidAll = childPayments.reduce((sum, p) => sum + Number(p.amount_usd || 0), 0);
+  const feeBalance = totalInvoiced - totalPaidAll; // positive = owing, negative = credit
 
   const avgMark = examResults.length > 0
     ? Math.round(examResults.reduce((s, r: any) => s + r.mark, 0) / examResults.length)
@@ -261,7 +266,10 @@ export default function ParentDashboard() {
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
+            childPayments={childPayments}
             feeBalance={feeBalance}
+            totalInvoiced={totalInvoiced}
+            totalPaidAll={totalPaidAll}
             exams={exams}
             examResults={examResults}
             selectedExamId={selectedExamId}
@@ -300,7 +308,10 @@ export default function ParentDashboard() {
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
+            childPayments={childPayments}
             feeBalance={feeBalance}
+            totalInvoiced={totalInvoiced}
+            totalPaidAll={totalPaidAll}
             exams={exams}
             examResults={examResults}
             selectedExamId={selectedExamId}
@@ -466,7 +477,10 @@ interface TabContentProps {
   attendanceData: any[];
   attendancePercent: number;
   invoices: any[];
+  childPayments: any[];
   feeBalance: number;
+  totalInvoiced: number;
+  totalPaidAll: number;
   exams: any[];
   examResults: any[];
   selectedExamId: string | null;
@@ -477,7 +491,7 @@ interface TabContentProps {
 }
 
 function TabContent(props: TabContentProps) {
-  const { activeTab, setActiveTab, child, attendanceData, attendancePercent, invoices, feeBalance, exams, examResults, selectedExamId, setSelectedExamId, rankings, avgMark, announcements } = props;
+  const { activeTab, setActiveTab, child, attendanceData, attendancePercent, invoices, childPayments, feeBalance, totalInvoiced, totalPaidAll, exams, examResults, selectedExamId, setSelectedExamId, rankings, avgMark, announcements } = props;
 
   if (!child) return null;
 
@@ -536,8 +550,10 @@ function TabContent(props: TabContentProps) {
                 <DollarSign className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-lg font-bold text-red-700">${feeBalance}</p>
-                <p className="text-[11px] text-muted-foreground">Fee Balance</p>
+                <p className={`text-lg font-bold ${feeBalance > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                  {feeBalance > 0 ? `$${feeBalance.toFixed(2)}` : feeBalance < 0 ? `$${Math.abs(feeBalance).toFixed(2)} credit` : "$0.00"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">{feeBalance > 0 ? "Fee Balance" : feeBalance < 0 ? "Credit Balance" : "Fees Settled"}</p>
               </div>
             </CardContent>
           </Card>
@@ -773,8 +789,13 @@ function TabContent(props: TabContentProps) {
           <CardContent className="p-4 flex items-center gap-4">
             <DollarSign className={`h-8 w-8 ${feeBalance > 0 ? "text-red-600" : "text-emerald-600"}`} />
             <div>
-              <p className="text-2xl font-bold">${feeBalance.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">{feeBalance > 0 ? "Outstanding Balance" : "No Outstanding Balance"}</p>
+              <p className="text-2xl font-bold">
+                {feeBalance > 0 ? `$${feeBalance.toFixed(2)} owing` : feeBalance < 0 ? `$${Math.abs(feeBalance).toFixed(2)} credit` : "$0.00"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {feeBalance > 0 ? "Outstanding Balance" : feeBalance < 0 ? "Credit Balance" : "No Outstanding Balance"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Total Invoiced: ${totalInvoiced.toFixed(2)} · Total Paid: ${totalPaidAll.toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -790,7 +811,10 @@ function TabContent(props: TabContentProps) {
                   invoice_number: i.invoice_number, term: i.term, academic_year: i.academic_year,
                   total_usd: i.total_usd, total_zig: i.total_zig, paid_usd: i.paid_usd, paid_zig: i.paid_zig, status: i.status,
                 })),
-                payments: [],
+                payments: childPayments.map((p: any) => ({
+                  receipt_number: p.receipt_number, payment_date: p.payment_date,
+                  amount_usd: p.amount_usd, amount_zig: p.amount_zig, payment_method: p.payment_method,
+                })),
               });
               openPrintWindow(html);
             }}>
