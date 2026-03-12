@@ -168,8 +168,16 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchFeeStructures(), fetchInvoices(), fetchPayments(), fetchExpenses(), fetchPettyCash(), fetchSupplierInvoices(), fetchSupplierPayments()])
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetchFeeStructures(),
+      fetchInvoices(),
+      fetchPayments(),
+      fetchExpenses(),
+      fetchPettyCash(),
+      fetchSupplierInvoices(),
+      fetchSupplierPayments(),
+      fetchRestrictionSettings(),
+    ]).finally(() => setLoading(false));
   }, []);
 
   // ═══ FETCH FUNCTIONS ═══
