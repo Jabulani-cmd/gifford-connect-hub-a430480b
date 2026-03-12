@@ -110,6 +110,16 @@ export default function FinanceManagement() {
   const [studentInvoices, setStudentInvoices] = useState<any[]>([]);
   const [payLoading, setPayLoading] = useState(false);
 
+  // ─── Printing / PDFs ───
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<any>(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+
+  // ─── Debtor Restriction Settings ───
+  const [restrictReportCards, setRestrictReportCards] = useState(false);
+  const [restrictExamResults, setRestrictExamResults] = useState(false);
+  const [restrictLoading, setRestrictLoading] = useState(false);
+
   // ─── Expenses ───
   const [expenses, setExpenses] = useState<any[]>([]);
   const [expDialogOpen, setExpDialogOpen] = useState(false);
