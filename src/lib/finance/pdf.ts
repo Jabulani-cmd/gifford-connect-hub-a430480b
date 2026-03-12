@@ -393,7 +393,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
   <style>
     body { font-family: Arial, sans-serif; padding: 24px; font-size: 11px; max-width: 800px; margin: 0 auto; }
     .header { display:flex; gap:14px; align-items:center; margin-bottom: 6px; }
-    .header img { width:56px; height:56px; object-fit:contain; }
+    .header img { width:48px; height:64px; object-fit:contain; }
     .header h1 { font-size: 18px; margin: 0; }
     .header .motto { color: #555; font-style: italic; font-size: 10px; }
     .header .address { color: #666; font-size: 9px; }
