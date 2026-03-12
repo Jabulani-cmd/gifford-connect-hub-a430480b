@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import schoolLogo from "@/assets/school-logo.png";
-import { buildInvoicePdf, urlToDataUrl, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { buildInvoicePdf, urlToDataUrl, buildStatementHtml, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
 import { printReceipt } from "@/lib/finance/print";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
