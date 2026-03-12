@@ -42,13 +42,22 @@ export default function Login() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (!authLoading && user && role) {
-      // Check if must change password first
-      if (user.user_metadata?.must_change_password) {
-        navigate("/change-password");
-        return;
+    if (!authLoading && user) {
+      if (role) {
+        // Check if must change password first
+        if (user.user_metadata?.must_change_password) {
+          navigate("/change-password");
+          return;
+        }
+        redirectByRole(role);
+      } else if (!loading) {
+        // User is logged in but has no role assigned
+        toast({
+          title: "Account not configured",
+          description: "Your account has no role assigned. Please contact the school administrator.",
+          variant: "destructive",
+        });
       }
-      redirectByRole(role);
     }
   }, [authLoading, user, role]);
 
