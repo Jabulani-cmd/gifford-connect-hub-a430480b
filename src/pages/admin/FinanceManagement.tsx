@@ -101,6 +101,12 @@ export default function FinanceManagement() {
   const [bulkTerm, setBulkTerm] = useState("Term 1");
   const [bulkDueDate, setBulkDueDate] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  // Single invoice
+  const [singleInvOpen, setSingleInvOpen] = useState(false);
+  const [singleInvForm, setSingleInvForm] = useState({ student_search: "", student_id: "", academic_year: "2026", term: "Term 1", due_date: "", description: "", amount_usd: "", amount_zig: "" });
+  const [singleInvStudentResults, setSingleInvStudentResults] = useState<any[]>([]);
+  const [singleInvSelectedStudent, setSingleInvSelectedStudent] = useState<any>(null);
+  const [singleInvLoading, setSingleInvLoading] = useState(false);
 
   // ─── Payments ───
   const [payments, setPayments] = useState<any[]>([]);
