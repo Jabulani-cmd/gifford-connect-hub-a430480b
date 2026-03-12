@@ -1087,6 +1087,11 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
+        {/* ═══════ RECEIPTS TAB ═══════ */}
+        <TabsContent value="receipts">
+          <ReceiptSearchTab />
+        </TabsContent>
+
         {/* ═══════ DEBTORS TAB ═══════ */}
         <TabsContent value="debtors">
           <div className="space-y-4">
