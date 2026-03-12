@@ -104,6 +104,10 @@ export default function StaffManagementFull() {
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ leave_type: "annual", start_date: "", end_date: "", reason: "" });
 
+  // Provision result dialog
+  const [provisionResult, setProvisionResult] = useState<{ email: string; temp_password: string; portal_role: string } | null>(null);
+  const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
+
   // Photo
   const photoRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);

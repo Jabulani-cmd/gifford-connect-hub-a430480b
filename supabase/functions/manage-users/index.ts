@@ -594,6 +594,85 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ==================== PROVISION STAFF ====================
+    if (action === "provision-staff") {
+      const { staff_id, full_name, email: staffEmail, role: staffRole } = payload;
+      if (!staff_id || !full_name) {
+        return new Response(JSON.stringify({ error: "staff_id and full_name are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check if staff already has a user_id
+      const { data: existingStaff } = await supabaseAdmin
+        .from("staff")
+        .select("user_id, staff_number, email")
+        .eq("id", staff_id)
+        .single();
+      if (existingStaff?.user_id) {
+        return new Response(JSON.stringify({ error: "Staff member already has an account" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Generate email: use staff email if available, otherwise generate from name
+      const useEmail = staffEmail || existingStaff?.email;
+      let generatedEmail: string;
+      if (useEmail) {
+        generatedEmail = useEmail;
+      } else {
+        const nameParts = full_name.toLowerCase().replace(/[^a-z\s]/g, "").trim().split(/\s+/);
+        generatedEmail = `${nameParts.join(".")}@giffordhigh.ac.zw`;
+      }
+
+      // Generate temporary password
+      const staffNum = existingStaff?.staff_number || "Staff";
+      const tempPassword = `${staffNum}@Ghs2026`;
+
+      // Check if email already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const emailExists = existingUsers?.users?.some((u) => u.email === generatedEmail);
+      if (emailExists) {
+        return new Response(JSON.stringify({ error: `Email ${generatedEmail} already in use` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create auth user with must_change_password flag
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: generatedEmail,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { full_name, must_change_password: true },
+      });
+      if (createError) throw createError;
+
+      const userId = newUser.user.id;
+
+      // Determine portal role based on staff role
+      let portalRole = "teacher";
+      if (["principal"].includes(staffRole || "")) portalRole = "principal";
+      else if (["deputy_principal"].includes(staffRole || "")) portalRole = "deputy_principal";
+      else if (["hod"].includes(staffRole || "")) portalRole = "hod";
+      else if (["bursar"].includes(staffRole || "")) portalRole = "finance";
+
+      // Assign portal role
+      await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: portalRole });
+
+      // Link staff record to auth user
+      await supabaseAdmin.from("staff").update({ user_id: userId }).eq("id", staff_id);
+
+      return new Response(JSON.stringify({
+        message: "Staff account provisioned",
+        user_id: userId,
+        email: generatedEmail,
+        temp_password: tempPassword,
+        portal_role: portalRole,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ==================== LEGACY: get-students ====================
     if (action === "get-students") {
       const { data: studentRoles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "student");
