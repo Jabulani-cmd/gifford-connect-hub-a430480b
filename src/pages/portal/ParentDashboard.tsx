@@ -802,7 +802,10 @@ function TabContent(props: TabContentProps) {
                   invoice_number: i.invoice_number, term: i.term, academic_year: i.academic_year,
                   total_usd: i.total_usd, total_zig: i.total_zig, paid_usd: i.paid_usd, paid_zig: i.paid_zig, status: i.status,
                 })),
-                payments: [],
+                payments: childPayments.map((p: any) => ({
+                  receipt_number: p.receipt_number, payment_date: p.payment_date,
+                  amount_usd: p.amount_usd, amount_zig: p.amount_zig, payment_method: p.payment_method,
+                })),
               });
               openPrintWindow(html);
             }}>
