@@ -136,14 +136,16 @@ export default function ParentDashboard() {
   };
 
   const fetchChildData = async (studentId: string) => {
-    const [{ data: att }, { data: inv }, { data: exm }] = await Promise.all([
+    const [{ data: att }, { data: inv }, { data: pay }, { data: exm }] = await Promise.all([
       supabase.from("attendance").select("*").eq("student_id", studentId).order("attendance_date", { ascending: false }),
       supabase.from("invoices").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
+      supabase.from("payments").select("*, invoices(invoice_number)").eq("student_id", studentId).order("payment_date", { ascending: false }),
       supabase.from("exams").select("*").eq("is_published", true).order("academic_year", { ascending: false }).order("term", { ascending: false }),
     ]);
 
     setAttendanceData(att || []);
     setInvoices(inv || []);
+    setChildPayments(pay || []);
     setExams(exm || []);
 
     if (exm && exm.length > 0) {
