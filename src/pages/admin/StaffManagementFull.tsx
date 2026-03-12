@@ -603,6 +603,7 @@ export default function StaffManagementFull() {
                 <TabsList className="w-full flex-wrap">
                   <TabsTrigger value="personal">Personal Info</TabsTrigger>
                   <TabsTrigger value="employment">Employment</TabsTrigger>
+                  <TabsTrigger value="classes">Classes & Assignments</TabsTrigger>
                   <TabsTrigger value="subjects">Subjects</TabsTrigger>
                   <TabsTrigger value="leave">Leave</TabsTrigger>
                 </TabsList>
@@ -641,6 +642,45 @@ export default function StaffManagementFull() {
                         <p className="font-medium">{(value as string) || "—"}</p>
                       </div>
                     ))}
+                  </div>
+                </TabsContent>
+                <TabsContent value="classes" className="space-y-4">
+                  {/* Class Teacher Section */}
+                  <div>
+                    <h4 className="font-heading text-sm font-semibold mb-2">Class Teacher For</h4>
+                    {classTeacherMap[selectedStaff.id] && classTeacherMap[selectedStaff.id].length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {classTeacherMap[selectedStaff.id].map(cn => (
+                          <Badge key={cn} className="bg-blue-100 text-blue-800">{cn}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Not assigned as class teacher for any class.</p>
+                    )}
+                  </div>
+                  {/* Teaching Assignments */}
+                  <div>
+                    <h4 className="font-heading text-sm font-semibold mb-2">Teaching Assignments</h4>
+                    {teachingClassesMap[selectedStaff.id] && teachingClassesMap[selectedStaff.id].length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Class</TableHead>
+                            <TableHead>Subject</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {teachingClassesMap[selectedStaff.id].map((a, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{a.className}</TableCell>
+                              <TableCell>{a.subjectName}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No teaching assignments found. Assign via Academic Management → Class Subjects.</p>
+                    )}
                   </div>
                 </TabsContent>
                 <TabsContent value="subjects">
