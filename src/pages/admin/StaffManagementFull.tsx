@@ -112,7 +112,7 @@ export default function StaffManagementFull() {
   const [uploading, setUploading] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
 
-  useEffect(() => { fetchStaff(); }, []);
+  useEffect(() => { fetchStaff(); fetchClassAssignments(); }, []);
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -124,6 +124,37 @@ export default function StaffManagementFull() {
     if (data) setStaff(data as unknown as StaffMember[]);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     setLoading(false);
+  };
+
+  const fetchClassAssignments = async () => {
+    // Fetch class teacher assignments
+    const { data: classes } = await supabase.from("classes").select("id, name, class_teacher_id");
+    if (classes) {
+      const ctMap: Record<string, string[]> = {};
+      classes.forEach((c: any) => {
+        if (c.class_teacher_id) {
+          if (!ctMap[c.class_teacher_id]) ctMap[c.class_teacher_id] = [];
+          ctMap[c.class_teacher_id].push(c.name);
+        }
+      });
+      setClassTeacherMap(ctMap);
+    }
+
+    // Fetch teaching assignments (class_subjects)
+    const { data: cs } = await supabase.from("class_subjects").select("teacher_id, classes(name), subjects(name)");
+    if (cs) {
+      const tcMap: Record<string, { className: string; subjectName: string }[]> = {};
+      cs.forEach((row: any) => {
+        if (row.teacher_id) {
+          if (!tcMap[row.teacher_id]) tcMap[row.teacher_id] = [];
+          tcMap[row.teacher_id].push({
+            className: row.classes?.name || "—",
+            subjectName: row.subjects?.name || "—",
+          });
+        }
+      });
+      setTeachingClassesMap(tcMap);
+    }
   };
 
   const fetchLeave = async (staffId: string) => {
