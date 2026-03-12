@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import schoolLogo from "@/assets/school-logo.png";
 import { buildInvoicePdf, buildInvoiceHtml, urlToDataUrl, buildStatementHtml, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
-import { printReceipt } from "@/lib/finance/print";
+import { printReceipt, openPrintWindow } from "@/lib/finance/print";
 import {
   DollarSign, Plus, Pencil, Trash2, Copy, FileText, CreditCard,
   AlertTriangle, TrendingUp, TrendingDown, Search, Download, Upload, Receipt,
