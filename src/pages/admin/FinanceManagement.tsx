@@ -2416,6 +2416,81 @@ export default function FinanceManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ═══ SINGLE INVOICE DIALOG ═══ */}
+      <Dialog open={singleInvOpen} onOpenChange={setSingleInvOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Invoice for Student</DialogTitle>
+            <DialogDescription>Generate an invoice for a specific student</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Search Student *</Label>
+              <Input placeholder="Type student name or admission #..." value={singleInvForm.student_search}
+                onChange={e => { setSingleInvForm(f => ({ ...f, student_search: e.target.value })); searchSingleInvStudents(e.target.value); }} />
+              {singleInvStudentResults.length > 0 && (
+                <div className="border rounded-md max-h-32 overflow-y-auto">
+                  {singleInvStudentResults.map(s => (
+                    <div key={s.id} className="px-3 py-2 hover:bg-muted cursor-pointer text-sm" onClick={() => selectSingleInvStudent(s)}>
+                      {s.full_name} — {s.admission_number} ({s.form})
+                    </div>
+                  ))}
+                </div>
+              )}
+              {singleInvSelectedStudent && (
+                <Badge variant="outline" className="mt-1">{singleInvSelectedStudent.full_name} — {singleInvSelectedStudent.admission_number}</Badge>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Academic Year</Label>
+                <Select value={singleInvForm.academic_year} onValueChange={v => setSingleInvForm(f => ({ ...f, academic_year: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["2024", "2025", "2026", "2027"].map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Term</Label>
+                <Select value={singleInvForm.term} onValueChange={v => setSingleInvForm(f => ({ ...f, term: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {termOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description</Label>
+              <Input placeholder="e.g. Term 1 School Fees" value={singleInvForm.description} onChange={e => setSingleInvForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input type="number" step="0.01" value={singleInvForm.amount_usd} onChange={e => setSingleInvForm(f => ({ ...f, amount_usd: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input type="number" step="0.01" value={singleInvForm.amount_zig} onChange={e => setSingleInvForm(f => ({ ...f, amount_zig: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Due Date</Label>
+              <Input type="date" value={singleInvForm.due_date} onChange={e => setSingleInvForm(f => ({ ...f, due_date: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSingleInvOpen(false)}>Cancel</Button>
+            <Button onClick={createSingleInvoice} disabled={singleInvLoading || !singleInvSelectedStudent}>
+              {singleInvLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Create Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
 }
