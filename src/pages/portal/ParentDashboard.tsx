@@ -72,6 +72,7 @@ export default function ParentDashboard() {
   // Child-specific data
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [childPayments, setChildPayments] = useState<any[]>([]);
   const [examResults, setExamResults] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
