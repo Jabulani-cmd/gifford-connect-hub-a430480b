@@ -1104,7 +1104,10 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(inv.total_usd - inv.paid_usd)}</TableCell>
                           {isFinanceOrAdmin && (
                             <TableCell>
-                              <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => downloadInvoicePdf(inv)} title="Download PDF"><Download className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => deleteInvoice(inv)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>
