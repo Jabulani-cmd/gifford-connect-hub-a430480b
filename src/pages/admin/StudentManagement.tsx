@@ -575,13 +575,10 @@ export default function StudentManagement() {
                 <TableHead>Photo</TableHead>
                 <TableHead>Student #</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Form/Stream</TableHead>
                 <TableHead>Guardian Phone</TableHead>
                 <TableHead>Portal</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-                <TableHead>Form/Stream</TableHead>
-                <TableHead>Guardian Phone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
