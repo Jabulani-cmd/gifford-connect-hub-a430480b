@@ -881,6 +881,7 @@ export default function StudentManagement() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     {[
                       ["Admission #", selectedStudent.admission_number],
+                      ["Email", selectedStudent.email],
                       ["Form", selectedStudent.form],
                       ["Stream", selectedStudent.stream],
                       ["Gender", selectedStudent.gender],
