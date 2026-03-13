@@ -48,6 +48,7 @@ type Student = {
   created_at: string;
   sports_activities: string[] | null;
   user_id: string | null;
+  email: string | null;
 };
 
 const sportsOptions = ["Rugby", "Soccer", "Cricket", "Tennis", "Athletics", "Swimming", "Volleyball", "Basketball", "Hockey", "Netball", "Chess", "Table Tennis"];
