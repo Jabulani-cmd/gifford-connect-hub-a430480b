@@ -2377,6 +2377,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           deleted_at: string | null
+          email: string | null
           emergency_contact: string | null
           enrollment_date: string | null
           form: string
@@ -2402,6 +2403,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
+          email?: string | null
           emergency_contact?: string | null
           enrollment_date?: string | null
           form?: string
@@ -2427,6 +2429,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
+          email?: string | null
           emergency_contact?: string | null
           enrollment_date?: string | null
           form?: string

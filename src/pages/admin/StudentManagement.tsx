@@ -48,6 +48,7 @@ type Student = {
   created_at: string;
   sports_activities: string[] | null;
   user_id: string | null;
+  email: string | null;
 };
 
 const sportsOptions = ["Rugby", "Soccer", "Cricket", "Tennis", "Athletics", "Swimming", "Volleyball", "Basketball", "Hockey", "Netball", "Chess", "Table Tennis"];
@@ -574,22 +575,19 @@ export default function StudentManagement() {
                 <TableHead>Photo</TableHead>
                 <TableHead>Student #</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Form/Stream</TableHead>
                 <TableHead>Guardian Phone</TableHead>
                 <TableHead>Portal</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-                <TableHead>Form/Stream</TableHead>
-                <TableHead>Guardian Phone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No students found. Click "Add Student" to get started.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No students found. Click "Add Student" to get started.</TableCell></TableRow>
               ) : filtered.map(s => (
                 <TableRow key={s.id}>
                   <TableCell>
@@ -606,6 +604,7 @@ export default function StudentManagement() {
                     {s.full_name}
                     {s.has_medical_alert && <AlertTriangle className="ml-1 inline h-4 w-4 text-destructive" />}
                   </TableCell>
+                  <TableCell className="text-sm">{s.email || "—"}</TableCell>
                   <TableCell>{s.form}{s.stream ? ` / ${s.stream}` : ""}</TableCell>
                   <TableCell>{s.guardian_phone || "—"}</TableCell>
                   <TableCell>
@@ -879,6 +878,7 @@ export default function StudentManagement() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     {[
                       ["Admission #", selectedStudent.admission_number],
+                      ["Email", selectedStudent.email],
                       ["Form", selectedStudent.form],
                       ["Stream", selectedStudent.stream],
                       ["Gender", selectedStudent.gender],
