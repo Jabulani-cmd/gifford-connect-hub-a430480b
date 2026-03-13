@@ -55,7 +55,7 @@ export default function StudentDashboard() {
 
     // Fetch profile & student record in parallel
     const [{ data: prof }, { data: studentRec }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", uid).single(),
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("students").select("*").eq("user_id", uid).maybeSingle(),
     ]);
 

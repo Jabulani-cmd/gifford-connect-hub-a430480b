@@ -106,7 +106,7 @@ export default function StudentMarksTab({ studentId }: Props) {
                     return (
                       <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="px-3 py-3 font-medium">{m.subjects?.name || "—"}</td>
-                        <td className="px-3 py-3 text-muted-foreground">{m.description || "—"}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{m.comment || "—"}</td>
                         <td className="px-3 py-3 text-center capitalize">{m.assessment_type}</td>
                         <td className="px-3 py-3 text-center">{m.term}</td>
                         <td className="px-3 py-3 text-center font-bold">{m.mark}%</td>
