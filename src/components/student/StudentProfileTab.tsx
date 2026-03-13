@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Phone, Mail, MapPin, AlertTriangle, Lock, Shield, Calendar, Hash } from "lucide-react";
+import { User, Phone, Mail, MapPin, AlertTriangle, Lock, Shield, Calendar, Hash, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,8 +22,16 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
   const { toast } = useToast();
   const { signOut } = useAuth();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [editForm, setEditForm] = useState({
+    phone: profile?.phone || "",
+    address: student?.address || "",
+    emergency_contact: student?.emergency_contact || "",
+  });
 
   const handlePasswordChange = async () => {
     if (passwords.new !== passwords.confirm) {
@@ -44,6 +52,40 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
       setPasswords({ current: "", new: "", confirm: "" });
     }
     setChangingPassword(false);
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    const updates: Promise<any>[] = [];
+
+    // Update profile phone
+    if (profile?.id) {
+      updates.push(
+        supabase.from("profiles").update({ phone: editForm.phone || null }).eq("id", profile.id)
+      );
+    }
+
+    // Update student address and emergency contact
+    if (student?.id) {
+      updates.push(
+        supabase.from("students").update({
+          address: editForm.address || null,
+          emergency_contact: editForm.emergency_contact || null,
+        }).eq("id", student.id)
+      );
+    }
+
+    const results = await Promise.all(updates);
+    const hasError = results.some((r) => r.error);
+
+    if (hasError) {
+      toast({ title: "Error saving changes", variant: "destructive" });
+    } else {
+      toast({ title: "Profile updated!" });
+      setShowEditDialog(false);
+      onRefresh();
+    }
+    setSaving(false);
   };
 
   const infoItems = [
@@ -76,11 +118,14 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
                 <User className="h-8 w-8 text-secondary" />
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-bold">{student?.full_name || profile?.full_name}</h2>
               <p className="text-sm text-muted-foreground">{student?.form} {student?.stream}</p>
               <p className="text-xs text-muted-foreground">{student?.admission_number}</p>
             </div>
+            <Button variant="ghost" size="icon" onClick={() => setShowEditDialog(true)} title="Edit Profile">
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -124,6 +169,13 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
         <Button
           variant="outline"
           className="w-full justify-start"
+          onClick={() => setShowEditDialog(true)}
+        >
+          <Pencil className="h-4 w-4 mr-2" /> Update Personal Information
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
           onClick={() => setShowPasswordDialog(true)}
         >
           <Lock className="h-4 w-4 mr-2" /> Change Password
@@ -136,6 +188,44 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
           <User className="h-4 w-4 mr-2" /> Logout
         </Button>
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Personal Information</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Phone Number</Label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="e.g. +263 77 123 4567"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Address</Label>
+              <Input
+                value={editForm.address}
+                onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
+                placeholder="Your home address"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Emergency Contact</Label>
+              <Input
+                value={editForm.emergency_contact}
+                onChange={(e) => setEditForm((f) => ({ ...f, emergency_contact: e.target.value }))}
+                placeholder="Emergency contact number"
+              />
+            </div>
+            <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
