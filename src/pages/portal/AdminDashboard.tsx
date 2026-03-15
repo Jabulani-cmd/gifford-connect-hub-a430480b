@@ -943,6 +943,11 @@ export default function AdminDashboard() {
             <AuditLogs />
           </TabsContent>
 
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <AdminAttendanceViewer />
+          </TabsContent>
+
           {/* Data Migration Tab */}
           <TabsContent value="migration">
             <DataMigration />
