@@ -83,7 +83,7 @@ export default function TeacherDashboard() {
   const fetchAll = async () => {
     setLoading(true);
     const [profRes, subRes, allClassRes, staffRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", user!.id).single(),
+      supabase.from("profiles").select("*").eq("id", user!.id).single(),
       supabase.from("subjects").select("*").order("name"),
       supabase.from("classes").select("*").order("name"),
       supabase.from("staff").select("id, staff_number, department, role").eq("user_id", user!.id).single(),
