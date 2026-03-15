@@ -159,20 +159,34 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (!attClass) return;
     (async () => {
+      // Load students for this class
       const { data: sc } = await supabase.from("student_classes").select("student_id").eq("class_id", attClass);
+      let studs: any[] = [];
       if (sc && sc.length > 0) {
         const ids = sc.map(s => s.student_id);
-        const { data: studs } = await supabase.from("students").select("id, full_name, admission_number").in("id", ids).eq("status", "active").order("full_name");
-        if (studs) { setAttStudents(studs); const d: Record<string, string> = {}; studs.forEach(s => { d[s.id] = "present"; }); setAttRecords(d); }
+        const { data } = await supabase.from("students").select("id, full_name, admission_number").in("id", ids).eq("status", "active").order("full_name");
+        if (data) studs = data;
       } else {
         const cls = classes.find(c => c.id === attClass);
         if (cls?.form_level) {
-          const { data: studs } = await supabase.from("students").select("id, full_name, admission_number").eq("form", cls.form_level).eq("status", "active").order("full_name");
-          if (studs) { setAttStudents(studs); const d: Record<string, string> = {}; studs.forEach(s => { d[s.id] = "present"; }); setAttRecords(d); }
+          const stream = cls.stream || cls.name;
+          const { data } = await supabase.from("students").select("id, full_name, admission_number").eq("form", cls.form_level).eq("status", "active").order("full_name");
+          if (data) studs = data;
         }
       }
+      setAttStudents(studs);
+      // Default all to present, then overlay any existing records
+      const defaults: Record<string, string> = {};
+      studs.forEach(s => { defaults[s.id] = "present"; });
+      if (studs.length > 0 && attDate) {
+        const { data: existing } = await supabase.from("attendance").select("student_id, status").eq("class_id", attClass).eq("attendance_date", attDate);
+        if (existing) {
+          existing.forEach(r => { defaults[r.student_id] = r.status; });
+        }
+      }
+      setAttRecords(defaults);
     })();
-  }, [attClass]);
+  }, [attClass, attDate]);
 
   const submitMark = async () => {
     const { student_id, subject_id, mark, term, assessment_type, description, comment } = markForm;
