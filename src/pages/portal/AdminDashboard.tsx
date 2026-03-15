@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
+import AdminAttendanceViewer from "@/components/admin/AdminAttendanceViewer";
 import VerificationCodesManager from "@/components/admin/VerificationCodesManager";
 import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
@@ -31,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket, KeyRound, Megaphone, Trophy, ShieldAlert } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket, KeyRound, Megaphone, Trophy, ShieldAlert, CheckCircle2 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -562,6 +563,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="facilities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
               <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
               <TabsTrigger value="awards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-4 w-4" /> Awards</TabsTrigger>
+              <TabsTrigger value="attendance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
               <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
               {/* Finance */}
               <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
@@ -939,6 +941,11 @@ export default function AdminDashboard() {
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
             <AuditLogs />
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <AdminAttendanceViewer />
           </TabsContent>
 
           {/* Data Migration Tab */}
