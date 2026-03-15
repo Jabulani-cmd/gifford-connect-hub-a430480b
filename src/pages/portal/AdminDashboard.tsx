@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
+import AdminAttendanceViewer from "@/components/admin/AdminAttendanceViewer";
 import VerificationCodesManager from "@/components/admin/VerificationCodesManager";
 import ImageCropper from "@/components/ImageCropper";
 import StaffManagement from "@/components/admin/StaffManagement";
