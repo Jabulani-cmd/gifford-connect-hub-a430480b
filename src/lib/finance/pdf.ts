@@ -48,7 +48,7 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
     try {
       const props = doc.getImageProperties(input.logoDataUrl);
       const aspectRatio = props.width && props.height ? props.width / props.height : 0.75;
-      const logoHeight = 26;
+      const logoHeight = 65;
       const logoWidth = logoHeight * aspectRatio;
       doc.addImage(input.logoDataUrl, "PNG", 14, 8, logoWidth, logoHeight);
     } catch {
