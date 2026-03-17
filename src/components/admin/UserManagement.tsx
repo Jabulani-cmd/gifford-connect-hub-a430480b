@@ -369,7 +369,7 @@ export default function UserManagement() {
       if (studentRecord) photoUrl = studentRecord.profile_photo_url || "";
     }
     if (!photoUrl) {
-      const { data: profileRecord } = await supabase.from("profiles").select("avatar_url").eq("user_id", user.id).maybeSingle();
+      const { data: profileRecord } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
       if (profileRecord) photoUrl = profileRecord.avatar_url || "";
     }
     setEditForm({
