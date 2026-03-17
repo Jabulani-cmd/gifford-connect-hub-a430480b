@@ -463,7 +463,7 @@ export default function UserManagement() {
         } else {
           await supabase.from("staff").update({ photo_url: null }).eq("user_id", editUser.id);
         }
-        await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", editUser.id);
+        await supabase.from("profiles").update({ avatar_url: null }).eq("id", editUser.id);
       }
 
       toast({ title: "User updated successfully" });
