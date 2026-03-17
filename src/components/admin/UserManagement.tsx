@@ -454,7 +454,7 @@ export default function UserManagement() {
           } else {
             await supabase.from("staff").update({ photo_url: photoUrl }).eq("user_id", editUser.id);
           }
-          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("user_id", editUser.id);
+          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("id", editUser.id);
         }
       } else if (!editForm.photo_url && !editPhotoPreview) {
         // Photo was removed
