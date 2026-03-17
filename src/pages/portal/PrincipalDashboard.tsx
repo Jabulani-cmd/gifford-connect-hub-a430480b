@@ -114,7 +114,7 @@ export default function PrincipalDashboard() {
           <TabsContent value="inventory"><InventoryManagement /></TabsContent>
           <TabsContent value="communication"><CommunicationModule /></TabsContent>
           <TabsContent value="reports"><EMISReports /></TabsContent>
-          <TabsContent value="finance"><FinanceManagement /></TabsContent>
+          
           <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
           <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
         </Tabs>
