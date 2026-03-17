@@ -19,7 +19,7 @@ import BoardingManagement from "@/pages/admin/BoardingManagement";
 import InventoryManagement from "@/pages/admin/InventoryManagement";
 import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
-import FinanceManagement from "@/pages/admin/FinanceManagement";
+
 import UserManagement from "@/components/admin/UserManagement";
 import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
 import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
