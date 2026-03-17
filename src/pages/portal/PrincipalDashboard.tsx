@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, UserCheck, Building, BedDouble, Package, Calendar, Shield, DollarSign, CalendarOff } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, UserCheck, Building, BedDouble, Package, Calendar, Shield, CalendarOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
