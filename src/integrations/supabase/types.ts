@@ -1669,6 +1669,7 @@ export type Database = {
           assessment_type: string
           comment: string | null
           created_at: string
+          description: string | null
           id: string
           mark: number
           student_id: string
@@ -1680,6 +1681,7 @@ export type Database = {
           assessment_type?: string
           comment?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           mark: number
           student_id: string
@@ -1691,6 +1693,7 @@ export type Database = {
           assessment_type?: string
           comment?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           mark?: number
           student_id?: string

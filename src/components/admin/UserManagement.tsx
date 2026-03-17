@@ -234,7 +234,7 @@ export default function UserManagement() {
           } else {
             await supabase.from("staff").update({ photo_url: photoUrl }).eq("user_id", data.user_id);
           }
-          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("user_id", data.user_id);
+          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("id", data.user_id);
         }
       }
 
@@ -369,7 +369,7 @@ export default function UserManagement() {
       if (studentRecord) photoUrl = studentRecord.profile_photo_url || "";
     }
     if (!photoUrl) {
-      const { data: profileRecord } = await supabase.from("profiles").select("avatar_url").eq("user_id", user.id).maybeSingle();
+      const { data: profileRecord } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
       if (profileRecord) photoUrl = profileRecord.avatar_url || "";
     }
     setEditForm({
@@ -454,7 +454,7 @@ export default function UserManagement() {
           } else {
             await supabase.from("staff").update({ photo_url: photoUrl }).eq("user_id", editUser.id);
           }
-          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("user_id", editUser.id);
+          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("id", editUser.id);
         }
       } else if (!editForm.photo_url && !editPhotoPreview) {
         // Photo was removed
@@ -463,7 +463,7 @@ export default function UserManagement() {
         } else {
           await supabase.from("staff").update({ photo_url: null }).eq("user_id", editUser.id);
         }
-        await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", editUser.id);
+        await supabase.from("profiles").update({ avatar_url: null }).eq("id", editUser.id);
       }
 
       toast({ title: "User updated successfully" });

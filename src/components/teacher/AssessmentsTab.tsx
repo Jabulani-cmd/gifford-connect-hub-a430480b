@@ -102,7 +102,6 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
       due_date: form.due_date || null,
       instructions: form.instructions || null,
       file_url,
-      link_url: form.link_url || null,
       is_published: form.is_published,
     });
 

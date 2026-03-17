@@ -150,8 +150,15 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (selectedTTClass) {
-      supabase.from("timetable").select("*, subjects(name)").eq("class_id", selectedTTClass).then(({ data }) => {
-        if (data) setTimetableData(data);
+      supabase.from("timetable_entries").select("*, subjects(name)").eq("class_id", selectedTTClass).then(({ data }) => {
+        if (data) {
+          // Map timetable_entries columns to match the expected format
+          const mapped = (data || []).map((t: any) => ({
+            ...t,
+            time_slot: t.start_time,
+          }));
+          setTimetableData(mapped);
+        }
       });
     }
   }, [selectedTTClass]);
