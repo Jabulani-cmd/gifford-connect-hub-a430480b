@@ -234,7 +234,7 @@ export default function UserManagement() {
           } else {
             await supabase.from("staff").update({ photo_url: photoUrl }).eq("user_id", data.user_id);
           }
-          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("user_id", data.user_id);
+          await supabase.from("profiles").update({ avatar_url: photoUrl }).eq("id", data.user_id);
         }
       }
 
