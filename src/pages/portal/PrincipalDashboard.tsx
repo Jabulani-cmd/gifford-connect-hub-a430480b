@@ -101,7 +101,7 @@ export default function PrincipalDashboard() {
             <TabsTrigger value="inventory"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
             <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
             <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
-            <TabsTrigger value="finance"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
+            
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
             <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
           </TabsList>
