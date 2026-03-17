@@ -159,8 +159,8 @@ Deno.serve(async (req) => {
       // Assign portal role (admin, teacher, student, parent)
       await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: portal_role });
 
-      // Update profile
-      await supabaseAdmin.from("profiles").update({ phone: phone || null }).eq("user_id", userId);
+      // Update profile (profiles.id = auth user id)
+      await supabaseAdmin.from("profiles").update({ phone: phone || null }).eq("id", userId);
       if (portal_role === "student") {
         // Create student record linked to auth user
         await supabaseAdmin.from("students").insert({
