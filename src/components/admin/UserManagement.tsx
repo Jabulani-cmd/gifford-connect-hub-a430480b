@@ -256,6 +256,7 @@ export default function UserManagement() {
         .from("students")
         .select("id, user_id, admission_number, full_name, enrollment_date")
         .is("deleted_at", null)
+        .eq("status", "active")
         .not("user_id", "is", null); // only students with a portal account
 
       console.log("Students data from DB:", studentsData);
