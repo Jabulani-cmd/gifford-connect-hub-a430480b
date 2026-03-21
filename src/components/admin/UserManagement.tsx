@@ -256,7 +256,7 @@ export default function UserManagement() {
       // 3. Transform students to ManagedUser structure
       const studentUsers: ManagedUser[] = (studentsData || []).map((s: any) => ({
         id: s.user_id,
-        email: `ghs${s.admission_number}@giffordhigh.ac.zw`, // consistent with provisioning
+        email: `ghs${s.admission_number.toLowerCase().replace(/^ghs/, "")}@giffordhigh.ac.zw`,
         full_name: s.full_name,
         portal_role: "student",
         staff_role: undefined,
