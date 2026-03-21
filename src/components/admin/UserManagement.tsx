@@ -222,10 +222,13 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      console.log("-- fetchUsers started --");
+
       // 1. Fetch staff users via Edge Function
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      console.log("Session:", session);
       if (!session?.access_token) {
         toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
         setLoading(false);
@@ -242,8 +245,11 @@ export default function UserManagement() {
         body: JSON.stringify({ action: "list-users" }),
       });
       const data = await res.json();
+      console.log("Edge Function response:", data);
       if (data.error) throw new Error(data.error);
       const staffUsersFromEdge: ManagedUser[] = data.users || [];
+      console.log("Staff users from Edge count:", staffUsersFromEdge.length);
+      console.log("Staff users from Edge:", staffUsersFromEdge);
 
       // 2. Fetch staff users directly from staff table (as backup)
       const { data: staffData, error: staffError } = await supabase
@@ -251,16 +257,19 @@ export default function UserManagement() {
         .select("id, user_id, staff_number, full_name, role, department, email, phone")
         .not("user_id", "is", null)
         .is("deleted_at", null);
-      if (staffError) console.error("Staff fetch error:", staffError);
+      console.log("Staff data from table:", staffData);
+      if (staffError) console.error("Staff error:", staffError);
       const staffUsersFromTable: ManagedUser[] = (staffData || []).map((s: any) => ({
         id: s.user_id,
         email: s.email || `${s.staff_number}@giffordhigh.ac.zw`,
         full_name: s.full_name,
-        portal_role: s.role === "admin" ? "admin" : "teacher", // adjust as needed
+        portal_role: s.role === "admin" ? "admin" : "teacher",
         staff_role: s.role,
         department: s.department,
         created_at: new Date().toISOString(),
       }));
+      console.log("Staff users from table count:", staffUsersFromTable.length);
+      console.log("Staff users from table:", staffUsersFromTable);
 
       // 3. Fetch student users from students table (active only)
       const { data: studentsData, error: studentsError } = await supabase
@@ -279,6 +288,8 @@ export default function UserManagement() {
         department: undefined,
         created_at: s.enrollment_date,
       }));
+      console.log("Student users count:", studentUsers.length);
+      console.log("Student users:", studentUsers);
 
       // 4. Merge all sources (avoid duplicates by id)
       const combined = [...staffUsersFromEdge];
@@ -292,6 +303,8 @@ export default function UserManagement() {
           combined.push(student);
         }
       }
+      console.log("Combined users count:", combined.length);
+      console.log("Combined users:", combined);
 
       setUsers(combined);
     } catch (err: any) {
@@ -299,6 +312,7 @@ export default function UserManagement() {
       toast({ title: "Error loading users", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
+      console.log("-- fetchUsers finished --");
     }
   };
 
