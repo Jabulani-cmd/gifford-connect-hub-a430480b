@@ -9,9 +9,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { UserPlus, Users, Search, Shield, Trash2, KeyRound, Pencil, FileSpreadsheet, Loader2, Camera, Upload, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  UserPlus,
+  Users,
+  Search,
+  Shield,
+  Trash2,
+  KeyRound,
+  Pencil,
+  FileSpreadsheet,
+  Loader2,
+  Camera,
+  Upload,
+  X,
+} from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import BulkUserImport from "./BulkUserImport";
 import ImageCropper from "@/components/ImageCropper";
@@ -48,9 +77,38 @@ const staffRoles = [
 
 const staffRoleLabels: Record<string, string> = Object.fromEntries(staffRoles.map((r) => [r.value, r.label]));
 
-const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports", "Administration"];
+const departmentOptions = [
+  "Mathematics",
+  "Sciences",
+  "Languages",
+  "Humanities",
+  "Technical",
+  "Arts",
+  "Sports",
+  "Administration",
+];
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
-const subjectsList = ["Mathematics", "English", "Shona", "Ndebele", "History", "Geography", "Physics", "Chemistry", "Biology", "Accounts", "Commerce", "Computer Science", "Agriculture", "Technical Graphics", "Food & Nutrition", "Fashion & Fabrics", "Music", "Art", "Physical Education"];
+const subjectsList = [
+  "Mathematics",
+  "English",
+  "Shona",
+  "Ndebele",
+  "History",
+  "Geography",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Accounts",
+  "Commerce",
+  "Computer Science",
+  "Agriculture",
+  "Technical Graphics",
+  "Food & Nutrition",
+  "Fashion & Fabrics",
+  "Music",
+  "Art",
+  "Physical Education",
+];
 
 interface ManagedUser {
   id: string;
@@ -136,7 +194,9 @@ export default function UserManagement() {
     const folder = role === "student" ? "profile-photos/students" : "profile-photos/staff";
     const ext = "jpg";
     const path = `${folder}/${userId}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("school-media").upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    const { error } = await supabase.storage
+      .from("school-media")
+      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
     if (error) {
       console.error("Photo upload error:", error);
       return null;
@@ -162,7 +222,10 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // 1. Fetch staff users via Edge Function
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
         setLoading(false);
@@ -180,11 +243,42 @@ export default function UserManagement() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setUsers(data.users || []);
+      const staffUsers: ManagedUser[] = data.users || [];
+
+      // 2. Fetch student users from the students table
+      const { data: studentsData, error: studentsError } = await supabase
+        .from("students")
+        .select("id, user_id, admission_number, full_name, enrollment_date")
+        .not("user_id", "is", null); // only students with a portal account
+
+      if (studentsError) throw studentsError;
+
+      // 3. Transform students to ManagedUser structure
+      const studentUsers: ManagedUser[] = (studentsData || []).map((s: any) => ({
+        id: s.user_id,
+        email: `ghs${s.admission_number}@giffordhigh.ac.zw`, // consistent with provisioning
+        full_name: s.full_name,
+        portal_role: "student",
+        staff_role: undefined,
+        department: undefined,
+        created_at: s.enrollment_date,
+      }));
+
+      // 4. Merge staff and student users (avoid duplicates by id)
+      const combined = [...staffUsers];
+      for (const student of studentUsers) {
+        if (!combined.some((u) => u.id === student.id)) {
+          combined.push(student);
+        }
+      }
+
+      setUsers(combined);
     } catch (err: any) {
       console.error("Failed to fetch users:", err);
+      toast({ title: "Error loading users", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCreate = async () => {
@@ -218,7 +312,10 @@ export default function UserManagement() {
           phone: form.phone || undefined,
           grade: form.grade || undefined,
           class_name: form.class_name || undefined,
-          assigned_class_id: (form.portal_role === "teacher" || form.portal_role === "admin") && form.assigned_class_id ? form.assigned_class_id : undefined,
+          assigned_class_id:
+            (form.portal_role === "teacher" || form.portal_role === "admin") && form.assigned_class_id
+              ? form.assigned_class_id
+              : undefined,
         }),
       });
       const data = await res.json();
@@ -239,7 +336,18 @@ export default function UserManagement() {
       }
 
       toast({ title: "User created successfully!" });
-      setForm({ full_name: "", email: "", password: "", portal_role: "teacher", staff_role: "teacher", department: "", phone: "", grade: "", class_name: "", assigned_class_id: "" });
+      setForm({
+        full_name: "",
+        email: "",
+        password: "",
+        portal_role: "teacher",
+        staff_role: "teacher",
+        department: "",
+        phone: "",
+        grade: "",
+        class_name: "",
+        assigned_class_id: "",
+      });
       setCreatePhotoBlob(null);
       setCreatePhotoPreview(null);
       fetchUsers();
@@ -275,7 +383,9 @@ export default function UserManagement() {
     }
     setResettingPassword(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
         setResettingPassword(false);
@@ -341,10 +451,24 @@ export default function UserManagement() {
   // Edit user state
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editForm, setEditForm] = useState({
-    portal_role: "", staff_role: "", department: "", full_name: "", assigned_class_id: "",
-    phone: "", email: "", address: "", emergency_contact: "", qualifications: "",
-    bio: "", title: "", subjects_taught: [] as string[], national_id: "",
-    nssa_number: "", paye_number: "", bank_details: "", employment_date: "",
+    portal_role: "",
+    staff_role: "",
+    department: "",
+    full_name: "",
+    assigned_class_id: "",
+    phone: "",
+    email: "",
+    address: "",
+    emergency_contact: "",
+    qualifications: "",
+    bio: "",
+    title: "",
+    subjects_taught: [] as string[],
+    national_id: "",
+    nssa_number: "",
+    paye_number: "",
+    bank_details: "",
+    employment_date: "",
     photo_url: "",
   });
   const [saving, setSaving] = useState(false);
@@ -361,15 +485,27 @@ export default function UserManagement() {
       if (staffRecord) {
         staffDetails = staffRecord;
         photoUrl = staffRecord.photo_url || "";
-        const { data: classRecord } = await supabase.from("classes").select("id").eq("class_teacher_id", staffRecord.id).maybeSingle();
+        const { data: classRecord } = await supabase
+          .from("classes")
+          .select("id")
+          .eq("class_teacher_id", staffRecord.id)
+          .maybeSingle();
         if (classRecord) currentClassId = classRecord.id;
       }
     } else if (user.portal_role === "student") {
-      const { data: studentRecord } = await supabase.from("students").select("profile_photo_url").eq("user_id", user.id).maybeSingle();
+      const { data: studentRecord } = await supabase
+        .from("students")
+        .select("profile_photo_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (studentRecord) photoUrl = studentRecord.profile_photo_url || "";
     }
     if (!photoUrl) {
-      const { data: profileRecord } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
+      const { data: profileRecord } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
       if (profileRecord) photoUrl = profileRecord.avatar_url || "";
     }
     setEditForm({
@@ -399,7 +535,9 @@ export default function UserManagement() {
     if (!editUser) return;
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
         setSaving(false);
@@ -407,10 +545,10 @@ export default function UserManagement() {
       }
       const token = session.access_token;
       const isStaff = editForm.portal_role === "teacher" || editForm.portal_role === "admin";
-      
+
       // Detect if email changed
       const emailChanged = editForm.email && editForm.email !== editUser.email;
-      
+
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
         method: "POST",
         headers: {
@@ -478,7 +616,8 @@ export default function UserManagement() {
   };
 
   const filteredUsers = users.filter((u) => {
-    const matchSearch = !searchQuery ||
+    const matchSearch =
+      !searchQuery ||
       u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchRole = filterRole === "all" || u.portal_role === filterRole;
@@ -487,11 +626,16 @@ export default function UserManagement() {
 
   const roleBadgeVariant = (role: string) => {
     switch (role) {
-      case "admin": return "destructive" as const;
-      case "teacher": return "default" as const;
-      case "student": return "secondary" as const;
-      case "parent": return "outline" as const;
-      default: return "secondary" as const;
+      case "admin":
+        return "destructive" as const;
+      case "teacher":
+        return "default" as const;
+      case "student":
+        return "secondary" as const;
+      case "parent":
+        return "outline" as const;
+      default:
+        return "secondary" as const;
     }
   };
 
@@ -500,9 +644,15 @@ export default function UserManagement() {
   return (
     <Tabs defaultValue="create" className="space-y-4">
       <TabsList>
-        <TabsTrigger value="create"><UserPlus className="mr-1 h-4 w-4" /> Create User</TabsTrigger>
-        <TabsTrigger value="bulk"><FileSpreadsheet className="mr-1 h-4 w-4" /> Bulk Import</TabsTrigger>
-        <TabsTrigger value="list"><Users className="mr-1 h-4 w-4" /> All Users</TabsTrigger>
+        <TabsTrigger value="create">
+          <UserPlus className="mr-1 h-4 w-4" /> Create User
+        </TabsTrigger>
+        <TabsTrigger value="bulk">
+          <FileSpreadsheet className="mr-1 h-4 w-4" /> Bulk Import
+        </TabsTrigger>
+        <TabsTrigger value="list">
+          <Users className="mr-1 h-4 w-4" /> All Users
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="create">
@@ -549,10 +699,14 @@ export default function UserManagement() {
               <div className="space-y-2">
                 <Label>Portal Access Role *</Label>
                 <Select value={form.portal_role} onValueChange={(v) => setForm((p) => ({ ...p, portal_role: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {portalRoles.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -565,10 +719,14 @@ export default function UserManagement() {
                   <div className="space-y-2">
                     <Label>Staff Position / Title</Label>
                     <Select value={form.staff_role} onValueChange={(v) => setForm((p) => ({ ...p, staff_role: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {staffRoles.map((r) => (
-                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          <SelectItem key={r.value} value={r.value}>
+                            {r.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -576,10 +734,14 @@ export default function UserManagement() {
                   <div className="space-y-2">
                     <Label>Department</Label>
                     <Select value={form.department} onValueChange={(v) => setForm((p) => ({ ...p, department: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
                       <SelectContent>
                         {departmentOptions.map((d) => (
-                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                          <SelectItem key={d} value={d}>
+                            {d}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -587,12 +749,20 @@ export default function UserManagement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Assigned Class (Class Teacher)</Label>
-                  <Select value={form.assigned_class_id || "none"} onValueChange={(v) => setForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <Select
+                    value={form.assigned_class_id || "none"}
+                    onValueChange={(v) => setForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select class" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No class assigned</SelectItem>
                       {classes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                          {c.form_level ? ` (${c.form_level})` : ""}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -605,10 +775,14 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label>Form / Grade</Label>
                   <Select value={form.grade} onValueChange={(v) => setForm((p) => ({ ...p, grade: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
                     <SelectContent>
                       {gradeOptions.map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                        <SelectItem key={g} value={g}>
+                          {g}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -616,10 +790,14 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label>Stream</Label>
                   <Select value={form.class_name} onValueChange={(v) => setForm((p) => ({ ...p, class_name: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
                     <SelectContent>
                       {["A", "B", "C", "D"].map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -644,11 +822,19 @@ export default function UserManagement() {
                   {createPhotoPreview ? (
                     <AvatarImage src={createPhotoPreview} alt="Preview" />
                   ) : (
-                    <AvatarFallback className="text-lg">{form.full_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                    <AvatarFallback className="text-lg">
+                      {form.full_name?.charAt(0)?.toUpperCase() || "?"}
+                    </AvatarFallback>
                   )}
                 </Avatar>
                 <div className="flex flex-wrap gap-2">
-                  <input ref={createFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, "create")} />
+                  <input
+                    ref={createFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e, "create")}
+                  />
                   <Button type="button" variant="outline" size="sm" onClick={() => createFileRef.current?.click()}>
                     <Upload className="mr-1 h-4 w-4" /> Upload
                   </Button>
@@ -656,7 +842,15 @@ export default function UserManagement() {
                     <Camera className="mr-1 h-4 w-4" /> Take Photo
                   </Button>
                   {createPhotoPreview && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => { setCreatePhotoBlob(null); setCreatePhotoPreview(null); }}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setCreatePhotoBlob(null);
+                        setCreatePhotoPreview(null);
+                      }}
+                    >
                       <X className="mr-1 h-4 w-4" /> Remove
                     </Button>
                   )}
@@ -694,11 +888,15 @@ export default function UserManagement() {
                 />
               </div>
               <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   {portalRoles.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -730,22 +928,15 @@ export default function UserManagement() {
                         <TableCell className="font-medium">{u.full_name}</TableCell>
                         <TableCell className="text-muted-foreground">{u.email}</TableCell>
                         <TableCell>
-                          <Badge variant={roleBadgeVariant(u.portal_role)}>
-                            {u.portal_role}
-                          </Badge>
+                          <Badge variant={roleBadgeVariant(u.portal_role)}>{u.portal_role}</Badge>
                         </TableCell>
                         <TableCell>
-                          {u.staff_role ? (staffRoleLabels[u.staff_role] || u.staff_role.replace(/_/g, " ")) : "—"}
+                          {u.staff_role ? staffRoleLabels[u.staff_role] || u.staff_role.replace(/_/g, " ") : "—"}
                         </TableCell>
                         <TableCell>{u.department || "—"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Edit user"
-                              onClick={() => openEditDialog(u)}
-                            >
+                            <Button variant="ghost" size="icon" title="Edit user" onClick={() => openEditDialog(u)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
@@ -806,19 +997,37 @@ export default function UserManagement() {
                     ) : editForm.photo_url ? (
                       <AvatarImage src={editForm.photo_url} alt="Current" />
                     ) : (
-                      <AvatarFallback className="text-lg">{editForm.full_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                      <AvatarFallback className="text-lg">
+                        {editForm.full_name?.charAt(0)?.toUpperCase() || "?"}
+                      </AvatarFallback>
                     )}
                   </Avatar>
                   <div className="flex flex-wrap gap-2">
-                    <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, "edit")} />
+                    <input
+                      ref={editFileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileSelect(e, "edit")}
+                    />
                     <Button type="button" variant="outline" size="sm" onClick={() => editFileRef.current?.click()}>
-                      <Upload className="mr-1 h-4 w-4" /> {editForm.photo_url || editPhotoPreview ? "Change Photo" : "Upload"}
+                      <Upload className="mr-1 h-4 w-4" />{" "}
+                      {editForm.photo_url || editPhotoPreview ? "Change Photo" : "Upload"}
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => setShowEditWebcam(true)}>
                       <Camera className="mr-1 h-4 w-4" /> Take Photo
                     </Button>
                     {(editPhotoPreview || editForm.photo_url) && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => { setEditPhotoBlob(null); setEditPhotoPreview(null); setEditForm(p => ({ ...p, photo_url: "" })); }}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditPhotoBlob(null);
+                          setEditPhotoPreview(null);
+                          setEditForm((p) => ({ ...p, photo_url: "" }));
+                        }}
+                      >
                         <X className="mr-1 h-4 w-4" /> Remove
                       </Button>
                     )}
@@ -828,11 +1037,19 @@ export default function UserManagement() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
-                  <Input value={editForm.full_name} onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))} />
+                  <Input
+                    value={editForm.full_name}
+                    onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Login Email</Label>
-                  <Input type="email" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="user@example.com" />
+                  <Input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="user@example.com"
+                  />
                   {editUser && editForm.email && editForm.email !== editUser.email && (
                     <p className="text-xs text-amber-600">⚠ Email will be changed from {editUser.email}</p>
                   )}
@@ -841,16 +1058,26 @@ export default function UserManagement() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Title (e.g. Mr, Mrs, Dr)</Label>
-                  <Input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                  <Input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Portal Access Role</Label>
-                <Select value={editForm.portal_role} onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={editForm.portal_role}
+                  onValueChange={(v) => setEditForm((p) => ({ ...p, portal_role: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {portalRoles.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -860,23 +1087,37 @@ export default function UserManagement() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Staff Position</Label>
-                      <Select value={editForm.staff_role} onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={editForm.staff_role}
+                        onValueChange={(v) => setEditForm((p) => ({ ...p, staff_role: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {staffRoles.map((r) => (
-                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                            <SelectItem key={r.value} value={r.value}>
+                              {r.label}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Department</Label>
-                      <Select value={editForm.department || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}>
-                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                      <Select
+                        value={editForm.department || "none"}
+                        onValueChange={(v) => setEditForm((p) => ({ ...p, department: v === "none" ? "" : v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No department</SelectItem>
                           {departmentOptions.map((d) => (
-                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                            <SelectItem key={d} value={d}>
+                              {d}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -884,19 +1125,31 @@ export default function UserManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>Assigned Class (Class Teacher)</Label>
-                    <Select value={editForm.assigned_class_id || "none"} onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                    <Select
+                      value={editForm.assigned_class_id || "none"}
+                      onValueChange={(v) => setEditForm((p) => ({ ...p, assigned_class_id: v === "none" ? "" : v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No class assigned</SelectItem>
                         {classes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.name}{c.form_level ? ` (${c.form_level})` : ""}</SelectItem>
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                            {c.form_level ? ` (${c.form_level})` : ""}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Bio</Label>
-                    <Textarea value={editForm.bio} onChange={(e) => setEditForm((p) => ({ ...p, bio: e.target.value }))} rows={3} />
+                    <Textarea
+                      value={editForm.bio}
+                      onChange={(e) => setEditForm((p) => ({ ...p, bio: e.target.value }))}
+                      rows={3}
+                    />
                   </div>
                 </>
               )}
@@ -908,24 +1161,44 @@ export default function UserManagement() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Phone</Label>
-                      <Input value={editForm.phone} onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="07XXXXXXXX" />
+                      <Input
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+                        placeholder="07XXXXXXXX"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Email</Label>
-                      <Input type="email" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
+                      <Input
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Emergency Contact</Label>
-                      <Input value={editForm.emergency_contact} onChange={(e) => setEditForm((p) => ({ ...p, emergency_contact: e.target.value }))} placeholder="07XXXXXXXX" />
+                      <Input
+                        value={editForm.emergency_contact}
+                        onChange={(e) => setEditForm((p) => ({ ...p, emergency_contact: e.target.value }))}
+                        placeholder="07XXXXXXXX"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>National ID</Label>
-                      <Input value={editForm.national_id} onChange={(e) => setEditForm((p) => ({ ...p, national_id: e.target.value }))} placeholder="XX-XXXXXXX-X-XX" />
+                      <Input
+                        value={editForm.national_id}
+                        onChange={(e) => setEditForm((p) => ({ ...p, national_id: e.target.value }))}
+                        placeholder="XX-XXXXXXX-X-XX"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Address</Label>
-                    <Textarea value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} rows={2} />
+                    <Textarea
+                      value={editForm.address}
+                      onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
+                      rows={2}
+                    />
                   </div>
                 </TabsContent>
 
@@ -933,24 +1206,43 @@ export default function UserManagement() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Employment Date</Label>
-                      <Input type="date" value={editForm.employment_date} onChange={(e) => setEditForm((p) => ({ ...p, employment_date: e.target.value }))} />
+                      <Input
+                        type="date"
+                        value={editForm.employment_date}
+                        onChange={(e) => setEditForm((p) => ({ ...p, employment_date: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Qualifications</Label>
-                      <Input value={editForm.qualifications} onChange={(e) => setEditForm((p) => ({ ...p, qualifications: e.target.value }))} placeholder="e.g. B.Ed, M.Sc" />
+                      <Input
+                        value={editForm.qualifications}
+                        onChange={(e) => setEditForm((p) => ({ ...p, qualifications: e.target.value }))}
+                        placeholder="e.g. B.Ed, M.Sc"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>NSSA Number</Label>
-                      <Input value={editForm.nssa_number} onChange={(e) => setEditForm((p) => ({ ...p, nssa_number: e.target.value }))} />
+                      <Input
+                        value={editForm.nssa_number}
+                        onChange={(e) => setEditForm((p) => ({ ...p, nssa_number: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>PAYE Number</Label>
-                      <Input value={editForm.paye_number} onChange={(e) => setEditForm((p) => ({ ...p, paye_number: e.target.value }))} />
+                      <Input
+                        value={editForm.paye_number}
+                        onChange={(e) => setEditForm((p) => ({ ...p, paye_number: e.target.value }))}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Bank Details</Label>
-                    <Textarea value={editForm.bank_details} onChange={(e) => setEditForm((p) => ({ ...p, bank_details: e.target.value }))} rows={2} placeholder="Bank name, account number, branch" />
+                    <Textarea
+                      value={editForm.bank_details}
+                      onChange={(e) => setEditForm((p) => ({ ...p, bank_details: e.target.value }))}
+                      rows={2}
+                      placeholder="Bank name, account number, branch"
+                    />
                   </div>
                 </TabsContent>
 
@@ -975,16 +1267,16 @@ export default function UserManagement() {
                     ))}
                   </div>
                   {editForm.subjects_taught.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: {editForm.subjects_taught.join(", ")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Selected: {editForm.subjects_taught.join(", ")}</p>
                   )}
                 </TabsContent>
               </>
             )}
           </Tabs>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditUser(null)}>
+              Cancel
+            </Button>
             <Button onClick={handleUpdateUser} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </Button>
@@ -997,13 +1289,24 @@ export default function UserManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User Account</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the account for <strong>{deleteTarget?.email}</strong>? This action cannot be undone.
+              Are you sure you want to delete the account for <strong>{deleteTarget?.email}</strong>? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</> : "Delete"}
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1097,8 +1400,17 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setPasswordTarget(null)} disabled={resettingPassword}>
               Cancel
             </Button>
-            <Button onClick={handleResetPassword} disabled={resettingPassword || !newPassword || newPassword !== confirmNewPassword}>
-              {resettingPassword ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating…</> : "Change Password"}
+            <Button
+              onClick={handleResetPassword}
+              disabled={resettingPassword || !newPassword || newPassword !== confirmNewPassword}
+            >
+              {resettingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating…
+                </>
+              ) : (
+                "Change Password"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
