@@ -251,10 +251,11 @@ export default function UserManagement() {
       console.log("Staff users count:", staffUsers.length);
       console.log("Staff users:", staffUsers);
 
-      // 2. Fetch student users from the students table
+      // 2. Fetch student users from the students table (only active students)
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("id, user_id, admission_number, full_name, enrollment_date")
+        .is("deleted_at", null)
         .not("user_id", "is", null); // only students with a portal account
 
       console.log("Students data from DB:", studentsData);
