@@ -222,10 +222,13 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      console.log("-- fetchUsers started --");
+
       // 1. Fetch staff users via Edge Function
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      console.log("Session:", session);
       if (!session?.access_token) {
         toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
         setLoading(false);
@@ -242,8 +245,11 @@ export default function UserManagement() {
         body: JSON.stringify({ action: "list-users" }),
       });
       const data = await res.json();
+      console.log("Edge Function response:", data);
       if (data.error) throw new Error(data.error);
       const staffUsers: ManagedUser[] = data.users || [];
+      console.log("Staff users count:", staffUsers.length);
+      console.log("Staff users:", staffUsers);
 
       // 2. Fetch student users from the students table
       const { data: studentsData, error: studentsError } = await supabase
@@ -251,6 +257,8 @@ export default function UserManagement() {
         .select("id, user_id, admission_number, full_name, enrollment_date")
         .not("user_id", "is", null); // only students with a portal account
 
+      console.log("Students data from DB:", studentsData);
+      if (studentsError) console.error("Students error:", studentsError);
       if (studentsError) throw studentsError;
 
       // 3. Transform students to ManagedUser structure
@@ -263,6 +271,8 @@ export default function UserManagement() {
         department: undefined,
         created_at: s.enrollment_date,
       }));
+      console.log("Student users count:", studentUsers.length);
+      console.log("Student users:", studentUsers);
 
       // 4. Merge staff and student users (avoid duplicates by id)
       const combined = [...staffUsers];
@@ -271,6 +281,8 @@ export default function UserManagement() {
           combined.push(student);
         }
       }
+      console.log("Combined users count:", combined.length);
+      console.log("Combined users:", combined);
 
       setUsers(combined);
     } catch (err: any) {
@@ -278,6 +290,7 @@ export default function UserManagement() {
       toast({ title: "Error loading users", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
+      console.log("-- fetchUsers finished --");
     }
   };
 
