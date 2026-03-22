@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Printer, Loader2, Eye } from "lucide-react";
+import { Search, Printer, Loader2, Eye, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -13,65 +14,55 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 
 export default function ReceiptSearchTab() {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentResults, setStudentResults] = useState<any[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [receipts, setReceipts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
-  const searchReceipts = async () => {
-    if (!searchTerm.trim()) {
-      toast({ title: "Enter a search term", variant: "destructive" });
+  const searchStudents = async (query: string) => {
+    if (query.length < 2) {
+      setStudentResults([]);
       return;
     }
-    setLoading(true);
-    setSearched(true);
-    const term = `%${searchTerm.trim().toLowerCase()}%`;
-
-    try {
-      // Step 1: Find student IDs matching the term (by name or admission number)
-      const { data: students } = await supabase
-        .from("students")
-        .select("id")
-        .or(`full_name.ilike.${term},admission_number.ilike.${term}`);
-
-      const studentIds = students?.map((s) => s.id) || [];
-
-      // Step 2: Find invoice numbers matching the term
-      const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", term);
-      const invoiceIds = invoices?.map((i) => i.id) || [];
-
-      // Step 3: Build query for payments
-      let query = supabase.from("payments").select(`
-          *,
-          students:student_id (full_name, admission_number, form),
-          invoices:invoice_id (invoice_number)
-        `);
-
-      // Apply filters: receipt number OR student OR invoice
-      if (searchTerm.trim()) {
-        const filters = [];
-        filters.push(`receipt_number.ilike.${term}`);
-        if (studentIds.length) filters.push(`student_id.in.(${studentIds.join(",")})`);
-        if (invoiceIds.length) filters.push(`invoice_id.in.(${invoiceIds.join(",")})`);
-
-        if (filters.length) {
-          query = query.or(filters.join(","));
-        } else {
-          // No matches from students/invoices, try receipt number only
-          query = query.ilike("receipt_number", term);
-        }
-      }
-
-      const { data, error } = await query.order("payment_date", { ascending: false });
-
-      if (error) throw error;
-      setReceipts(data || []);
-    } catch (err: any) {
-      toast({ title: "Search failed", description: err.message, variant: "destructive" });
-      setReceipts([]);
-    } finally {
-      setLoading(false);
+    const term = `%${query.toLowerCase()}%`;
+    const { data, error } = await supabase
+      .from("students")
+      .select("id, full_name, admission_number, form")
+      .or(`full_name.ilike.${term},admission_number.ilike.${term}`)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .limit(10);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setStudentResults(data || []);
     }
+  };
+
+  const selectStudent = async (student: any) => {
+    setSelectedStudent(student);
+    setStudentSearch(student.full_name);
+    setStudentResults([]);
+    setReceiptLoading(true);
+    const { data, error } = await supabase
+      .from("payments")
+      .select(
+        `
+        *,
+        students:student_id (full_name, admission_number, form),
+        invoices:invoice_id (invoice_number)
+      `,
+      )
+      .eq("student_id", student.id)
+      .order("payment_date", { ascending: false });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setReceipts([]);
+    } else {
+      setReceipts(data || []);
+    }
+    setReceiptLoading(false);
   };
 
   const viewReceipt = (payment: any) => {
@@ -121,34 +112,77 @@ export default function ReceiptSearchTab() {
     openPrintWindow(receiptHtml);
   };
 
+  const clearSelection = () => {
+    setSelectedStudent(null);
+    setStudentSearch("");
+    setReceipts([]);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-heading">Receipt Search</CardTitle>
-        <CardDescription>
-          Find receipts by student name, admission number, receipt number, or invoice number.
-        </CardDescription>
+        <CardDescription>Select a student to view and reprint receipts.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+        <div className="space-y-2">
+          <Label>Search Student</Label>
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by student name, admission #, receipt #, or invoice #"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Type student name or admission number..."
+              value={studentSearch}
+              onChange={(e) => {
+                setStudentSearch(e.target.value);
+                searchStudents(e.target.value);
+              }}
               className="pl-9"
-              onKeyDown={(e) => e.key === "Enter" && searchReceipts()}
             />
           </div>
-          <Button onClick={searchReceipts} disabled={loading}>
-            {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Search className="mr-1 h-4 w-4" />}
-            Search
-          </Button>
+          {studentResults.length > 0 && (
+            <div className="border rounded-md max-h-48 overflow-y-auto">
+              {studentResults.map((s) => (
+                <div
+                  key={s.id}
+                  className="px-3 py-2 hover:bg-muted cursor-pointer flex justify-between items-center"
+                  onClick={() => selectStudent(s)}
+                >
+                  <div>
+                    <p className="font-medium">{s.full_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.admission_number} • {s.form}
+                    </p>
+                  </div>
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {searched && receipts.length === 0 && !loading && (
-          <p className="text-center py-8 text-muted-foreground">No receipts found.</p>
+        {selectedStudent && (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Selected Student:</p>
+              <p className="text-lg font-semibold">{selectedStudent.full_name}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedStudent.admission_number} • {selectedStudent.form}
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              Clear
+            </Button>
+          </div>
+        )}
+
+        {receiptLoading && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          </div>
+        )}
+
+        {!receiptLoading && selectedStudent && receipts.length === 0 && (
+          <p className="text-center py-8 text-muted-foreground">No receipts found for this student.</p>
         )}
 
         {receipts.length > 0 && (
