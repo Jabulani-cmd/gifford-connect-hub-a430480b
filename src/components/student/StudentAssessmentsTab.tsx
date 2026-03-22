@@ -48,10 +48,7 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
         .eq("is_published", true)
         .eq("class_id", studentClassId!)
         .order("due_date", { ascending: true }),
-      supabase
-        .from("assessment_submissions")
-        .select("*")
-        .eq("student_id", studentId!),
+      supabase.from("assessment_submissions").select("*").eq("student_id", studentId!),
       supabase
         .from("assessment_results")
         .select("*, assessments(title, max_marks, subjects(name))")
@@ -64,13 +61,13 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
     setLoading(false);
   };
 
-  const getSubmission = (assessmentId: string) =>
-    submissions.find((s) => s.assessment_id === assessmentId);
-  const getResult = (assessmentId: string) =>
-    results.find((r) => r.assessment_id === assessmentId);
+  const getSubmission = (assessmentId: string) => submissions.find((s) => s.assessment_id === assessmentId);
+  const getResult = (assessmentId: string) => results.find((r) => r.assessment_id === assessmentId);
 
   const upcoming = assessments.filter((a) => a.due_date && !isPast(new Date(a.due_date)) && !getResult(a.id));
-  const pastDue = assessments.filter((a) => a.due_date && isPast(new Date(a.due_date)) && !getSubmission(a.id) && !getResult(a.id));
+  const pastDue = assessments.filter(
+    (a) => a.due_date && isPast(new Date(a.due_date)) && !getSubmission(a.id) && !getResult(a.id),
+  );
   const completed = assessments.filter((a) => getResult(a.id) || getSubmission(a.id));
 
   const handleSubmit = async () => {
@@ -115,7 +112,13 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
   };
 
   if (loading) {
-    return <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />)}</div>;
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
+        ))}
+      </div>
+    );
   }
 
   const renderAssessmentCard = (a: any, showDue = true) => {
@@ -131,13 +134,17 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-medium">{a.title}</p>
-                <Badge variant="outline" className="text-[10px]">{a.assessment_type}</Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  {a.assessment_type}
+                </Badge>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">{a.subjects?.name}</p>
               {showDue && a.due_date && (
                 <div className="flex items-center gap-1 mt-1">
                   <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span className={`text-[11px] ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                  <span
+                    className={`text-[11px] ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}
+                  >
                     {isOverdue
                       ? "Overdue"
                       : daysLeft === 0
@@ -159,12 +166,26 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
               )}
             </div>
             <div className="flex flex-col gap-1">
+              {/* View Document Button - appears if file_url exists */}
+              {a.file_url && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7"
+                  onClick={() => window.open(a.file_url, "_blank")}
+                >
+                  <FileText className="h-3 w-3 mr-1" /> View Document
+                </Button>
+              )}
               {!sub && !res && a.assessment_type === "assignment" && (
                 <Button
                   size="sm"
                   variant="outline"
                   className="text-xs h-7"
-                  onClick={() => { setSelectedAssessment(a); setShowSubmit(true); }}
+                  onClick={() => {
+                    setSelectedAssessment(a);
+                    setShowSubmit(true);
+                  }}
                 >
                   <Upload className="h-3 w-3 mr-1" /> Submit
                 </Button>
@@ -174,14 +195,15 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
                   size="sm"
                   variant="ghost"
                   className="text-xs h-7"
-                  onClick={() => { setSelectedAssessment(a); setShowResult(true); }}
+                  onClick={() => {
+                    setSelectedAssessment(a);
+                    setShowResult(true);
+                  }}
                 >
                   <Eye className="h-3 w-3 mr-1" /> Result
                 </Button>
               )}
-              {sub && !res && (
-                <Badge className="text-[10px] bg-green-100 text-green-700">Submitted</Badge>
-              )}
+              {sub && !res && <Badge className="text-[10px] bg-green-100 text-green-700">Submitted</Badge>}
             </div>
           </div>
         </CardContent>
@@ -208,20 +230,38 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
 
         <TabsContent value="upcoming" className="space-y-2 mt-3">
           {upcoming.length === 0 ? (
-            <EmptyState icon={<CheckCircle2 className="h-10 w-10" />} text="No upcoming assessments" sub="You're all caught up!" />
-          ) : upcoming.map((a) => renderAssessmentCard(a))}
+            <EmptyState
+              icon={<CheckCircle2 className="h-10 w-10" />}
+              text="No upcoming assessments"
+              sub="You're all caught up!"
+            />
+          ) : (
+            upcoming.map((a) => renderAssessmentCard(a))
+          )}
         </TabsContent>
 
         <TabsContent value="pastdue" className="space-y-2 mt-3">
           {pastDue.length === 0 ? (
-            <EmptyState icon={<CheckCircle2 className="h-10 w-10" />} text="No overdue assessments" sub="Great job staying on track!" />
-          ) : pastDue.map((a) => renderAssessmentCard(a))}
+            <EmptyState
+              icon={<CheckCircle2 className="h-10 w-10" />}
+              text="No overdue assessments"
+              sub="Great job staying on track!"
+            />
+          ) : (
+            pastDue.map((a) => renderAssessmentCard(a))
+          )}
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-2 mt-3">
           {completed.length === 0 ? (
-            <EmptyState icon={<ClipboardList className="h-10 w-10" />} text="No completed assessments yet" sub="Results will appear here after grading." />
-          ) : completed.map((a) => renderAssessmentCard(a, false))}
+            <EmptyState
+              icon={<ClipboardList className="h-10 w-10" />}
+              text="No completed assessments yet"
+              sub="Results will appear here after grading."
+            />
+          ) : (
+            completed.map((a) => renderAssessmentCard(a, false))
+          )}
         </TabsContent>
       </Tabs>
 
@@ -239,7 +279,12 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
                 <Upload className="h-3 w-3 mr-1" /> {submitFile ? submitFile.name : "Attach File"}
               </Button>
-              <input ref={fileRef} type="file" className="hidden" onChange={(e) => setSubmitFile(e.target.files?.[0] || null)} />
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => setSubmitFile(e.target.files?.[0] || null)}
+              />
             </div>
             <Textarea
               placeholder="Add comments (optional)..."
@@ -269,9 +314,7 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
                 <p className="text-lg font-medium mt-1">
                   {selectedResult.marks_obtained} / {selectedAssessment?.max_marks}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedResult.percentage?.toFixed(1)}%
-                </p>
+                <p className="text-sm text-muted-foreground">{selectedResult.percentage?.toFixed(1)}%</p>
               </div>
               {selectedResult.teacher_feedback && (
                 <div className="bg-muted p-3 rounded-lg">
