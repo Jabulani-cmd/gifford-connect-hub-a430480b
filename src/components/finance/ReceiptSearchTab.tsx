@@ -25,26 +25,72 @@ export default function ReceiptSearchTab() {
     }
     setLoading(true);
     setSearched(true);
-    const term = `%${searchTerm.trim().toLowerCase()}%`;
-    const { data, error } = await supabase
-      .from("payments")
-      .select(
-        `
-        *,
-        students:student_id (full_name, admission_number, form),
-        invoices:invoice_id (invoice_number)
-      `,
-      )
-      .or(
-        `receipt_number.ilike.${term},students.full_name.ilike.${term},students.admission_number.ilike.${term},invoices.invoice_number.ilike.${term}`,
-      )
-      .order("payment_date", { ascending: false });
-    if (error) {
-      toast({ title: "Search failed", description: error.message, variant: "destructive" });
-    } else {
-      setReceipts(data || []);
+    const term = searchTerm.trim();
+
+    try {
+      // 1. Try exact receipt number match
+      let { data: payments, error } = await supabase
+        .from("payments")
+        .select(
+          `
+          *,
+          students:student_id (full_name, admission_number, form),
+          invoices:invoice_id (invoice_number)
+        `,
+        )
+        .eq("receipt_number", term);
+
+      if (error) throw error;
+
+      // 2. If none, try invoice number partial match
+      if (!payments || payments.length === 0) {
+        const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", `%${term}%`);
+        const invoiceIds = invoices?.map((i) => i.id) || [];
+        if (invoiceIds.length > 0) {
+          const { data: paymentsByInvoice } = await supabase
+            .from("payments")
+            .select(
+              `
+              *,
+              students:student_id (full_name, admission_number, form),
+              invoices:invoice_id (invoice_number)
+            `,
+            )
+            .in("invoice_id", invoiceIds);
+          if (paymentsByInvoice) payments = paymentsByInvoice;
+        }
+      }
+
+      // 3. If still none, try student name/admission number partial match
+      if (!payments || payments.length === 0) {
+        const { data: students } = await supabase
+          .from("students")
+          .select("id")
+          .ilike("full_name", `%${term}%`)
+          .or(`admission_number.ilike.%${term}%`);
+        const studentIds = students?.map((s) => s.id) || [];
+        if (studentIds.length > 0) {
+          const { data: paymentsByStudent } = await supabase
+            .from("payments")
+            .select(
+              `
+              *,
+              students:student_id (full_name, admission_number, form),
+              invoices:invoice_id (invoice_number)
+            `,
+            )
+            .in("student_id", studentIds);
+          if (paymentsByStudent) payments = paymentsByStudent;
+        }
+      }
+
+      setReceipts(payments || []);
+    } catch (err: any) {
+      toast({ title: "Search failed", description: err.message, variant: "destructive" });
+      setReceipts([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const printReceipt = (payment: any) => {
