@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Clock, CheckCircle2, AlertCircle, Upload, FileText, Eye } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle2, Upload, FileText, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, isPast, differenceInDays } from "date-fns";
@@ -126,6 +126,7 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
     const res = getResult(a.id);
     const daysLeft = a.due_date ? differenceInDays(new Date(a.due_date), new Date()) : null;
     const isOverdue = a.due_date && isPast(new Date(a.due_date));
+    const hasFile = a.file_url && a.file_url.trim() !== "";
 
     return (
       <Card key={a.id} className={isOverdue && !sub && !res ? "border-destructive/30" : ""}>
@@ -133,6 +134,8 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
+                {/* File icon if document exists */}
+                {hasFile && <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
                 <p className="text-sm font-medium">{a.title}</p>
                 <Badge variant="outline" className="text-[10px]">
                   {a.assessment_type}
@@ -166,8 +169,8 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
               )}
             </div>
             <div className="flex flex-col gap-1">
-              {/* View Document Button - appears if file_url exists */}
-              {a.file_url && (
+              {/* View Document Button - only if file exists */}
+              {hasFile && (
                 <Button
                   size="sm"
                   variant="outline"
