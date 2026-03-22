@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Search, Printer, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { openPrintWindow, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/print";
-import { fmt } from "@/lib/finance/utils";
+
+const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function ReceiptSearchTab() {
   const { toast } = useToast();
@@ -109,8 +109,8 @@ export default function ReceiptSearchTab() {
                   <TableHead>Adm #</TableHead>
                   <TableHead>Form</TableHead>
                   <TableHead>Invoice</TableHead>
-                  <TableHead>Amount USD</TableHead>
-                  <TableHead>Amount ZiG</TableHead>
+                  <TableHead className="text-right">Amount USD</TableHead>
+                  <TableHead className="text-right">Amount ZiG</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
