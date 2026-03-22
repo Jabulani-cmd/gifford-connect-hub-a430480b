@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Clock, CheckCircle2, Upload, FileText, Eye } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle2, Upload, FileText, Eye, Download, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, isPast, differenceInDays } from "date-fns";
@@ -169,14 +169,24 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
             </div>
             <div className="flex flex-col gap-1">
               {hasFile && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs h-7"
-                  onClick={() => window.open(a.file_url, "_blank")}
-                >
-                  <FileText className="h-3 w-3 mr-1" /> View Document
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7"
+                    onClick={() => window.open(a.file_url, "_blank")}
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" /> Open
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7"
+                    onClick={() => window.open(a.file_url, "_blank")}
+                  >
+                    <Download className="h-3 w-3 mr-1" /> Download
+                  </Button>
+                </>
               )}
               {!sub && !res && a.assessment_type === "assignment" && (
                 <Button
