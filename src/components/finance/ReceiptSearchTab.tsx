@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Printer, Loader2, Eye, User } from "lucide-react";
+import { Search, Printer, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -14,55 +13,60 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 
 export default function ReceiptSearchTab() {
   const { toast } = useToast();
-  const [studentSearch, setStudentSearch] = useState("");
-  const [studentResults, setStudentResults] = useState<any[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [receipts, setReceipts] = useState<any[]>([]);
-  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
 
-  const searchStudents = async (query: string) => {
-    if (query.length < 2) {
-      setStudentResults([]);
+  const searchReceipts = async () => {
+    if (!searchTerm.trim()) {
+      toast({ title: "Enter a search term", variant: "destructive" });
       return;
     }
-    const term = `%${query.toLowerCase()}%`;
-    const { data, error } = await supabase
-      .from("students")
-      .select("id, full_name, admission_number, form")
-      .or(`full_name.ilike.${term},admission_number.ilike.${term}`)
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .limit(10);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setStudentResults(data || []);
-    }
-  };
+    setLoading(true);
+    setSearched(true);
+    const term = `%${searchTerm.trim().toLowerCase()}%`;
 
-  const selectStudent = async (student: any) => {
-    setSelectedStudent(student);
-    setStudentSearch(student.full_name);
-    setStudentResults([]);
-    setReceiptLoading(true);
-    const { data, error } = await supabase
-      .from("payments")
-      .select(
-        `
-        *,
-        students:student_id (full_name, admission_number, form),
-        invoices:invoice_id (invoice_number)
-      `,
-      )
-      .eq("student_id", student.id)
-      .order("payment_date", { ascending: false });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      setReceipts([]);
-    } else {
+    try {
+      // Get student IDs matching the term (name or admission number)
+      const { data: students } = await supabase
+        .from("students")
+        .select("id")
+        .or(`full_name.ilike.${term},admission_number.ilike.${term}`);
+      const studentIds = students?.map((s) => s.id) || [];
+
+      // Get invoice IDs matching the term (invoice number)
+      const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", term);
+      const invoiceIds = invoices?.map((i) => i.id) || [];
+
+      // Build query
+      let query = supabase.from("payments").select(`
+          *,
+          students:student_id (full_name, admission_number, form),
+          invoices:invoice_id (invoice_number)
+        `);
+
+      const filters = [];
+      filters.push(`receipt_number.ilike.${term}`);
+      if (studentIds.length) filters.push(`student_id.in.(${studentIds.join(",")})`);
+      if (invoiceIds.length) filters.push(`invoice_id.in.(${invoiceIds.join(",")})`);
+
+      if (filters.length) {
+        query = query.or(filters.join(","));
+      } else {
+        query = query.ilike("receipt_number", term);
+      }
+
+      const { data, error } = await query.order("payment_date", { ascending: false });
+
+      if (error) throw error;
       setReceipts(data || []);
+    } catch (err: any) {
+      toast({ title: "Search failed", description: err.message, variant: "destructive" });
+      setReceipts([]);
+    } finally {
+      setLoading(false);
     }
-    setReceiptLoading(false);
   };
 
   const viewReceipt = (payment: any) => {
@@ -112,77 +116,32 @@ export default function ReceiptSearchTab() {
     openPrintWindow(receiptHtml);
   };
 
-  const clearSelection = () => {
-    setSelectedStudent(null);
-    setStudentSearch("");
-    setReceipts([]);
-  };
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-heading">Receipt Search</CardTitle>
-        <CardDescription>Select a student to view and reprint receipts.</CardDescription>
+        <CardDescription>Search by student name, admission number, receipt number, or invoice number.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Search Student</Label>
-          <div className="relative">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Type student name or admission number..."
-              value={studentSearch}
-              onChange={(e) => {
-                setStudentSearch(e.target.value);
-                searchStudents(e.target.value);
-              }}
+              placeholder="Search by student name, admission #, receipt #, or invoice #"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
+              onKeyDown={(e) => e.key === "Enter" && searchReceipts()}
             />
           </div>
-          {studentResults.length > 0 && (
-            <div className="border rounded-md max-h-48 overflow-y-auto">
-              {studentResults.map((s) => (
-                <div
-                  key={s.id}
-                  className="px-3 py-2 hover:bg-muted cursor-pointer flex justify-between items-center"
-                  onClick={() => selectStudent(s)}
-                >
-                  <div>
-                    <p className="font-medium">{s.full_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.admission_number} • {s.form}
-                    </p>
-                  </div>
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-              ))}
-            </div>
-          )}
+          <Button onClick={searchReceipts} disabled={loading}>
+            {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Search className="mr-1 h-4 w-4" />}
+            Search
+          </Button>
         </div>
 
-        {selectedStudent && (
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Selected Student:</p>
-              <p className="text-lg font-semibold">{selectedStudent.full_name}</p>
-              <p className="text-xs text-muted-foreground">
-                {selectedStudent.admission_number} • {selectedStudent.form}
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
-              Clear
-            </Button>
-          </div>
-        )}
-
-        {receiptLoading && (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
-          </div>
-        )}
-
-        {!receiptLoading && selectedStudent && receipts.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground">No receipts found for this student.</p>
+        {searched && receipts.length === 0 && !loading && (
+          <p className="text-center py-8 text-muted-foreground">No receipts found.</p>
         )}
 
         {receipts.length > 0 && (
