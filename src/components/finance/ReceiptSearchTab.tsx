@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Printer, Loader2 } from "lucide-react";
+import { Search, Printer, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -25,71 +25,78 @@ export default function ReceiptSearchTab() {
     }
     setLoading(true);
     setSearched(true);
-    const term = searchTerm.trim();
+    const term = `%${searchTerm.trim().toLowerCase()}%`;
 
     try {
-      // 1. Try exact receipt number match
-      let { data: payments, error } = await supabase
-        .from("payments")
-        .select(
-          `
+      // Step 1: Find student IDs matching the term (by name or admission number)
+      const { data: students } = await supabase
+        .from("students")
+        .select("id")
+        .or(`full_name.ilike.${term},admission_number.ilike.${term}`);
+
+      const studentIds = students?.map((s) => s.id) || [];
+
+      // Step 2: Find invoice numbers matching the term
+      const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", term);
+      const invoiceIds = invoices?.map((i) => i.id) || [];
+
+      // Step 3: Build query for payments
+      let query = supabase.from("payments").select(`
           *,
           students:student_id (full_name, admission_number, form),
           invoices:invoice_id (invoice_number)
-        `,
-        )
-        .eq("receipt_number", term);
+        `);
+
+      // Apply filters: receipt number OR student OR invoice
+      if (searchTerm.trim()) {
+        const filters = [];
+        filters.push(`receipt_number.ilike.${term}`);
+        if (studentIds.length) filters.push(`student_id.in.(${studentIds.join(",")})`);
+        if (invoiceIds.length) filters.push(`invoice_id.in.(${invoiceIds.join(",")})`);
+
+        if (filters.length) {
+          query = query.or(filters.join(","));
+        } else {
+          // No matches from students/invoices, try receipt number only
+          query = query.ilike("receipt_number", term);
+        }
+      }
+
+      const { data, error } = await query.order("payment_date", { ascending: false });
 
       if (error) throw error;
-
-      // 2. If none, try invoice number partial match
-      if (!payments || payments.length === 0) {
-        const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", `%${term}%`);
-        const invoiceIds = invoices?.map((i) => i.id) || [];
-        if (invoiceIds.length > 0) {
-          const { data: paymentsByInvoice } = await supabase
-            .from("payments")
-            .select(
-              `
-              *,
-              students:student_id (full_name, admission_number, form),
-              invoices:invoice_id (invoice_number)
-            `,
-            )
-            .in("invoice_id", invoiceIds);
-          if (paymentsByInvoice) payments = paymentsByInvoice;
-        }
-      }
-
-      // 3. If still none, try student name/admission number partial match
-      if (!payments || payments.length === 0) {
-        const { data: students } = await supabase
-          .from("students")
-          .select("id")
-          .ilike("full_name", `%${term}%`)
-          .or(`admission_number.ilike.%${term}%`);
-        const studentIds = students?.map((s) => s.id) || [];
-        if (studentIds.length > 0) {
-          const { data: paymentsByStudent } = await supabase
-            .from("payments")
-            .select(
-              `
-              *,
-              students:student_id (full_name, admission_number, form),
-              invoices:invoice_id (invoice_number)
-            `,
-            )
-            .in("student_id", studentIds);
-          if (paymentsByStudent) payments = paymentsByStudent;
-        }
-      }
-
-      setReceipts(payments || []);
+      setReceipts(data || []);
     } catch (err: any) {
       toast({ title: "Search failed", description: err.message, variant: "destructive" });
       setReceipts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const viewReceipt = (payment: any) => {
+    const receiptHtml = buildReceiptHtml({
+      logoUrl: SCHOOL_LOGO_URL,
+      receiptNumber: payment.receipt_number,
+      paymentDate: payment.payment_date,
+      student: {
+        fullName: payment.students?.full_name || "—",
+        admissionNumber: payment.students?.admission_number || "—",
+        form: payment.students?.form || "—",
+      },
+      invoiceNumber: payment.invoices?.invoice_number,
+      amounts: {
+        usd: payment.amount_usd,
+        zig: payment.amount_zig,
+      },
+      paymentMethod: payment.payment_method,
+      referenceNumber: payment.reference_number,
+    });
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.open();
+      w.document.write(receiptHtml);
+      w.document.close();
     }
   };
 
@@ -158,7 +165,7 @@ export default function ReceiptSearchTab() {
                   <TableHead className="text-right">Amount USD</TableHead>
                   <TableHead className="text-right">Amount ZiG</TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Action</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -174,9 +181,14 @@ export default function ReceiptSearchTab() {
                     <TableCell className="text-right font-mono">ZiG {fmt(p.amount_zig)}</TableCell>
                     <TableCell>{p.payment_method}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => printReceipt(p)} title="Print Receipt">
-                        <Printer className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => viewReceipt(p)} title="View Receipt">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => printReceipt(p)} title="Print Receipt">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
