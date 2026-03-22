@@ -779,12 +779,12 @@ export default function FinanceManagement() {
       <h2>Invoices</h2>
        table<thead> th<th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th> </thead>
       <tbody>
-      ${stmtInvoices.map((i) => ` <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      ${stmtInvoices.map((i) => `   <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
       </tbody> </table>
       <h2>Payments</h2>
        table<thead> <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
       <tbody>
-      ${stmtPayments.map((p) => ` <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      ${stmtPayments.map((p) => `   <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
       </tbody> </table>
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
@@ -812,7 +812,7 @@ export default function FinanceManagement() {
       <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
        table<thead> <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
       <tbody>
-      ${filtered.map((d, i) => ` <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${d.status}</td></tr>`).join("")}
+      ${filtered.map((d, i) => `   <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${d.status}</td></tr>`).join("")}
       <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
       </tbody> </table>
       </body></html>`);
@@ -1769,7 +1769,7 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* ═══════ PAYMENTS TAB – FULLY RESTORED ═══════ */}
+        {/* Payments Tab – fully restored */}
         <TabsContent value="payments">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -1887,11 +1887,950 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* Other tabs (Receipts, Debtors, Petty Cash, Supplier Payables, Statements, Expenses, etc.) remain unchanged – omitted for brevity. They are the same as the original file. */}
+        {/* Receipts Tab – unchanged (using ReceiptSearchTab) */}
+        <TabsContent value="receipts">
+          <ReceiptSearchTab />
+        </TabsContent>
+
+        {/* Debtors Tab – restored */}
+        <TabsContent value="debtors">
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="border-destructive/30 bg-destructive/5">
+                <CardContent className="p-5">
+                  <p className="text-xs text-destructive font-medium uppercase tracking-wider">Total Outstanding</p>
+                  <p className="text-xl font-bold text-destructive">USD {fmt(totalOwedUsd)}</p>
+                  <p className="text-sm text-destructive/80">ZiG {fmt(totalOwedZig)}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-amber-300/50 bg-amber-50/50">
+                <CardContent className="p-5">
+                  <p className="text-xs text-amber-700 font-medium uppercase tracking-wider">Partial Payments</p>
+                  <p className="text-xl font-bold text-amber-800">
+                    {debtors.filter((d) => d.status === "partial").length}
+                  </p>
+                  <p className="text-sm text-amber-600">students</p>
+                </CardContent>
+              </Card>
+              <Card className="border-destructive/40 bg-destructive/10">
+                <CardContent className="p-5">
+                  <p className="text-xs text-destructive font-medium uppercase tracking-wider">Unpaid</p>
+                  <p className="text-xl font-bold text-destructive">
+                    {debtors.filter((d) => d.status === "unpaid").length}
+                  </p>
+                  <p className="text-sm text-destructive/80">students</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+                <CardTitle className="font-heading">Debtors List</CardTitle>
+                <div className="flex gap-2 flex-wrap">
+                  <Select value={debtorsFormFilter} onValueChange={setDebtorsFormFilter}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Filter by Form" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Forms</SelectItem>
+                      {formOptions.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={printDebtorsList} disabled={debtors.length === 0}>
+                    <Printer className="mr-1 h-4 w-4" /> Print List
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const filtered =
+                    debtorsFormFilter === "all"
+                      ? debtors
+                      : debtors.filter((d) => d.students?.form === debtorsFormFilter);
+                  return filtered.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">
+                      No outstanding debts{debtorsFormFilter !== "all" ? ` for ${debtorsFormFilter}` : ""}. 🎉
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>#</TableHead>
+                            <TableHead>Student</TableHead>
+                            <TableHead>Adm #</TableHead>
+                            <TableHead>Form</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Term</TableHead>
+                            <TableHead className="text-right">Owed USD</TableHead>
+                            <TableHead className="text-right">Owed ZiG</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filtered.map((d, idx) => (
+                            <TableRow key={d.id}>
+                              <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell>{d.students?.full_name || "—"}</TableCell>
+                              <TableCell>{d.students?.admission_number || "—"}</TableCell>
+                              <TableCell>{d.students?.form || "—"}</TableCell>
+                              <TableCell className="font-mono text-xs">{d.invoice_number}</TableCell>
+                              <TableCell>{d.term}</TableCell>
+                              <TableCell className="text-right font-mono text-destructive">
+                                {fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-destructive">
+                                {fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}
+                              </TableCell>
+                              <TableCell>{statusBadge(d.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => {
+                                    setDebtorToDelete(d);
+                                    setDeleteDebtorOpen(true);
+                                  }}
+                                  title="Remove debtor"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Petty Cash Tab – restored */}
+        <TabsContent value="petty-cash">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+              <div>
+                <CardTitle className="font-heading">Petty Cash</CardTitle>
+                <CardDescription>Track deposits into and withdrawals from the petty cash float</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPcForm({
+                      transaction_date: new Date().toISOString().split("T")[0],
+                      transaction_type: "deposit",
+                      description: "",
+                      amount_usd: "",
+                      amount_zig: "",
+                      reference_number: "",
+                    });
+                    setPcDialogOpen(true);
+                  }}
+                >
+                  <TrendingUp className="mr-1 h-4 w-4" /> Deposit
+                </Button>
+                <Button
+                  onClick={() => {
+                    setPcForm({
+                      transaction_date: new Date().toISOString().split("T")[0],
+                      transaction_type: "withdrawal",
+                      description: "",
+                      amount_usd: "",
+                      amount_zig: "",
+                      reference_number: "",
+                    });
+                    setPcDialogOpen(true);
+                  }}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Withdrawal
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const depositsUsd = pettyCash
+                  .filter((t) => t.transaction_type === "deposit")
+                  .reduce((s, t) => s + Number(t.amount_usd), 0);
+                const depositsZig = pettyCash
+                  .filter((t) => t.transaction_type === "deposit")
+                  .reduce((s, t) => s + Number(t.amount_zig), 0);
+                const withdrawalsUsd = pettyCash
+                  .filter((t) => t.transaction_type === "withdrawal")
+                  .reduce((s, t) => s + Number(t.amount_usd), 0);
+                const withdrawalsZig = pettyCash
+                  .filter((t) => t.transaction_type === "withdrawal")
+                  .reduce((s, t) => s + Number(t.amount_zig), 0);
+                const balUsd = depositsUsd - withdrawalsUsd;
+                const balZig = depositsZig - withdrawalsZig;
+                return (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Deposits</p>
+                        <p className="text-xl font-bold font-mono text-green-700">USD {fmt(depositsUsd)}</p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(depositsZig)}</p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Withdrawals</p>
+                        <p className="text-xl font-bold font-mono text-destructive">USD {fmt(withdrawalsUsd)}</p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(withdrawalsZig)}</p>
+                      </div>
+                      <div
+                        className={`rounded-lg border p-4 ${balUsd >= 0 ? "bg-green-50/50 border-green-200" : "bg-destructive/5 border-destructive/30"}`}
+                      >
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Float Balance</p>
+                        <p
+                          className={`text-xl font-bold font-mono ${balUsd >= 0 ? "text-green-700" : "text-destructive"}`}
+                        >
+                          USD {fmt(balUsd)}
+                        </p>
+                        <p className="text-sm font-mono text-muted-foreground">ZiG {fmt(balZig)}</p>
+                      </div>
+                    </div>
+                    {pettyCash.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">No petty cash transactions recorded.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead className="text-right">USD</TableHead>
+                              <TableHead className="text-right">ZiG</TableHead>
+                              <TableHead>Reference</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {pettyCash.map((pc) => (
+                              <TableRow key={pc.id}>
+                                <TableCell className="text-xs">{pc.transaction_date}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      pc.transaction_type === "deposit"
+                                        ? "bg-green-100 text-green-800 border-green-300"
+                                        : "bg-red-100 text-red-800 border-red-300"
+                                    }
+                                  >
+                                    {pc.transaction_type === "deposit" ? "Deposit" : "Withdrawal"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="max-w-[250px] truncate">{pc.description}</TableCell>
+                                <TableCell
+                                  className={`text-right font-mono ${pc.transaction_type === "deposit" ? "text-green-700" : "text-destructive"}`}
+                                >
+                                  {pc.transaction_type === "deposit" ? "+" : "-"}
+                                  {fmt(pc.amount_usd)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{fmt(pc.amount_zig)}</TableCell>
+                                <TableCell className="text-xs">{pc.reference_number || "—"}</TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="icon" onClick={() => deletePettyCash(pc.id)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Supplier Payables Tab – restored (simplified but functional) */}
+        <TabsContent value="supplier-payables">
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="border-destructive/30 bg-destructive/5">
+                <CardContent className="p-5">
+                  <p className="text-xs text-destructive font-medium uppercase tracking-wider">
+                    Total Owed to Suppliers
+                  </p>
+                  <p className="text-xl font-bold text-destructive">
+                    USD {fmt(supplierInvoices.reduce((s, si) => s + (Number(si.amount_usd) - Number(si.paid_usd)), 0))}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Invoices</p>
+                  <p className="text-xl font-bold">{supplierInvoices.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Unpaid Invoices</p>
+                  <p className="text-xl font-bold text-destructive">
+                    {supplierInvoices.filter((si) => si.status !== "paid").length}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+                <CardTitle className="font-heading">Supplier Invoices</CardTitle>
+                <Button
+                  onClick={() => {
+                    setSiDialogOpen(true);
+                    setSiForm({
+                      supplier_name: "",
+                      supplier_contact: "",
+                      invoice_number: "",
+                      invoice_date: new Date().toISOString().split("T")[0],
+                      due_date: "",
+                      description: "",
+                      amount_usd: "",
+                      amount_zig: "",
+                    });
+                  }}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Add Supplier Invoice
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {supplierInvoices.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No supplier invoices recorded.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Amount USD</TableHead>
+                          <TableHead className="text-right">Paid USD</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supplierInvoices.map((si) => (
+                          <TableRow key={si.id}>
+                            <TableCell className="font-medium">{si.supplier_name}</TableCell>
+                            <TableCell className="font-mono text-xs">{si.invoice_number}</TableCell>
+                            <TableCell className="text-xs">{si.invoice_date}</TableCell>
+                            <TableCell className="text-xs">{si.due_date || "—"}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{si.description || "—"}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(si.amount_usd)}</TableCell>
+                            <TableCell className="text-right font-mono text-green-700">{fmt(si.paid_usd)}</TableCell>
+                            <TableCell className="text-right font-mono text-destructive">
+                              {fmt(Number(si.amount_usd) - Number(si.paid_usd))}
+                            </TableCell>
+                            <TableCell>{statusBadge(si.status)}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {si.status !== "paid" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Record payment"
+                                    onClick={() => {
+                                      setSpInvoice(si);
+                                      setSpDialogOpen(true);
+                                      setSpForm({
+                                        payment_date: new Date().toISOString().split("T")[0],
+                                        amount_usd: "",
+                                        amount_zig: "",
+                                        payment_method: "Cash",
+                                        reference_number: "",
+                                        notes: "",
+                                      });
+                                    }}
+                                  >
+                                    <CreditCard className="h-4 w-4 text-green-700" />
+                                  </Button>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={() => deleteSupplierInvoice(si.id)}>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Supplier Payments History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {supplierPayments.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No supplier payments recorded yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Supplier</TableHead>
+                          <TableHead>Invoice #</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Amount USD</TableHead>
+                          <TableHead className="text-right">Amount ZiG</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {supplierPayments.map((sp: any) => (
+                          <TableRow key={sp.id}>
+                            <TableCell className="text-xs">{sp.payment_date}</TableCell>
+                            <TableCell className="font-medium">{sp.supplier_invoices?.supplier_name || "—"}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {sp.supplier_invoices?.invoice_number || "—"}
+                            </TableCell>
+                            <TableCell>{sp.payment_method}</TableCell>
+                            <TableCell className="font-mono text-xs">{sp.reference_number || "—"}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_usd)}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(sp.amount_zig)}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{sp.notes || "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Statements Tab – restored */}
+        <TabsContent value="statements">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading">Student Financial Statements</CardTitle>
+              <CardDescription>Search for a student to view their full financial history</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!stmtStudent ? (
+                <div className="space-y-2">
+                  <div className="relative max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or admission number…"
+                      value={stmtSearch}
+                      onChange={(e) => {
+                        setStmtSearch(e.target.value);
+                        searchStmtStudents(e.target.value);
+                      }}
+                      className="pl-9"
+                    />
+                  </div>
+                  {stmtStudentResults.length > 0 && (
+                    <div className="border rounded-md max-w-md divide-y">
+                      {stmtStudentResults.map((s) => (
+                        <button
+                          key={s.id}
+                          className="w-full text-left px-4 py-2 hover:bg-muted/50 transition-colors flex justify-between items-center"
+                          onClick={() => selectStmtStudent(s)}
+                        >
+                          <span className="font-medium">{s.full_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {s.admission_number} • {s.form}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : stmtLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-accent" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="icon" onClick={clearStmtStudent}>
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                      <div>
+                        <p className="font-semibold text-lg">{stmtStudent.full_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {stmtStudent.admission_number} • {stmtStudent.form}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => selectStmtStudent(stmtStudent)}
+                        title="Refresh statement"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${stmtLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                      <Button variant="outline" onClick={printStudentStatement}>
+                        <Printer className="mr-1 h-4 w-4" /> Print Statement
+                      </Button>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const tInvUsd = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+                    const tInvZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
+                    const tPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
+                    const tPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
+                    const balUsd = tInvUsd - tPaidUsd;
+                    const balZig = tInvZig - tPaidZig;
+                    return (
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-muted-foreground uppercase">Total Invoiced</p>
+                            <p className="font-bold font-mono">USD {fmt(tInvUsd)}</p>
+                            <p className="text-sm text-muted-foreground font-mono">ZiG {fmt(tInvZig)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-muted-foreground uppercase">Total Paid</p>
+                            <p className="font-bold font-mono text-green-700">USD {fmt(tPaidUsd)}</p>
+                            <p className="text-sm text-muted-foreground font-mono">ZiG {fmt(tPaidZig)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card className={balUsd > 0 ? "bg-destructive/5" : "bg-green-50"}>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-muted-foreground uppercase">Balance</p>
+                            <p className={`font-bold font-mono ${balUsd > 0 ? "text-destructive" : "text-green-700"}`}>
+                              USD {fmt(balUsd)}
+                            </p>
+                            <p className="text-sm text-muted-foreground font-mono">ZiG {fmt(balZig)}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    );
+                  })()}
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Invoices ({stmtInvoices.length})</h3>
+                    {stmtInvoices.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No invoices found.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Invoice #</TableHead>
+                              <TableHead>Term</TableHead>
+                              <TableHead>Year</TableHead>
+                              <TableHead className="text-right">Total USD</TableHead>
+                              <TableHead className="text-right">Total ZiG</TableHead>
+                              <TableHead className="text-right">Paid USD</TableHead>
+                              <TableHead className="text-right">Paid ZiG</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {stmtInvoices.map((i) => (
+                              <TableRow key={i.id}>
+                                <TableCell className="font-mono text-xs">{i.invoice_number}</TableCell>
+                                <TableCell>{i.term}</TableCell>
+                                <TableCell>{i.academic_year}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.total_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.total_zig))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.paid_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(i.paid_zig))}</TableCell>
+                                <TableCell>{statusBadge(i.status)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Payments ({stmtPayments.length})</h3>
+                    {stmtPayments.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No payments recorded.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Receipt #</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Invoice</TableHead>
+                              <TableHead className="text-right">USD</TableHead>
+                              <TableHead className="text-right">ZiG</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>Ref</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {stmtPayments.map((p) => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-mono text-xs">{p.receipt_number}</TableCell>
+                                <TableCell>{p.payment_date}</TableCell>
+                                <TableCell className="font-mono text-xs">{p.invoices?.invoice_number || "—"}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(p.amount_usd))}</TableCell>
+                                <TableCell className="text-right font-mono">{fmt(parseFloat(p.amount_zig))}</TableCell>
+                                <TableCell>{p.payment_method}</TableCell>
+                                <TableCell className="text-xs">{p.reference_number || "—"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Expenses Tab – restored */}
+        <TabsContent value="expenses">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-heading">Expenses</CardTitle>
+                <CardDescription>Track school expenditures</CardDescription>
+              </div>
+              <Button
+                onClick={() => {
+                  setExpDialogOpen(true);
+                  setExpForm({
+                    expense_date: new Date().toISOString().split("T")[0],
+                    category: "General",
+                    description: "",
+                    amount_usd: "",
+                    amount_zig: "",
+                    payment_method: "Cash",
+                    reference_number: "",
+                  });
+                }}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                <Plus className="mr-1 h-4 w-4" /> Record Expense
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {expenses.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No expenses recorded.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">USD</TableHead>
+                        <TableHead className="text-right">ZiG</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map((exp) => (
+                        <TableRow key={exp.id}>
+                          <TableCell>{exp.expense_date}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{exp.category}</Badge>
+                          </TableCell>
+                          <TableCell className="max-w-[250px] truncate">{exp.description}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(exp.amount_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(exp.amount_zig)}</TableCell>
+                          <TableCell>{exp.payment_method}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => deleteExpense(exp.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Bank Reconciliation Tab – unchanged */}
+        <TabsContent value="bank-recon">
+          <BankReconciliation />
+        </TabsContent>
+
+        {/* Income & Expenditure Tab – unchanged */}
+        <TabsContent value="income-expenditure">
+          <IncomeExpenditureReport />
+        </TabsContent>
+
+        {/* Reports Tab – unchanged */}
+        <TabsContent value="reports">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Collection Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total USD Collected</p>
+                    <p className="text-2xl font-bold text-green-700">${fmt(totalCollectedUsd)}</p>
+                  </div>
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total ZiG Collected</p>
+                    <p className="text-2xl font-bold text-green-700">ZiG {fmt(totalCollectedZig)}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">By Payment Method</h4>
+                  {paymentMethods.map((method) => {
+                    const methodPayments = payments.filter((p) => p.payment_method === method);
+                    const mUsd = methodPayments.reduce((s, p) => s + parseFloat(p.amount_usd || 0), 0);
+                    const mZig = methodPayments.reduce((s, p) => s + parseFloat(p.amount_zig || 0), 0);
+                    if (mUsd === 0 && mZig === 0) return null;
+                    return (
+                      <div key={method} className="flex items-center justify-between text-sm border-b pb-1">
+                        <span>{method}</span>
+                        <span className="font-mono">
+                          USD {fmt(mUsd)} / ZiG {fmt(mZig)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Income vs Expenditure</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Income (USD)</span>
+                    <span className="font-mono font-bold text-green-700">${fmt(totalCollectedUsd)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Expenses (USD)</span>
+                    <span className="font-mono font-bold text-red-600">${fmt(totalExpensesUsd)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between items-center">
+                    <span className="text-sm font-semibold">Net (USD)</span>
+                    <span
+                      className={`font-mono font-bold ${totalCollectedUsd - totalExpensesUsd >= 0 ? "text-green-700" : "text-red-600"}`}
+                    >
+                      ${fmt(totalCollectedUsd - totalExpensesUsd)}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Income (ZiG)</span>
+                    <span className="font-mono font-bold text-green-700">ZiG {fmt(totalCollectedZig)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Expenses (ZiG)</span>
+                    <span className="font-mono font-bold text-red-600">ZiG {fmt(totalExpensesZig)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between items-center">
+                    <span className="text-sm font-semibold">Net (ZiG)</span>
+                    <span
+                      className={`font-mono font-bold ${totalCollectedZig - totalExpensesZig >= 0 ? "text-green-700" : "text-red-600"}`}
+                    >
+                      ZiG {fmt(totalCollectedZig - totalExpensesZig)}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="font-heading">Fee Collection Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {invoices.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">No data available</p>
+                ) : (
+                  <div className="space-y-3">
+                    {["Term 1", "Term 2", "Term 3"].map((term) => {
+                      const termInvs = invoices.filter((i) => i.term === term);
+                      if (termInvs.length === 0) return null;
+                      const totalUsd = termInvs.reduce((s, i) => s + parseFloat(i.total_usd), 0);
+                      const paidUsd = termInvs.reduce((s, i) => s + parseFloat(i.paid_usd), 0);
+                      const pct = totalUsd > 0 ? (paidUsd / totalUsd) * 100 : 0;
+                      return (
+                        <div key={term}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>{term}</span>
+                            <span className="font-mono">
+                              {pct.toFixed(1)}% collected (USD {fmt(paidUsd)} / {fmt(totalUsd)})
+                            </span>
+                          </div>
+                          <div className="h-3 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-accent transition-all"
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
 
-      {/* Dialogs – updated single invoice dialog */}
-      {/* Bulk Invoice Dialog unchanged */}
+      {/* ═══ DIALOGS ═══ */}
+      {/* Fee Structure Dialog */}
+      <Dialog open={feeDialogOpen} onOpenChange={setFeeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingFee ? "Edit Fee Structure" : "Add Fee Structure"}</DialogTitle>
+            <DialogDescription>Define the fee amounts in both USD and ZiG.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Academic Year</Label>
+                <Input
+                  value={feeForm.academic_year}
+                  onChange={(e) => setFeeForm((p) => ({ ...p, academic_year: e.target.value }))}
+                  placeholder="2026"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Term</Label>
+                <Select value={feeForm.term} onValueChange={(v) => setFeeForm((p) => ({ ...p, term: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termOptions.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Form</Label>
+                <Select value={feeForm.form} onValueChange={(v) => setFeeForm((p) => ({ ...p, form: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formOptions.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Boarding Status</Label>
+                <Select
+                  value={feeForm.boarding_status}
+                  onValueChange={(v) => setFeeForm((p) => ({ ...p, boarding_status: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardingOptions.map((b) => (
+                      <SelectItem key={b.value} value={b.value}>
+                        {b.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                value={feeForm.description}
+                onChange={(e) => setFeeForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="e.g. Tuition + Levy"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount (USD)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={feeForm.amount_usd}
+                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount (ZiG)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={feeForm.amount_zig}
+                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={saveFee}
+              disabled={feeLoading}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            >
+              {feeLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              {editingFee ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Invoice Dialog */}
       <Dialog open={bulkInvoiceOpen} onOpenChange={setBulkInvoiceOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1934,14 +2873,13 @@ export default function FinanceManagement() {
               disabled={bulkLoading}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
-              {bulkLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Generate Invoices
+              {bulkLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Generate Invoices
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Single Invoice Dialog – UPDATED */}
+      {/* Single Invoice Dialog */}
       <Dialog open={singleInvOpen} onOpenChange={setSingleInvOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -2024,7 +2962,6 @@ export default function FinanceManagement() {
               </div>
             </div>
 
-            {/* Fee Structure Selection */}
             <div className="space-y-1">
               <Label>Fee Structure</Label>
               <Select
@@ -2032,14 +2969,13 @@ export default function FinanceManagement() {
                 onValueChange={(id) => {
                   const fs = availableFeeStructures.find((f) => f.id === id);
                   setSelectedFeeStructure(fs);
-                  if (fs) {
+                  if (fs)
                     setSingleInvForm((f) => ({
                       ...f,
                       amount_usd: String(fs.amount_usd),
                       amount_zig: String(fs.amount_zig),
                       description: fs.description || "",
                     }));
-                  }
                 }}
               >
                 <SelectTrigger>
@@ -2077,14 +3013,703 @@ export default function FinanceManagement() {
                 (!singleInvForm.amount_usd && !singleInvForm.amount_zig)
               }
             >
-              {singleInvLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Create Invoice
+              {singleInvLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Create Invoice
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Other dialogs (Payment, Expense, etc.) remain unchanged – omitted for brevity */}
+      {/* Payment Dialog */}
+      <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>Record a payment with split USD/ZiG support.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label>Search Student</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Name or admission #"
+                  value={payForm.student_search}
+                  onChange={(e) => {
+                    setPayForm((p) => ({ ...p, student_search: e.target.value }));
+                    searchStudents(e.target.value);
+                  }}
+                />
+              </div>
+              {studentResults.length > 0 && (
+                <div className="border rounded-md max-h-32 overflow-y-auto">
+                  {studentResults.map((s) => (
+                    <button
+                      key={s.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                      onClick={() => selectStudentForPayment(s)}
+                    >
+                      {s.full_name} ({s.admission_number}) - {s.form}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedStudent && (
+                <p className="text-sm text-accent font-medium">Selected: {selectedStudent.full_name}</p>
+              )}
+            </div>
+            {selectedStudent && studentInvoices.length > 0 && (
+              <div className="space-y-2">
+                <Label>Select Invoice</Label>
+                <Select value={payForm.invoice_id} onValueChange={(v) => setPayForm((p) => ({ ...p, invoice_id: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select invoice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {studentInvoices.map((inv) => (
+                      <SelectItem key={inv.id} value={inv.id}>
+                        {inv.invoice_number} — USD {fmt(parseFloat(inv.total_usd) - parseFloat(inv.paid_usd))} / ZiG{" "}
+                        {fmt(parseFloat(inv.total_zig) - parseFloat(inv.paid_zig))} owing
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {selectedStudent && studentInvoices.length === 0 && (
+              <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
+                <p className="text-sm text-accent font-medium">
+                  No outstanding invoices — this will be recorded as an advance payment.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">An invoice and receipt will be auto-generated.</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount USD</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={payForm.amount_usd}
+                  onChange={(e) => setPayForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount ZiG</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={payForm.amount_zig}
+                  onChange={(e) => setPayForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select
+                  value={payForm.payment_method}
+                  onValueChange={(v) => setPayForm((p) => ({ ...p, payment_method: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {payForm.payment_method !== "Cash" && (
+                <div className="space-y-2">
+                  <Label>Reference #</Label>
+                  <Input
+                    value={payForm.reference_number}
+                    onChange={(e) => setPayForm((p) => ({ ...p, reference_number: e.target.value }))}
+                    placeholder="e.g. TXN123"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Date</Label>
+              <Input
+                type="date"
+                value={payForm.payment_date}
+                onChange={(e) => setPayForm((p) => ({ ...p, payment_date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={payForm.notes}
+                onChange={(e) => setPayForm((p) => ({ ...p, notes: e.target.value }))}
+                rows={2}
+                placeholder="Optional notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={recordPayment}
+              disabled={payLoading}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            >
+              {payLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Invoice Dialog */}
+      <Dialog open={siDialogOpen} onOpenChange={setSiDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Supplier Invoice</DialogTitle>
+            <DialogDescription>Record an invoice received from a supplier.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input
+                  value={siForm.supplier_name}
+                  onChange={(e) => setSiForm((p) => ({ ...p, supplier_name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input
+                  value={siForm.supplier_contact}
+                  onChange={(e) => setSiForm((p) => ({ ...p, supplier_contact: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Invoice Number *</Label>
+                <Input
+                  value={siForm.invoice_number}
+                  onChange={(e) => setSiForm((p) => ({ ...p, invoice_number: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Invoice Date</Label>
+                <Input
+                  type="date"
+                  value={siForm.invoice_date}
+                  onChange={(e) => setSiForm((p) => ({ ...p, invoice_date: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={siForm.due_date}
+                  onChange={(e) => setSiForm((p) => ({ ...p, due_date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Description</Label>
+                <Input
+                  value={siForm.description}
+                  onChange={(e) => setSiForm((p) => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={siForm.amount_usd}
+                  onChange={(e) => setSiForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={siForm.amount_zig}
+                  onChange={(e) => setSiForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSiDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={saveSupplierInvoice}
+              disabled={siLoading || !siForm.supplier_name || !siForm.invoice_number}
+            >
+              {siLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Save Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supplier Payment Dialog */}
+      <Dialog
+        open={spDialogOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setSpDialogOpen(false);
+            setSpInvoice(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Supplier Payment</DialogTitle>
+            <DialogDescription>
+              {spInvoice
+                ? `Payment for ${spInvoice.supplier_name} — Invoice #${spInvoice.invoice_number} (Balance: USD ${fmt(Number(spInvoice.amount_usd) - Number(spInvoice.paid_usd))})`
+                : "Select an unpaid supplier invoice and record a payment."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {!spInvoice && (
+              <div className="space-y-1">
+                <Label>Select Supplier Invoice *</Label>
+                <Select
+                  onValueChange={(v) => {
+                    const inv = supplierInvoices.find((si) => si.id === v);
+                    setSpInvoice(inv || null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an unpaid invoice..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supplierInvoices
+                      .filter((si) => si.status !== "paid")
+                      .map((si) => (
+                        <SelectItem key={si.id} value={si.id}>
+                          {si.supplier_name} — #{si.invoice_number} (Bal: USD $
+                          {fmt(Number(si.amount_usd) - Number(si.paid_usd))})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input
+                  type="date"
+                  value={spForm.payment_date}
+                  onChange={(e) => setSpForm((p) => ({ ...p, payment_date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select
+                  value={spForm.payment_method}
+                  onValueChange={(v) => setSpForm((p) => ({ ...p, payment_method: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={spForm.amount_usd}
+                  onChange={(e) => setSpForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={spForm.amount_zig}
+                  onChange={(e) => setSpForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input
+                value={spForm.reference_number}
+                onChange={(e) => setSpForm((p) => ({ ...p, reference_number: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea
+                value={spForm.notes}
+                onChange={(e) => setSpForm((p) => ({ ...p, notes: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSpDialogOpen(false);
+                setSpInvoice(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveSupplierPayment} disabled={spLoading || (!spForm.amount_usd && !spForm.amount_zig)}>
+              {spLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cash on Delivery Dialog */}
+      <Dialog open={codDialogOpen} onOpenChange={setCodDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cash on Delivery Payment</DialogTitle>
+            <DialogDescription>
+              Record a direct payment to a supplier for goods/services received on delivery.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Supplier Name *</Label>
+                <Input
+                  value={codForm.supplier_name}
+                  onChange={(e) => setCodForm((p) => ({ ...p, supplier_name: e.target.value }))}
+                  placeholder="e.g. ABC Supplies"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Supplier Contact</Label>
+                <Input
+                  value={codForm.supplier_contact}
+                  onChange={(e) => setCodForm((p) => ({ ...p, supplier_contact: e.target.value }))}
+                  placeholder="Phone or email"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input
+                value={codForm.description}
+                onChange={(e) => setCodForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="e.g. Office stationery delivery"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Payment Date</Label>
+                <Input
+                  type="date"
+                  value={codForm.payment_date}
+                  onChange={(e) => setCodForm((p) => ({ ...p, payment_date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Payment Method</Label>
+                <Select
+                  value={codForm.payment_method}
+                  onValueChange={(v) => setCodForm((p) => ({ ...p, payment_method: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={codForm.amount_usd}
+                  onChange={(e) => setCodForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={codForm.amount_zig}
+                  onChange={(e) => setCodForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Reference Number</Label>
+              <Input
+                value={codForm.reference_number}
+                onChange={(e) => setCodForm((p) => ({ ...p, reference_number: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Notes</Label>
+              <Textarea
+                value={codForm.notes}
+                onChange={(e) => setCodForm((p) => ({ ...p, notes: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCodDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={saveCodPayment}
+              disabled={codLoading || !codForm.supplier_name || (!codForm.amount_usd && !codForm.amount_zig)}
+            >
+              {codLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Record COD Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Petty Cash Dialog */}
+      <Dialog open={pcDialogOpen} onOpenChange={setPcDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pcForm.transaction_type === "deposit" ? "Deposit to Petty Cash" : "Petty Cash Withdrawal"}
+            </DialogTitle>
+            <DialogDescription>
+              Record a {pcForm.transaction_type} transaction for the petty cash float.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={pcForm.transaction_date}
+                  onChange={(e) => setPcForm((p) => ({ ...p, transaction_date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Type</Label>
+                <Select
+                  value={pcForm.transaction_type}
+                  onValueChange={(v) =>
+                    setPcForm((p) => ({
+                      ...p,
+                      transaction_type: v,
+                      reference_number: v === "deposit" ? "" : p.reference_number,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deposit">Deposit</SelectItem>
+                    <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Description *</Label>
+              <Input
+                value={pcForm.description}
+                onChange={(e) => setPcForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="e.g. Office supplies, Float top-up"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Amount USD</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={pcForm.amount_usd}
+                  onChange={(e) => setPcForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Amount ZiG</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={pcForm.amount_zig}
+                  onChange={(e) => setPcForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                />
+              </div>
+            </div>
+            {pcForm.transaction_type === "withdrawal" && (
+              <div className="space-y-1">
+                <Label>Reference Number</Label>
+                <Input
+                  value={pcForm.reference_number}
+                  onChange={(e) => setPcForm((p) => ({ ...p, reference_number: e.target.value }))}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPcDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={savePettyCash} disabled={pcLoading || !pcForm.description}>
+              {pcLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Debtor Confirmation Dialog */}
+      <Dialog
+        open={deleteDebtorOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setDeleteDebtorOpen(false);
+            setDebtorToDelete(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Debtor</DialogTitle>
+            <DialogDescription>
+              This will mark invoice <span className="font-mono font-semibold">{debtorToDelete?.invoice_number}</span>{" "}
+              for <span className="font-semibold">{debtorToDelete?.students?.full_name}</span> as paid and remove them
+              from the debtors list. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDebtorOpen(false);
+                setDebtorToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deletingDebtor}
+              onClick={async () => {
+                if (!debtorToDelete) return;
+                setDeletingDebtor(true);
+                const { error } = await supabase
+                  .from("invoices")
+                  .update({ status: "paid", paid_usd: debtorToDelete.total_usd, paid_zig: debtorToDelete.total_zig })
+                  .eq("id", debtorToDelete.id);
+                if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+                else {
+                  toast({
+                    title: "Debtor removed",
+                    description: `${debtorToDelete.students?.full_name} has been cleared from the debtors list.`,
+                  });
+                  setDebtors((prev) => prev.filter((d) => d.id !== debtorToDelete.id));
+                  fetchInvoices();
+                }
+                setDeletingDebtor(false);
+                setDeleteDebtorOpen(false);
+                setDebtorToDelete(null);
+              }}
+            >
+              {deletingDebtor && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Confirm Removal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Impact Modal */}
+      <Dialog
+        open={deleteImpactOpen}
+        onOpenChange={(open) => {
+          if (!deleteConfirmLoading) setDeleteImpactOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Delete Fee Structure
+            </DialogTitle>
+            <DialogDescription>
+              {deleteTargetFee && (
+                <span className="block mt-1 font-medium text-foreground">
+                  {deleteTargetFee.form} — {deleteTargetFee.term} {deleteTargetFee.academic_year} (
+                  {deleteTargetFee.boarding_status === "boarding" ? "Boarding" : "Day"})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            {deleteImpactLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking impact…
+              </div>
+            ) : deleteImpactCount === -1 ? (
+              <p className="text-sm text-destructive">Could not check linked invoice items. Proceed with caution.</p>
+            ) : deleteImpactCount === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No invoice items are linked to this fee structure. It can be safely deleted.
+              </p>
+            ) : (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                <p className="text-sm font-semibold text-amber-800">
+                  {deleteImpactCount} invoice item{deleteImpactCount !== 1 ? "s" : ""} will be unlinked
+                </p>
+                <p className="text-xs text-amber-700">
+                  These invoice items will remain on their invoices but their fee structure reference will be cleared.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteImpactOpen(false)} disabled={deleteConfirmLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteFee}
+              disabled={deleteImpactLoading || deleteConfirmLoading}
+            >
+              {deleteConfirmLoading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Delete Fee Structure
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
