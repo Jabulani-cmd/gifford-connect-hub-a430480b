@@ -2978,11 +2978,36 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      column_exists: { Args: { col: string; tbl: string }; Returns: boolean }
       delete_class_cascade: { Args: { _class_id: string }; Returns: undefined }
       get_exam_rankings: {
         Args: { p_exam_id: string; p_student_id: string }
