@@ -779,13 +779,13 @@ export default function FinanceManagement() {
       <h2>Invoices</h2>
        table<thead> th<th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th> </thead>
       <tbody>
-      ${stmtInvoices.map((i) => `   <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
-      </tbody> </table>
+      ${stmtInvoices.map((i) => `    <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      </tbody>  </table>
       <h2>Payments</h2>
-       table<thead> <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
+       table<thead>  <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
       <tbody>
-      ${stmtPayments.map((p) => `   <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
-      </tbody> </table>
+      ${stmtPayments.map((p) => `    <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      </tbody>  </table>
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
         <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
@@ -810,11 +810,11 @@ export default function FinanceManagement() {
       @media print{body{padding:15px}}</style></head><body>
       <h1>Gifford High School — Debtors List</h1>
       <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
-       table<thead> <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
+       table<thead>  <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
       <tbody>
-      ${filtered.map((d, i) => `   <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${d.status}</td></tr>`).join("")}
+      ${filtered.map((d, i) => `    <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${statusBadge(d.status)}</td></tr>`).join("")}
       <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
-      </tbody> </table>
+      </tbody>  </table>
       </body></html>`);
     printWindow.document.close();
     printWindow.print();
@@ -1614,7 +1614,7 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* Invoices Tab – updated bulk generation */}
+        {/* Invoices Tab – updated with positive credit display */}
         <TabsContent value="invoices">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
@@ -1651,7 +1651,6 @@ export default function FinanceManagement() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Filters – unchanged */}
               <div className="flex gap-3 flex-wrap">
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1725,7 +1724,15 @@ export default function FinanceManagement() {
                           <TableCell className="text-right font-mono">{fmt(inv.paid_usd)}</TableCell>
                           <TableCell className="text-right font-mono">{fmt(inv.paid_zig)}</TableCell>
                           <TableCell>{statusBadge(inv.status)}</TableCell>
-                          <TableCell className="text-right font-mono">{fmt(inv.total_usd - inv.paid_usd)}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {(() => {
+                              const balance = inv.total_usd - inv.paid_usd;
+                              if (balance < 0) {
+                                return <span className="text-green-600">({fmt(Math.abs(balance))} credit)</span>;
+                              }
+                              return fmt(balance);
+                            })()}
+                          </TableCell>
                           {isFinanceOrAdmin && (
                             <TableCell>
                               <div className="flex gap-1">
@@ -1887,12 +1894,12 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* Receipts Tab – unchanged (using ReceiptSearchTab) */}
+        {/* Receipts Tab – unchanged (uses ReceiptSearchTab) */}
         <TabsContent value="receipts">
           <ReceiptSearchTab />
         </TabsContent>
 
-        {/* Debtors Tab – restored */}
+        {/* Debtors Tab – unchanged */}
         <TabsContent value="debtors">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
@@ -2014,7 +2021,7 @@ export default function FinanceManagement() {
           </div>
         </TabsContent>
 
-        {/* Petty Cash Tab – restored */}
+        {/* Petty Cash Tab – unchanged */}
         <TabsContent value="petty-cash">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
@@ -2157,7 +2164,7 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* Supplier Payables Tab – restored (simplified but functional) */}
+        {/* Supplier Payables Tab – unchanged */}
         <TabsContent value="supplier-payables">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
@@ -2326,7 +2333,7 @@ export default function FinanceManagement() {
           </div>
         </TabsContent>
 
-        {/* Statements Tab – restored */}
+        {/* Statements Tab – updated with positive credit display */}
         <TabsContent value="statements">
           <Card>
             <CardHeader>
@@ -2405,6 +2412,7 @@ export default function FinanceManagement() {
                     const tPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
                     const balUsd = tInvUsd - tPaidUsd;
                     const balZig = tInvZig - tPaidZig;
+                    const isCredit = balUsd < 0;
                     return (
                       <div className="grid gap-4 sm:grid-cols-3">
                         <Card>
@@ -2421,13 +2429,22 @@ export default function FinanceManagement() {
                             <p className="text-sm text-muted-foreground font-mono">ZiG {fmt(tPaidZig)}</p>
                           </CardContent>
                         </Card>
-                        <Card className={balUsd > 0 ? "bg-destructive/5" : "bg-green-50"}>
+                        <Card
+                          className={
+                            isCredit ? "bg-green-50 border-green-200" : balUsd > 0 ? "bg-destructive/5" : "bg-muted"
+                          }
+                        >
                           <CardContent className="p-4">
                             <p className="text-xs text-muted-foreground uppercase">Balance</p>
-                            <p className={`font-bold font-mono ${balUsd > 0 ? "text-destructive" : "text-green-700"}`}>
-                              USD {fmt(balUsd)}
+                            <p
+                              className={`font-bold font-mono ${isCredit ? "text-green-700" : balUsd > 0 ? "text-destructive" : "text-muted-foreground"}`}
+                            >
+                              USD {isCredit ? fmt(Math.abs(balUsd)) : fmt(balUsd)}
                             </p>
-                            <p className="text-sm text-muted-foreground font-mono">ZiG {fmt(balZig)}</p>
+                            <p className="text-sm text-muted-foreground font-mono">
+                              ZiG {balZig < 0 ? fmt(Math.abs(balZig)) : fmt(balZig)}
+                            </p>
+                            {isCredit && <span className="text-xs text-green-600">(credit)</span>}
                           </CardContent>
                         </Card>
                       </div>
@@ -2513,7 +2530,7 @@ export default function FinanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* Expenses Tab – restored */}
+        {/* Expenses Tab – unchanged */}
         <TabsContent value="expenses">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
