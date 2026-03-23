@@ -392,6 +392,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
 
   const totalOwedUsd = input.invoices.reduce((s, i) => s + (Number(i.total_usd) - Number(i.paid_usd)), 0);
   const totalOwedZig = input.invoices.reduce((s, i) => s + (Number(i.total_zig) - Number(i.paid_zig)), 0);
+  const balanceLabel = totalOwedUsd < 0 ? 'Credit Balance' : 'Outstanding Balance';
 
   return `<!doctype html>
 <html>
