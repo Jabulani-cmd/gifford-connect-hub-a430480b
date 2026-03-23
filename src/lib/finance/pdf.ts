@@ -164,8 +164,8 @@ export function buildInvoiceHtml(input: InvoicePdfInput): string {
   const totalZig = Number(input.totals.total_zig || 0);
   const paidUsd = Number(input.totals.paid_usd || 0);
   const paidZig = Number(input.totals.paid_zig || 0);
-  const balUsd = Math.max(0, totalUsd - paidUsd);
-  const balZig = Math.max(0, totalZig - paidZig);
+  const rawBalUsd = totalUsd - paidUsd;
+  const rawBalZig = totalZig - paidZig;
 
   const itemRows = input.items.map(it => `
     <tr>
