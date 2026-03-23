@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { Search, Printer, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { openPrintWindow, buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/print";
+import { buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+import { openPrintWindow } from "@/lib/finance/print";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
