@@ -31,7 +31,11 @@ export default function StudentFeeTab({ studentId }: Props) {
   const fetchData = async () => {
     setLoading(true);
     const [invRes, payRes] = await Promise.all([
-      supabase.from("invoices").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
+      supabase
+        .from("invoices")
+        .select("*, students(full_name, admission_number, form)")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false }),
       supabase
         .from("payments")
         .select("*, invoices(invoice_number)")
@@ -162,10 +166,10 @@ export default function StudentFeeTab({ studentId }: Props) {
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Term</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Paid</TableHead>
-                    <TableHead>Balance</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -182,12 +186,12 @@ export default function StudentFeeTab({ studentId }: Props) {
                         <TableCell className="text-right">
                           {(() => {
                             if (balance < 0) {
-                              return <span className="text-green-600">({fmt(Math.abs(balance))} credit)</span>;
+                              return <span className="text-green-600">+${fmt(Math.abs(balance))} credit</span>;
                             }
                             return fmt(balance);
                           })()}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Badge
                             variant="outline"
                             className={
@@ -228,7 +232,7 @@ export default function StudentFeeTab({ studentId }: Props) {
                     <TableHead className="text-right">USD</TableHead>
                     <TableHead className="text-right">ZiG</TableHead>
                     <TableHead>Method</TableHead>
-                    <TableHead>Receipt</TableHead>
+                    <TableHead className="text-center">Receipt</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -240,7 +244,7 @@ export default function StudentFeeTab({ studentId }: Props) {
                       <TableCell className="text-right font-mono">${fmt(p.amount_usd)}</TableCell>
                       <TableCell className="text-right font-mono">ZiG {fmt(p.amount_zig)}</TableCell>
                       <TableCell>{p.payment_method}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <Button
                           variant="ghost"
                           size="icon"
