@@ -779,17 +779,17 @@ export default function FinanceManagement() {
       <h2>Invoices</h2>
        table<thead> th<th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th> </thead>
       <tbody>
-      ${stmtInvoices.map((i) => `    <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
-      </tbody>  </table>
+      ${stmtInvoices.map((i) => `     <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      </tbody>   </table>
       <h2>Payments</h2>
-       table<thead>  <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
+       table<thead>   <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
       <tbody>
-      ${stmtPayments.map((p) => `    <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
-      </tbody>  </table>
+      ${stmtPayments.map((p) => `     <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      </tbody>   </table>
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
         <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
-        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>${totalInvoicedUsd - totalPaidUsd < 0 ? 'Credit Balance' : 'Balance'}:</strong> USD ${totalInvoicedUsd - totalPaidUsd < 0 ? '+' + fmt(Math.abs(totalInvoicedUsd - totalPaidUsd)) : fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${totalInvoicedZig - totalPaidZig < 0 ? '+' + fmt(Math.abs(totalInvoicedZig - totalPaidZig)) : fmt(totalInvoicedZig - totalPaidZig)}</p>
+        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>${totalInvoicedUsd - totalPaidUsd < 0 ? "Credit Balance" : "Balance"}:</strong> USD ${totalInvoicedUsd - totalPaidUsd < 0 ? "+" + fmt(Math.abs(totalInvoicedUsd - totalPaidUsd)) : fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${totalInvoicedZig - totalPaidZig < 0 ? "+" + fmt(Math.abs(totalInvoicedZig - totalPaidZig)) : fmt(totalInvoicedZig - totalPaidZig)}</p>
       </div>
       </body></html>`);
     printWindow.document.close();
@@ -810,11 +810,11 @@ export default function FinanceManagement() {
       @media print{body{padding:15px}}</style></head><body>
       <h1>Gifford High School — Debtors List</h1>
       <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
-       table<thead>  <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
+       table<thead>   <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
       <tbody>
-      ${filtered.map((d, i) => `    <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${statusBadge(d.status)}</td></tr>`).join("")}
+      ${filtered.map((d, i) => `     <tr><td>${i + 1}</td><td>${d.students?.full_name || "—"}</td><td>${d.students?.admission_number || "—"}</td><td>${d.students?.form || "—"}</td><td class="mono">${d.invoice_number}</td><td>${d.term}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${statusBadge(d.status)}</td></tr>`).join("")}
       <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
-      </tbody>  </table>
+      </tbody>   </table>
       </body></html>`);
     printWindow.document.close();
     printWindow.print();
@@ -1150,11 +1150,12 @@ export default function FinanceManagement() {
     setSelectedStudent(student);
     setStudentResults([]);
     setPayForm((p) => ({ ...p, student_search: student.full_name }));
+    // Fetch invoices that are not fully paid OR have a credit (paid_usd > total_usd)
     const { data } = await supabase
       .from("invoices")
       .select("*")
       .eq("student_id", student.id)
-      .neq("status", "paid")
+      .or(`status.ne.paid,paid_usd.gt.total_usd`) // include unpaid, partial, and overpaid
       .order("created_at");
     if (data) {
       setStudentInvoices(data);
@@ -3088,7 +3089,9 @@ export default function FinanceManagement() {
                       const balZig = parseFloat(inv.total_zig) - parseFloat(inv.paid_zig);
                       return (
                         <SelectItem key={inv.id} value={inv.id}>
-                          {inv.invoice_number} — {balUsd < 0 ? `+USD ${fmt(Math.abs(balUsd))} credit` : `USD ${fmt(balUsd)} owing`} / {balZig < 0 ? `+ZiG ${fmt(Math.abs(balZig))} credit` : `ZiG ${fmt(balZig)} owing`}
+                          {inv.invoice_number} —{" "}
+                          {balUsd < 0 ? `+USD ${fmt(Math.abs(balUsd))} credit` : `USD ${fmt(balUsd)} owing`} /{" "}
+                          {balZig < 0 ? `+ZiG ${fmt(Math.abs(balZig))} credit` : `ZiG ${fmt(balZig)} owing`}
                         </SelectItem>
                       );
                     })}
