@@ -22,9 +22,12 @@ export default function ReceiptSearchTab() {
   // Auto-search after 3 characters
   useEffect(() => {
     if (searchTerm.trim().length >= 3) {
-      const timer = setTimeout(() => searchReceipts(), 400);
+      const timer = setTimeout(() => {
+        searchReceipts();
+      }, 400);
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
   const searchReceipts = async () => {
