@@ -444,7 +444,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
     <tbody>${paymentRows || "<tr><td colspan='5'>No payments</td></tr>"}</tbody>
   </table>
 
-  <div class="balance">Outstanding Balance: USD ${totalOwedUsd.toFixed(2)} &nbsp; | &nbsp; ZiG ${totalOwedZig.toFixed(2)}</div>
+  <div class="balance">${balanceLabel}: USD ${totalOwedUsd < 0 ? Math.abs(totalOwedUsd).toFixed(2) : totalOwedUsd.toFixed(2)} &nbsp; | &nbsp; ZiG ${totalOwedZig < 0 ? Math.abs(totalOwedZig).toFixed(2) : totalOwedZig.toFixed(2)}</div>
 
   <div class="footer">
     <p>This is a computer-generated statement. | ${safe(SCHOOL_NAME)} | ${safe(SCHOOL_ADDRESS)}</p>
