@@ -789,7 +789,7 @@ export default function FinanceManagement() {
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
         <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
-        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>Balance:</strong> USD ${fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${fmt(totalInvoicedZig - totalPaidZig)}</p>
+        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>${totalInvoicedUsd - totalPaidUsd < 0 ? 'Credit Balance' : 'Balance'}:</strong> USD ${totalInvoicedUsd - totalPaidUsd < 0 ? '+' + fmt(Math.abs(totalInvoicedUsd - totalPaidUsd)) : fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${totalInvoicedZig - totalPaidZig < 0 ? '+' + fmt(Math.abs(totalInvoicedZig - totalPaidZig)) : fmt(totalInvoicedZig - totalPaidZig)}</p>
       </div>
       </body></html>`);
     printWindow.document.close();
