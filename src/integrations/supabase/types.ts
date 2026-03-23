@@ -1703,6 +1703,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "marks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "marks_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
