@@ -3083,12 +3083,15 @@ export default function FinanceManagement() {
                     <SelectValue placeholder="Select invoice" />
                   </SelectTrigger>
                   <SelectContent>
-                    {studentInvoices.map((inv) => (
-                      <SelectItem key={inv.id} value={inv.id}>
-                        {inv.invoice_number} — USD {fmt(parseFloat(inv.total_usd) - parseFloat(inv.paid_usd))} / ZiG{" "}
-                        {fmt(parseFloat(inv.total_zig) - parseFloat(inv.paid_zig))} owing
-                      </SelectItem>
-                    ))}
+                    {studentInvoices.map((inv) => {
+                      const balUsd = parseFloat(inv.total_usd) - parseFloat(inv.paid_usd);
+                      const balZig = parseFloat(inv.total_zig) - parseFloat(inv.paid_zig);
+                      return (
+                        <SelectItem key={inv.id} value={inv.id}>
+                          {inv.invoice_number} — {balUsd < 0 ? `+USD ${fmt(Math.abs(balUsd))} credit` : `USD ${fmt(balUsd)} owing`} / {balZig < 0 ? `+ZiG ${fmt(Math.abs(balZig))} credit` : `ZiG ${fmt(balZig)} owing`}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
