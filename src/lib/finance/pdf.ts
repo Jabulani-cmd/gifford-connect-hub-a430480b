@@ -123,8 +123,8 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   const totalZig = Number(input.totals.total_zig || 0);
   const paidUsd = Number(input.totals.paid_usd || 0);
   const paidZig = Number(input.totals.paid_zig || 0);
-  const balUsd = Math.max(0, totalUsd - paidUsd);
-  const balZig = Math.max(0, totalZig - paidZig);
+  const rawBalUsd = totalUsd - paidUsd;
+  const rawBalZig = totalZig - paidZig;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -137,7 +137,11 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   doc.setDrawColor(0);
 
   doc.setFontSize(11);
-  doc.text(`BALANCE:   USD ${balUsd.toFixed(2)}     ZiG ${balZig.toFixed(2)}`, 14, endY + 26);
+  if (rawBalUsd < 0 || rawBalZig < 0) {
+    doc.text(`CREDIT:    USD ${Math.abs(rawBalUsd).toFixed(2)}     ZiG ${Math.abs(rawBalZig).toFixed(2)}`, 14, endY + 26);
+  } else {
+    doc.text(`BALANCE:   USD ${rawBalUsd.toFixed(2)}     ZiG ${rawBalZig.toFixed(2)}`, 14, endY + 26);
+  }
 
   // Footer
   doc.setFont("helvetica", "normal");
