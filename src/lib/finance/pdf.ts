@@ -138,7 +138,7 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
 
   doc.setFontSize(11);
   if (rawBalUsd < 0 || rawBalZig < 0) {
-    doc.text(`CREDIT:    USD ${Math.abs(rawBalUsd).toFixed(2)}     ZiG ${Math.abs(rawBalZig).toFixed(2)}`, 14, endY + 26);
+    doc.text(`CREDIT:    USD +${Math.abs(rawBalUsd).toFixed(2)}     ZiG +${Math.abs(rawBalZig).toFixed(2)}`, 14, endY + 26);
   } else {
     doc.text(`BALANCE:   USD ${rawBalUsd.toFixed(2)}     ZiG ${rawBalZig.toFixed(2)}`, 14, endY + 26);
   }
