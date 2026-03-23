@@ -789,7 +789,7 @@ export default function FinanceManagement() {
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
         <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
-        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>Balance:</strong> USD ${fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${fmt(totalInvoicedZig - totalPaidZig)}</p>
+        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>${totalInvoicedUsd - totalPaidUsd < 0 ? 'Credit Balance' : 'Balance'}:</strong> USD ${totalInvoicedUsd - totalPaidUsd < 0 ? '+' + fmt(Math.abs(totalInvoicedUsd - totalPaidUsd)) : fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${totalInvoicedZig - totalPaidZig < 0 ? '+' + fmt(Math.abs(totalInvoicedZig - totalPaidZig)) : fmt(totalInvoicedZig - totalPaidZig)}</p>
       </div>
       </body></html>`);
     printWindow.document.close();
@@ -3083,12 +3083,15 @@ export default function FinanceManagement() {
                     <SelectValue placeholder="Select invoice" />
                   </SelectTrigger>
                   <SelectContent>
-                    {studentInvoices.map((inv) => (
-                      <SelectItem key={inv.id} value={inv.id}>
-                        {inv.invoice_number} — USD {fmt(parseFloat(inv.total_usd) - parseFloat(inv.paid_usd))} / ZiG{" "}
-                        {fmt(parseFloat(inv.total_zig) - parseFloat(inv.paid_zig))} owing
-                      </SelectItem>
-                    ))}
+                    {studentInvoices.map((inv) => {
+                      const balUsd = parseFloat(inv.total_usd) - parseFloat(inv.paid_usd);
+                      const balZig = parseFloat(inv.total_zig) - parseFloat(inv.paid_zig);
+                      return (
+                        <SelectItem key={inv.id} value={inv.id}>
+                          {inv.invoice_number} — {balUsd < 0 ? `+USD ${fmt(Math.abs(balUsd))} credit` : `USD ${fmt(balUsd)} owing`} / {balZig < 0 ? `+ZiG ${fmt(Math.abs(balZig))} credit` : `ZiG ${fmt(balZig)} owing`}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

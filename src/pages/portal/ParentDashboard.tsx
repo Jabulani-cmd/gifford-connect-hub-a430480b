@@ -1044,7 +1044,9 @@ function TabContent(props: TabContentProps) {
                           </td>
                           <td className="px-3 py-2 text-center">${inv.total_usd}</td>
                           <td className="px-3 py-2 text-center text-emerald-600">${inv.paid_usd}</td>
-                          <td className="px-3 py-2 text-center font-bold">${bal.toFixed(2)}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${bal < 0 ? "text-emerald-600" : bal > 0 ? "text-red-600" : ""}`}>
+                            {bal < 0 ? `+$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
+                          </td>
                           <td className="px-3 py-2 text-center">
                             <Badge
                               variant="outline"
