@@ -19,6 +19,14 @@ export default function ReceiptSearchTab() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
+  // Auto-search after 3 characters
+  useEffect(() => {
+    if (searchTerm.trim().length >= 3) {
+      const timer = setTimeout(() => searchReceipts(), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [searchTerm]);
+
   const searchReceipts = async () => {
     if (!searchTerm.trim()) {
       toast({ title: "Enter a search term", variant: "destructive" });
@@ -26,42 +34,36 @@ export default function ReceiptSearchTab() {
     }
     setLoading(true);
     setSearched(true);
-    const term = `%${searchTerm.trim().toLowerCase()}%`;
+    const term = searchTerm.trim().toLowerCase();
 
     try {
-      // Get student IDs matching the term (name or admission number)
-      const { data: students } = await supabase
-        .from("students")
-        .select("id")
-        .or(`full_name.ilike.${term},admission_number.ilike.${term}`);
-      const studentIds = students?.map((s) => s.id) || [];
-
-      // Get invoice IDs matching the term (invoice number)
-      const { data: invoices } = await supabase.from("invoices").select("id").ilike("invoice_number", term);
-      const invoiceIds = invoices?.map((i) => i.id) || [];
-
-      // Build query
-      let query = supabase.from("payments").select(`
+      // Search payments with joined student & invoice data
+      const { data, error } = await supabase
+        .from("payments")
+        .select(`
           *,
           students:student_id (full_name, admission_number, form),
           invoices:invoice_id (invoice_number)
-        `);
-
-      const filters = [];
-      filters.push(`receipt_number.ilike.${term}`);
-      if (studentIds.length) filters.push(`student_id.in.(${studentIds.join(",")})`);
-      if (invoiceIds.length) filters.push(`invoice_id.in.(${invoiceIds.join(",")})`);
-
-      if (filters.length) {
-        query = query.or(filters.join(","));
-      } else {
-        query = query.ilike("receipt_number", term);
-      }
-
-      const { data, error } = await query.order("payment_date", { ascending: false });
+        `)
+        .order("payment_date", { ascending: false });
 
       if (error) throw error;
-      setReceipts(data || []);
+
+      // Client-side filter for flexible matching
+      const filtered = (data || []).filter((p: any) => {
+        const receipt = (p.receipt_number || "").toLowerCase();
+        const studentName = (p.students?.full_name || "").toLowerCase();
+        const admNum = (p.students?.admission_number || "").toLowerCase();
+        const invNum = (p.invoices?.invoice_number || "").toLowerCase();
+        return (
+          receipt.includes(term) ||
+          studentName.includes(term) ||
+          admNum.includes(term) ||
+          invNum.includes(term)
+        );
+      });
+
+      setReceipts(filtered);
     } catch (err: any) {
       toast({ title: "Search failed", description: err.message, variant: "destructive" });
       setReceipts([]);
