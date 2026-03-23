@@ -33,8 +33,8 @@ export default function StudentMetricsCards({ attendancePercent, upcomingAssessm
       bgColor: "bg-purple-50",
     },
     ...(feeBalance !== null ? [{
-      label: "Fee Balance",
-      value: `$${feeBalance.toFixed(0)}`,
+      label: feeBalance < 0 ? "Credit Balance" : "Fee Balance",
+      value: feeBalance < 0 ? `$${Math.abs(feeBalance).toFixed(0)} CR` : `$${feeBalance.toFixed(0)}`,
       icon: DollarSign,
       color: feeBalance > 0 ? "text-destructive" : "text-green-600",
       bgColor: feeBalance > 0 ? "bg-red-50" : "bg-green-50",

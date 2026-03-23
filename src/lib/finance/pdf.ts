@@ -123,8 +123,8 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   const totalZig = Number(input.totals.total_zig || 0);
   const paidUsd = Number(input.totals.paid_usd || 0);
   const paidZig = Number(input.totals.paid_zig || 0);
-  const balUsd = Math.max(0, totalUsd - paidUsd);
-  const balZig = Math.max(0, totalZig - paidZig);
+  const rawBalUsd = totalUsd - paidUsd;
+  const rawBalZig = totalZig - paidZig;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -137,7 +137,11 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   doc.setDrawColor(0);
 
   doc.setFontSize(11);
-  doc.text(`BALANCE:   USD ${balUsd.toFixed(2)}     ZiG ${balZig.toFixed(2)}`, 14, endY + 26);
+  if (rawBalUsd < 0 || rawBalZig < 0) {
+    doc.text(`CREDIT:    USD ${Math.abs(rawBalUsd).toFixed(2)}     ZiG ${Math.abs(rawBalZig).toFixed(2)}`, 14, endY + 26);
+  } else {
+    doc.text(`BALANCE:   USD ${rawBalUsd.toFixed(2)}     ZiG ${rawBalZig.toFixed(2)}`, 14, endY + 26);
+  }
 
   // Footer
   doc.setFont("helvetica", "normal");
@@ -160,8 +164,8 @@ export function buildInvoiceHtml(input: InvoicePdfInput): string {
   const totalZig = Number(input.totals.total_zig || 0);
   const paidUsd = Number(input.totals.paid_usd || 0);
   const paidZig = Number(input.totals.paid_zig || 0);
-  const balUsd = Math.max(0, totalUsd - paidUsd);
-  const balZig = Math.max(0, totalZig - paidZig);
+  const rawBalUsd = totalUsd - paidUsd;
+  const rawBalZig = totalZig - paidZig;
 
   const itemRows = input.items.map(it => `
     <tr>
@@ -239,7 +243,7 @@ export function buildInvoiceHtml(input: InvoicePdfInput): string {
   <div class="totals">
     <div><strong>Total:</strong> USD ${totalUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${totalZig.toFixed(2)}</div>
     <div><strong>Paid:</strong> USD ${paidUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${paidZig.toFixed(2)}</div>
-    <div class="balance">Balance Due: USD ${balUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${balZig.toFixed(2)}</div>
+    <div class="balance">${rawBalUsd < 0 ? `Credit Balance: USD ${Math.abs(rawBalUsd).toFixed(2)} &nbsp;|&nbsp; ZiG ${Math.abs(rawBalZig).toFixed(2)}` : `Balance Due: USD ${rawBalUsd.toFixed(2)} &nbsp;|&nbsp; ZiG ${rawBalZig.toFixed(2)}`}</div>
   </div>
 
   <div class="footer">
@@ -388,6 +392,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
 
   const totalOwedUsd = input.invoices.reduce((s, i) => s + (Number(i.total_usd) - Number(i.paid_usd)), 0);
   const totalOwedZig = input.invoices.reduce((s, i) => s + (Number(i.total_zig) - Number(i.paid_zig)), 0);
+  const balanceLabel = totalOwedUsd < 0 ? 'Credit Balance' : 'Outstanding Balance';
 
   return `<!doctype html>
 <html>
@@ -439,7 +444,7 @@ export function buildStatementHtml(input: StatementPrintInput) {
     <tbody>${paymentRows || "<tr><td colspan='5'>No payments</td></tr>"}</tbody>
   </table>
 
-  <div class="balance">Outstanding Balance: USD ${totalOwedUsd.toFixed(2)} &nbsp; | &nbsp; ZiG ${totalOwedZig.toFixed(2)}</div>
+  <div class="balance">${balanceLabel}: USD ${totalOwedUsd < 0 ? Math.abs(totalOwedUsd).toFixed(2) : totalOwedUsd.toFixed(2)} &nbsp; | &nbsp; ZiG ${totalOwedZig < 0 ? Math.abs(totalOwedZig).toFixed(2) : totalOwedZig.toFixed(2)}</div>
 
   <div class="footer">
     <p>This is a computer-generated statement. | ${safe(SCHOOL_NAME)} | ${safe(SCHOOL_ADDRESS)}</p>
