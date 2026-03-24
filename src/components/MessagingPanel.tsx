@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageSquare, Send, Plus, Users, User, Search, ArrowLeft,
-  Megaphone, AlertCircle, X, Loader2, ShieldAlert, Ban, Flag, MoreVertical
+  Megaphone, AlertCircle, X, Loader2, ShieldAlert, Ban, Flag, MoreVertical, BookUser
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,15 @@ export default function MessagingPanel() {
   const [search, setSearch] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
 
+  // Panel tab: "chats" or "contacts"
+  const [panelTab, setPanelTab] = useState<"chats" | "contacts">("chats");
+
+  // Contact directory state
+  const [contacts, setContacts] = useState<UserProfile[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactRoleFilter, setContactRoleFilter] = useState<string>("all");
+  const [contactsLoading, setContactsLoading] = useState(false);
+
   // New conversation dialog
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [newConvType, setNewConvType] = useState<"direct" | "group" | "broadcast">("direct");
@@ -78,6 +87,7 @@ export default function MessagingPanel() {
   const [userResults, setUserResults] = useState<UserProfile[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [creating, setCreating] = useState(false);
+  const [searchRoleFilter, setSearchRoleFilter] = useState<string>("all");
 
   // Block & report
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
@@ -292,6 +302,56 @@ export default function MessagingPanel() {
   };
 
   // Search users with role info
+  // Fetch contact directory
+  const fetchContacts = useCallback(async () => {
+    if (!user) return;
+    setContactsLoading(true);
+
+    let query = supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .neq("id", user.id)
+      .order("full_name", { ascending: true })
+      .limit(100);
+
+    if (contactSearch.length >= 2) {
+      query = query.ilike("full_name", `%${contactSearch}%`);
+    }
+
+    const { data: profiles } = await query;
+    if (!profiles) { setContacts([]); setContactsLoading(false); return; }
+
+    const userIds = profiles.map(p => p.id);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("user_id", userIds);
+
+    const roleMap: Record<string, string> = {};
+    roles?.forEach(r => { roleMap[r.user_id] = r.role; });
+
+    let results: UserProfile[] = profiles
+      .filter(p => !blockedIds.includes(p.id))
+      .map(p => ({ ...p, role: roleMap[p.id] || "user" }));
+
+    if (contactRoleFilter !== "all") {
+      results = results.filter(p => p.role === contactRoleFilter);
+    }
+
+    setContacts(results);
+    setContactsLoading(false);
+  }, [user, contactSearch, contactRoleFilter, blockedIds]);
+
+  // Fetch contacts when tab switches or filters change
+  useEffect(() => {
+    if (panelTab === "contacts") fetchContacts();
+  }, [panelTab, fetchContacts]);
+
+  // Re-run user search when role filter changes
+  useEffect(() => {
+    if (userSearch.length >= 2) searchUsers(userSearch);
+  }, [searchRoleFilter]);
+
   const searchUsers = async (query: string) => {
     setUserSearch(query);
     if (query.length < 2) { setUserResults([]); return; }
@@ -315,13 +375,17 @@ export default function MessagingPanel() {
     const roleMap: Record<string, string> = {};
     roles?.forEach(r => { roleMap[r.user_id] = r.role; });
 
-    // Filter out blocked users
-    const results: UserProfile[] = profiles
+    // Filter out blocked users and apply role filter
+    let results: UserProfile[] = profiles
       .filter(p => !blockedIds.includes(p.id))
       .map(p => ({
         ...p,
         role: roleMap[p.id] || "user",
       }));
+
+    if (searchRoleFilter !== "all") {
+      results = results.filter(p => p.role === searchRoleFilter);
+    }
 
     setUserResults(results);
   };
@@ -433,7 +497,26 @@ export default function MessagingPanel() {
     setSelectedUsers([]);
     setUserSearch("");
     setUserResults([]);
+    setSearchRoleFilter("all");
   };
+
+  // Quick message from contact directory
+  const startDirectFromContact = (contact: UserProfile) => {
+    setSelectedUsers([contact]);
+    setNewConvType("direct");
+    setNewConvOpen(true);
+  };
+
+  const roleFilterOptions = [
+    { value: "all", label: "All Roles" },
+    { value: "admin", label: "Admin" },
+    { value: "teacher", label: "Teacher" },
+    { value: "student", label: "Student" },
+    { value: "parent", label: "Parent" },
+    { value: "finance", label: "Finance" },
+    { value: "principal", label: "Principal" },
+    { value: "hod", label: "HOD" },
+  ];
 
   // Block a user
   const blockUser = async (targetId: string, targetName: string) => {
@@ -644,64 +727,151 @@ export default function MessagingPanel() {
 
             {/* Body */}
             {!activeConv ? (
-              /* Conversation List */
               <div className="flex flex-1 flex-col overflow-hidden">
-                <div className="border-b px-3 py-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search conversations..."
-                      className="h-8 pl-8 text-xs"
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                    />
-                  </div>
+                {/* Tabs: Chats / Contacts */}
+                <div className="flex border-b">
+                  <button
+                    onClick={() => setPanelTab("chats")}
+                    className={`flex-1 py-2 text-xs font-medium transition-colors ${panelTab === "chats" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <MessageSquare className="inline h-3.5 w-3.5 mr-1" />
+                    Chats
+                    {totalUnread > 0 && (
+                      <Badge className="ml-1.5 h-4 min-w-4 inline-flex items-center justify-center rounded-full p-0 text-[9px]">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                      </Badge>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setPanelTab("contacts")}
+                    className={`flex-1 py-2 text-xs font-medium transition-colors ${panelTab === "contacts" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <BookUser className="inline h-3.5 w-3.5 mr-1" />
+                    Contacts
+                  </button>
                 </div>
-                <ScrollArea className="flex-1">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+
+                {panelTab === "chats" ? (
+                  <>
+                    <div className="border-b px-3 py-2">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="Search conversations..."
+                          className="h-8 pl-8 text-xs"
+                          value={search}
+                          onChange={e => setSearch(e.target.value)}
+                        />
+                      </div>
                     </div>
-                  ) : filteredConversations.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                      <MessageSquare className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground">No conversations yet</p>
-                      <Button variant="outline" size="sm" className="mt-3" onClick={() => setNewConvOpen(true)}>
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Start a conversation
-                      </Button>
+                    <ScrollArea className="flex-1">
+                      {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : filteredConversations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                          <MessageSquare className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                          <p className="text-sm text-muted-foreground">No conversations yet</p>
+                          <Button variant="outline" size="sm" className="mt-3" onClick={() => setNewConvOpen(true)}>
+                            <Plus className="mr-1 h-3.5 w-3.5" /> Start a conversation
+                          </Button>
+                        </div>
+                      ) : (
+                        filteredConversations.map(conv => (
+                          <button
+                            key={conv.id}
+                            onClick={() => openConversation(conv)}
+                            className="w-full flex items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                          >
+                            <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                              {typeIcon(conv.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-medium truncate">{conv.name}</p>
+                                {conv.last_message_at && (
+                                  <span className="flex-shrink-0 text-[10px] text-muted-foreground">
+                                    {format(new Date(conv.last_message_at), "MMM d")}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs text-muted-foreground truncate">{conv.last_message || "No messages yet"}</p>
+                                {(conv.unread_count || 0) > 0 && (
+                                  <Badge className="h-5 min-w-5 flex-shrink-0 flex items-center justify-center rounded-full p-0 text-[10px]">
+                                    {conv.unread_count}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </ScrollArea>
+                  </>
+                ) : (
+                  /* Contact Directory */
+                  <>
+                    <div className="border-b px-3 py-2 space-y-2">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="Search contacts..."
+                          className="h-8 pl-8 text-xs"
+                          value={contactSearch}
+                          onChange={e => setContactSearch(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {roleFilterOptions.map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setContactRoleFilter(opt.value)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                              contactRoleFilter === opt.value
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted text-muted-foreground border-transparent hover:border-border"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  ) : (
-                    filteredConversations.map(conv => (
-                      <button
-                        key={conv.id}
-                        onClick={() => openConversation(conv)}
-                        className="w-full flex items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50"
-                      >
-                        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                          {typeIcon(conv.type)}
+                    <ScrollArea className="flex-1">
+                      {contactsLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium truncate">{conv.name}</p>
-                            {conv.last_message_at && (
-                              <span className="flex-shrink-0 text-[10px] text-muted-foreground">
-                                {format(new Date(conv.last_message_at), "MMM d")}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs text-muted-foreground truncate">{conv.last_message || "No messages yet"}</p>
-                            {(conv.unread_count || 0) > 0 && (
-                              <Badge className="h-5 min-w-5 flex-shrink-0 flex items-center justify-center rounded-full p-0 text-[10px]">
-                                {conv.unread_count}
-                              </Badge>
-                            )}
-                          </div>
+                      ) : contacts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                          <BookUser className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                          <p className="text-sm text-muted-foreground">No contacts found</p>
                         </div>
-                      </button>
-                    ))
-                  )}
-                </ScrollArea>
+                      ) : (
+                        contacts.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => startDirectFromContact(c)}
+                            className="w-full flex items-center gap-3 border-b px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+                          >
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{c.full_name}</p>
+                            </div>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border flex-shrink-0 ${roleBadgeColor(c.role || "")}`}>
+                              {c.role || "user"}
+                            </span>
+                            <Send className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          </button>
+                        ))
+                      )}
+                    </ScrollArea>
+                  </>
+                )}
               </div>
             ) : (
               /* Chat View */
@@ -810,14 +980,26 @@ export default function MessagingPanel() {
                   ))}
                 </div>
               )}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search users by name..."
-                  className="pl-8"
-                  value={userSearch}
-                  onChange={e => searchUsers(e.target.value)}
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users by name..."
+                    className="pl-8"
+                    value={userSearch}
+                    onChange={e => searchUsers(e.target.value)}
+                  />
+                </div>
+                <Select value={searchRoleFilter} onValueChange={setSearchRoleFilter}>
+                  <SelectTrigger className="w-[110px] h-9 text-xs">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleFilterOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {userResults.length > 0 && (
                 <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
