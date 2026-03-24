@@ -271,6 +271,37 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     setUploading(false);
   };
 
+  const handleCtaFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCtaCropSrc(reader.result as string);
+      setCtaCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (ctaFileRef.current) ctaFileRef.current.value = "";
+  };
+
+  const handleCtaCropComplete = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const file = new File([blob], `cta_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const url = await uploadFile(file, "site-images");
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "cta_image");
+      if (existing && existing.length > 0) {
+        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "cta_image");
+      } else {
+        await supabase.from("site_settings").insert({ setting_key: "cta_image", setting_value: url });
+      }
+      setCtaImageUrl(url);
+      toast({ title: "CTA image updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
     if (data) setAnnouncements(data);
