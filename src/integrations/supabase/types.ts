@@ -1664,6 +1664,84 @@ export type Database = {
           },
         ]
       }
+      lesson_plans: {
+        Row: {
+          assessment_strategy: string | null
+          class_id: string | null
+          conclusion: string | null
+          created_at: string
+          date: string
+          duration_minutes: number | null
+          homework_notes: string | null
+          id: string
+          introduction: string | null
+          main_activity: string | null
+          materials_needed: string | null
+          objectives: string | null
+          reflection: string | null
+          status: string
+          subject_id: string | null
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_strategy?: string | null
+          class_id?: string | null
+          conclusion?: string | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          homework_notes?: string | null
+          id?: string
+          introduction?: string | null
+          main_activity?: string | null
+          materials_needed?: string | null
+          objectives?: string | null
+          reflection?: string | null
+          status?: string
+          subject_id?: string | null
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_strategy?: string | null
+          class_id?: string | null
+          conclusion?: string | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          homework_notes?: string | null
+          id?: string
+          introduction?: string | null
+          main_activity?: string | null
+          materials_needed?: string | null
+          objectives?: string | null
+          reflection?: string | null
+          status?: string
+          subject_id?: string | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_plans_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_plans_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marks: {
         Row: {
           assessment_type: string
@@ -1881,6 +1959,53 @@ export type Database = {
           },
           {
             foreignKeyName: "online_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_communication_logs: {
+        Row: {
+          communication_type: string
+          created_at: string
+          follow_up_completed: boolean | null
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          parent_name: string | null
+          student_id: string | null
+          subject: string
+          teacher_id: string
+        }
+        Insert: {
+          communication_type?: string
+          created_at?: string
+          follow_up_completed?: boolean | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          parent_name?: string | null
+          student_id?: string | null
+          subject: string
+          teacher_id: string
+        }
+        Update: {
+          communication_type?: string
+          created_at?: string
+          follow_up_completed?: boolean | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          parent_name?: string | null
+          student_id?: string | null
+          subject?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_communication_logs_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -2713,6 +2838,53 @@ export type Database = {
             columns: ["supplier_invoice_id"]
             isOneToOne: false
             referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_favorite: boolean | null
+          resource_type: string
+          subject_id: string | null
+          tags: string[] | null
+          teacher_id: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          resource_type?: string
+          subject_id?: string | null
+          tags?: string[] | null
+          teacher_id: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          resource_type?: string
+          subject_id?: string | null
+          tags?: string[] | null
+          teacher_id?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_resources_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
