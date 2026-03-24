@@ -13,7 +13,6 @@ type StaffMember = {
   department: string | null;
   bio: string | null;
   photo_url: string | null;
-  email: string | null;
   category: string;
 };
 
@@ -36,8 +35,8 @@ export default function Staff() {
 
   useEffect(() => {
     supabase
-      .from("staff")
-      .select("id, full_name, title, department, bio, photo_url, email, category")
+      .from("staff_public" as any)
+      .select("id, full_name, title, department, bio, photo_url, category")
       .order("full_name")
       .then(({ data }) => { if (data) setStaff(data as StaffMember[]); });
 
