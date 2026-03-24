@@ -3510,16 +3510,17 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={codForm.amount_usd}
-                  onChange={(e) => setCodForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setCodForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={codForm.amount_zig}
-                  onChange={(e) => setCodForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                 />
               </div>
             </div>
