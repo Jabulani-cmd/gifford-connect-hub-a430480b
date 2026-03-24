@@ -347,6 +347,11 @@ export default function MessagingPanel() {
     if (panelTab === "contacts") fetchContacts();
   }, [panelTab, fetchContacts]);
 
+  // Re-run user search when role filter changes
+  useEffect(() => {
+    if (userSearch.length >= 2) searchUsers(userSearch);
+  }, [searchRoleFilter]);
+
   const searchUsers = async (query: string) => {
     setUserSearch(query);
     if (query.length < 2) { setUserResults([]); return; }
