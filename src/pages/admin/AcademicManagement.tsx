@@ -144,7 +144,7 @@ export default function AcademicManagement() {
   const [resultsSearch, setResultsSearch] = useState("");
 
   useEffect(() => {
-    Promise.all([fetchClasses(), fetchSubjects(), fetchStaff(), fetchStudents(), fetchTimetable(), fetchClassSubjects(), fetchExams(), fetchExamResults()])
+    Promise.all([fetchClasses(), fetchSubjects(), fetchStaff(), fetchStudents(), fetchTimetable(), fetchClassSubjects(), fetchExams(), fetchExamResults(), fetchSportsSchedule()])
       .finally(() => setLoading(false));
   }, []);
 
