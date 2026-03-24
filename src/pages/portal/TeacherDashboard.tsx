@@ -282,9 +282,9 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container flex h-20 items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High" className="h-8 w-8 object-contain" />
+            <img src={schoolLogo} alt="Gifford High" className="h-16 w-16 object-contain" />
             <span className="font-heading text-lg font-bold text-primary">Teacher Portal</span>
           </div>
           <div className="flex items-center gap-3">
