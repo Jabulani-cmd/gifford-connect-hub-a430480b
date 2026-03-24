@@ -577,6 +577,26 @@ export default function TeacherDashboard() {
             <StudentExamTimetableTab showAll />
           </TabsContent>
 
+          {/* LESSON PLANS */}
+          <TabsContent value="lesson-plans">
+            <LessonPlansTab userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
+          {/* STUDENT PROGRESS */}
+          <TabsContent value="progress">
+            <StudentProgressTracker userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
+          {/* RESOURCE LIBRARY */}
+          <TabsContent value="resources">
+            <ResourceLibraryTab userId={user!.id} subjects={subjects} />
+          </TabsContent>
+
+          {/* PARENT COMMUNICATION LOG */}
+          <TabsContent value="parent-log">
+            <ParentCommunicationLog userId={user!.id} students={students} />
+          </TabsContent>
+
           {/* MY SCHEDULE */}
           <TabsContent value="schedule">
             <PersonalTimetableEditor />
