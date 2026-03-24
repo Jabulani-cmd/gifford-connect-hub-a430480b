@@ -1150,17 +1150,25 @@ export default function FinanceManagement() {
     setSelectedStudent(student);
     setStudentResults([]);
     setPayForm((p) => ({ ...p, student_search: student.full_name }));
-    // Fetch invoices that are not fully paid OR have a credit (paid_usd > total_usd)
+    // Fetch ALL invoices for this student so we can always pay against existing ones
     const { data } = await supabase
       .from("invoices")
       .select("*")
       .eq("student_id", student.id)
-      .or(`status.ne.paid,paid_usd.gt.total_usd`) // include unpaid, partial, and overpaid
-      .order("created_at");
+      .order("created_at", { ascending: false });
     if (data) {
-      setStudentInvoices(data);
-      if (data.length === 1) {
-        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: data[0].id }));
+      // Prefer unpaid/partial invoices first, but show all
+      const sorted = [...data].sort((a, b) => {
+        const order = { unpaid: 0, partial: 1, paid: 2 };
+        return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+      });
+      setStudentInvoices(sorted);
+      // Auto-select the first unpaid/partial invoice
+      const firstUnpaid = sorted.find((i) => i.status === "unpaid" || i.status === "partial");
+      if (firstUnpaid) {
+        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: firstUnpaid.id }));
+      } else if (sorted.length === 1) {
+        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: sorted[0].id }));
       }
     }
   }
