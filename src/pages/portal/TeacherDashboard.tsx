@@ -303,7 +303,7 @@ export default function TeacherDashboard() {
 
       <div className="container px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-2xl font-bold text-primary mb-1">Welcome, {displayName}</h1>
+          <h1 className="font-heading text-lg sm:text-2xl font-bold text-primary mb-1">Welcome, {displayName}</h1>
           {staffInfo?.staff_number && (
             <p className="text-sm text-muted-foreground mb-4">Staff No: <span className="font-medium text-foreground">{staffInfo.staff_number}</span>{staffInfo.department ? ` · ${staffInfo.department}` : ""}</p>
           )}
