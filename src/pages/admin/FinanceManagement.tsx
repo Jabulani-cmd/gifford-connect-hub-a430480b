@@ -987,6 +987,26 @@ export default function FinanceManagement() {
     }
     setSingleInvLoading(true);
     try {
+      // Check if an invoice already exists for this student/term/year
+      const { data: existingInv } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("student_id", singleInvSelectedStudent.id)
+        .eq("academic_year", singleInvForm.academic_year)
+        .eq("term", singleInvForm.term)
+        .not("notes", "eq", "Auto-generated for advance payment")
+        .maybeSingle();
+
+      if (existingInv) {
+        toast({ 
+          title: "Invoice already exists", 
+          description: `${existingInv.invoice_number} already exists for ${singleInvForm.term} ${singleInvForm.academic_year}. Payments should be recorded against it.`, 
+          variant: "destructive" 
+        });
+        setSingleInvLoading(false);
+        return;
+      }
+
       const invoiceNumber = genInvoiceNum();
       const { data: inv, error } = await supabase
         .from("invoices")
