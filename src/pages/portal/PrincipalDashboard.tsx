@@ -92,8 +92,9 @@ export default function PrincipalDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="students" className="space-y-6">
-          <TabsList className="flex-wrap">
+        <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="flex-wrap h-auto gap-1 w-max sm:w-auto">
             <TabsTrigger value="students"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
             <TabsTrigger value="staff"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
             <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
