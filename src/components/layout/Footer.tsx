@@ -54,9 +54,10 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-primary-foreground/20 pt-6 text-center text-xs text-primary-foreground/60">
-          <div className="mb-4 flex items-center justify-center gap-6">
+          <div className="mb-4 flex items-center justify-center gap-8">
             <img src={moeLogo} alt="Ministry of Education logo" className="h-24 w-24 object-contain" />
             <img src={zimbabweFlag} alt="Flag of Zimbabwe" className="h-16 w-24 rounded object-cover shadow-md" />
+            <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-24 object-contain" />
           </div>
           <span className="mb-3 block text-xs text-primary-foreground/70">Ministry of Primary and Secondary Education</span>
           <p>© {new Date().getFullYear()} Gifford High School. All rights reserved.</p>

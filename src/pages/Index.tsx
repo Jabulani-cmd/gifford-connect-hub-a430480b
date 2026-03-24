@@ -451,10 +451,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-
-          <div className="flex justify-center lg:justify-end">
-            <img src={cambridgeLogo} alt="University of Cambridge" className="h-96 w-96 object-contain opacity-90 md:h-[32rem] md:w-[32rem]" />
-          </div>
         </div>
       </section>
     </Layout>
