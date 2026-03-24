@@ -31,22 +31,18 @@ export default function ForceChangePassword() {
     }
     setLoading(true);
     try {
-      // Update password and clear the flag
-      const { error: pwError } = await supabase.auth.updateUser({ password });
-      if (pwError) throw pwError;
-
-      const { error: metaError } = await supabase.auth.updateUser({
-        data: { must_change_password: false },
+      // Use server-side edge function to change password and clear the flag
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("change-password", {
+        body: { new_password: password },
       });
-      if (metaError) throw metaError;
+
+      if (error) throw error;
 
       toast({ title: "Password updated successfully!" });
       // Refresh session to pick up new metadata, then redirect
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Navigate to login which will redirect based on role
-        navigate("/login");
-      }
+      await supabase.auth.refreshSession();
+      navigate("/login");
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to update password", variant: "destructive" });
     } finally {

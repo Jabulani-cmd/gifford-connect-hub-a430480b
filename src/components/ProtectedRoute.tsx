@@ -43,8 +43,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     );
   }
 
-  // Force password change for admin-created accounts
-  if (user.user_metadata?.must_change_password) {
+  // Force password change for admin-created accounts (check both app_metadata and user_metadata for compatibility)
+  if (user.app_metadata?.must_change_password || user.user_metadata?.must_change_password) {
     return <Navigate to="/change-password" replace />;
   }
 
