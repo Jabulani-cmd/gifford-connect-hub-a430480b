@@ -139,17 +139,7 @@ export default function AdminSupervisorDashboard() {
         await supabase.from("invoices").update({ status: "voided" } as any).eq("id", target_id);
         toast({ title: "Invoice voided" });
       } else if (action_type === "void_payment") {
-        // Reverse payment on invoice
-        const metadata = selectedRequest.metadata as any;
-        if (metadata?.invoice_id && metadata?.amount_usd !== undefined) {
-          const { data: inv } = await supabase.from("invoices").select("paid_usd, paid_zig, total_usd").eq("id", metadata.invoice_id).single();
-          if (inv) {
-            const newPaidUsd = Math.max(0, Number(inv.paid_usd) - Number(metadata.amount_usd));
-            const newPaidZig = Math.max(0, Number(inv.paid_zig) - Number(metadata.amount_zig || 0));
-            const newStatus = newPaidUsd <= 0 ? "unpaid" : newPaidUsd >= Number(inv.total_usd) ? "paid" : "partial";
-            await supabase.from("invoices").update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus }).eq("id", metadata.invoice_id);
-          }
-        }
+        // Invoice totals are synchronized automatically by backend payment triggers.
         await supabase.from("payments").delete().eq("id", target_id);
         toast({ title: "Payment voided & reversed" });
       }
