@@ -737,6 +737,17 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
             title="Crop Tradition Image"
           />
         )}
+        {ctaCropSrc && (
+          <ImageCropper
+            imageSrc={ctaCropSrc}
+            open={ctaCropOpen}
+            onClose={() => { setCtaCropOpen(false); setCtaCropSrc(null); }}
+            onCropComplete={handleCtaCropComplete}
+            aspectRatio={1}
+            cropShape="rect"
+            title="Crop CTA Image"
+          />
+        )}
 
         <Tabs defaultValue="announcements" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide rounded-xl border bg-card p-1.5">
