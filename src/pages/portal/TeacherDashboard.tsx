@@ -561,7 +561,7 @@ export default function TeacherDashboard() {
 
           {/* EXAM TIMETABLE */}
           <TabsContent value="exam-timetable">
-            <StudentExamTimetableTab />
+            <StudentExamTimetableTab showAll />
           </TabsContent>
 
           {/* MY SCHEDULE */}
