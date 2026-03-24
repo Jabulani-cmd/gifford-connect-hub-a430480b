@@ -47,7 +47,7 @@ const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props
         <img
           src={photoUrl}
           alt="The Principal"
-          className="h-[420px] w-full rounded-xl object-cover object-top shadow-2xl"
+          className="aspect-[3/4] w-full rounded-xl object-cover object-top shadow-2xl lg:aspect-[4/5]"
         />
       ) : (
         <div className="flex h-[420px] w-full items-center justify-center rounded-xl bg-muted shadow-2xl">
