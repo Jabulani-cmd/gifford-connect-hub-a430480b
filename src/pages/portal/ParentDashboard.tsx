@@ -102,6 +102,7 @@ export default function ParentDashboard() {
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [rankings, setRankings] = useState<any>(null);
+  const [childClassId, setChildClassId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
