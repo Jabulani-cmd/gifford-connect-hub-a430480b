@@ -2840,17 +2840,18 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={feeForm.amount_usd}
-                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                   placeholder="0.00"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Amount (ZiG)</Label>
+                <Label>Amount (ZiG) <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={feeForm.amount_zig}
-                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                   placeholder="0.00"
                 />
               </div>
