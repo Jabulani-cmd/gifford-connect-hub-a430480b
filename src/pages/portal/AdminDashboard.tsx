@@ -167,7 +167,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   }, [ttSelectedClassId]);
 
   const fetchSiteSettings = async () => {
-    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image"]);
+    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image", "cta_image"]);
     if (data) {
       data.forEach((s) => {
         if (s.setting_key === "achievements_image") setAchievementsImageUrl(s.setting_value);
