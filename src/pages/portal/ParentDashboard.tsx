@@ -558,6 +558,7 @@ interface TabContentProps {
   activeTab: TabId;
   setActiveTab: (tab: TabId) => void;
   child: ChildInfo | null;
+  childClassId: string | null;
   attendanceData: any[];
   attendancePercent: number;
   invoices: any[];
