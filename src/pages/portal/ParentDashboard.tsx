@@ -40,7 +40,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
-import StudentMarksTab from "@/components/student/StudentMarksTab"; // 👈 import for marks tab
+import StudentMarksTab from "@/components/student/StudentMarksTab";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
