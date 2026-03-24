@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import moeLogo from "@/assets/ministry-of-education-logo.png";
-import zimbabweFlag from "@/assets/zimbabwe-flag.jpg";
 import cambridgeLogo from "@/assets/cambridge-logo.png";
 import zimsecLogo from "@/assets/zimsec-logo.png";
 
@@ -55,11 +54,10 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-primary-foreground/20 pt-6 text-center text-xs text-primary-foreground/60">
-          <div className="mb-4 flex items-center justify-center gap-10">
-            <img src={moeLogo} alt="Ministry of Education logo" className="h-32 w-32 object-contain" />
-            <img src={zimbabweFlag} alt="Flag of Zimbabwe" className="h-20 w-32 rounded object-cover shadow-md" />
-            <img src={cambridgeLogo} alt="University of Cambridge" className="h-64 w-64 object-contain" />
-            <img src={zimsecLogo} alt="ZIMSEC" className="h-64 w-64 object-contain" />
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-10">
+            <img src={moeLogo} alt="Ministry of Education logo" className="h-20 w-20 object-contain sm:h-24 sm:w-24 lg:h-32 lg:w-32" />
+            <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-auto max-w-[40vw] object-contain sm:h-32 lg:h-56" />
+            <img src={zimsecLogo} alt="ZIMSEC" className="h-24 w-auto max-w-[40vw] object-contain sm:h-32 lg:h-56" />
           </div>
           <span className="mb-3 block text-xs text-primary-foreground/70">Ministry of Primary and Secondary Education</span>
           <p>© {new Date().getFullYear()} Gifford High School. All rights reserved.</p>
