@@ -261,8 +261,23 @@ export default function TeacherDashboard() {
   const handleLogout = async () => { await signOut(); navigate("/login"); };
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "Teacher";
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-  const timeSlots = ["07:30", "08:30", "10:00", "11:00", "13:00"];
-  const getTimetableCell = (ts: string, di: number) => timetableData.find(t => t.time_slot === ts && t.day_of_week === di)?.subjects?.name || "—";
+  const ttTimeSlots = [
+    { start: "07:30", end: "08:10" },
+    { start: "08:10", end: "08:50" },
+    { start: "08:50", end: "09:30" },
+    { start: "09:30", end: "09:50", isBreak: true, label: "Break" },
+    { start: "09:50", end: "10:30" },
+    { start: "10:30", end: "11:10" },
+    { start: "11:10", end: "11:50" },
+    { start: "11:50", end: "12:30" },
+    { start: "12:30", end: "13:30", isBreak: true, label: "Lunch" },
+    { start: "13:30", end: "14:10" },
+    { start: "14:10", end: "14:50" },
+  ];
+  const getTimetableCell = (start: string, di: number) => {
+    const entry = timetableData.find(t => t.start_time === start && t.day_of_week === di);
+    return entry?.subjects?.name || "—";
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
