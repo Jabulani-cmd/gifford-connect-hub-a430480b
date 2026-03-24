@@ -40,7 +40,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
-import StudentMarksTab from "@/components/student/StudentMarksTab"; // 👈 import for marks tab
+import StudentMarksTab from "@/components/student/StudentMarksTab";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
@@ -87,6 +88,7 @@ function getGradeColor(grade: string): string {
 export default function ParentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const { rate, usdToZig } = useExchangeRate();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [children, setChildren] = useState<ChildInfo[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
@@ -982,10 +984,12 @@ function TabContent(props: TabContentProps) {
               </p>
               <p className="text-sm text-muted-foreground">
                 {feeBalance > 0 ? "Outstanding Balance" : feeBalance < 0 ? "Credit Balance" : "No Outstanding Balance"}
+                {feeBalance !== 0 && ` (ZiG ${usdToZig(Math.abs(feeBalance)).toFixed(2)})`}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Total Invoiced: ${totalInvoiced.toFixed(2)} · Total Paid: ${totalPaidAll.toFixed(2)}
+                Total Invoiced: ${totalInvoiced.toFixed(2)} (ZiG {usdToZig(totalInvoiced).toFixed(2)}) · Total Paid: ${totalPaidAll.toFixed(2)}
               </p>
+              <p className="text-xs text-muted-foreground">Rate: 1 USD = {rate} ZiG</p>
             </div>
           </CardContent>
         </Card>
@@ -1059,10 +1063,11 @@ function TabContent(props: TabContentProps) {
                           <td className="px-3 py-2 text-muted-foreground">
                             {inv.term} {inv.academic_year}
                           </td>
-                          <td className="px-3 py-2 text-center">${Number(inv.total_usd || 0).toFixed(2)}</td>
+                          <td className="px-3 py-2 text-center">${Number(inv.total_usd || 0).toFixed(2)}<br/><span className="text-xs text-muted-foreground">ZiG {usdToZig(Number(inv.total_usd || 0)).toFixed(2)}</span></td>
                           <td className="px-3 py-2 text-center text-emerald-600">${paid.toFixed(2)}</td>
                           <td className={`px-3 py-2 text-center font-bold ${bal < 0 ? "text-emerald-600" : bal > 0 ? "text-red-600" : ""}`}>
                             {bal < 0 ? `+$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
+                            <br/><span className="text-xs font-normal text-muted-foreground">ZiG {usdToZig(Math.abs(bal)).toFixed(2)}</span>
                           </td>
                           <td className="px-3 py-2 text-center">
                             <Badge

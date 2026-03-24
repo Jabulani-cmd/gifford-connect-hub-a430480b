@@ -23,6 +23,7 @@ import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
 import PasswordManagement from "@/components/admin/PasswordManagement";
+import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -999,6 +1000,9 @@ export default function AdminDashboard() {
 
           {/* Site Images Tab */}
           <TabsContent value="site-images">
+            <div className="mb-6 max-w-md">
+              <ExchangeRateCard />
+            </div>
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Principal Photo */}
               <Card>

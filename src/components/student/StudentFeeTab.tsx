@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -19,6 +20,7 @@ interface Props {
 
 export default function StudentFeeTab({ studentId }: Props) {
   const { toast } = useToast();
+  const { rate, usdToZig } = useExchangeRate();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +147,10 @@ export default function StudentFeeTab({ studentId }: Props) {
               {balanceUsd < 0 ? "Credit Balance" : balanceUsd > 0 ? "Outstanding Balance" : "No Balance"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Total Invoiced: ${fmt(totalInvoicedUsd)} · Total Paid: ${fmt(totalPaidUsd)}
+              Total Invoiced: ${fmt(totalInvoicedUsd)} (ZiG {fmt(usdToZig(totalInvoicedUsd))}) · Total Paid: ${fmt(totalPaidUsd)} (ZiG {fmt(usdToZig(totalPaidUsd))})
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Exchange Rate: 1 USD = {rate} ZiG
             </p>
           </div>
         </CardContent>
@@ -166,9 +171,10 @@ export default function StudentFeeTab({ studentId }: Props) {
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Term</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right">Total (USD)</TableHead>
+                    <TableHead className="text-right">Total (ZiG)</TableHead>
+                    <TableHead className="text-right">Paid (USD)</TableHead>
+                    <TableHead className="text-right">Balance (USD)</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -184,13 +190,14 @@ export default function StudentFeeTab({ studentId }: Props) {
                           {inv.term} {inv.academic_year}
                         </TableCell>
                         <TableCell className="text-right">${fmt(inv.total_usd)}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">ZiG {fmt(usdToZig(inv.total_usd))}</TableCell>
                         <TableCell className="text-right">${fmt(actualPaid)}</TableCell>
                         <TableCell className="text-right">
                           {(() => {
                             if (balance < 0) {
                               return <span className="text-green-600">+${fmt(Math.abs(balance))} credit</span>;
                             }
-                            return fmt(balance);
+                            return `$${fmt(balance)}`;
                           })()}
                         </TableCell>
                         <TableCell className="text-center">
