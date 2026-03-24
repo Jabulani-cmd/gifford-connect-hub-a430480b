@@ -9,11 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildReceiptHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function ReceiptSearchTab() {
   const { toast } = useToast();
+  const { usdToZig } = useExchangeRate();
   const [searchTerm, setSearchTerm] = useState("");
   const [receipts, setReceipts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,12 @@ export default function ReceiptSearchTab() {
         );
       });
 
-      setReceipts(filtered);
+      setReceipts(
+        filtered.map((p: any) => ({
+          ...p,
+          amount_zig: Number(usdToZig(Number(p.amount_usd || 0)).toFixed(2)),
+        })),
+      );
     } catch (err: any) {
       toast({ title: "Search failed", description: err.message, variant: "destructive" });
       setReceipts([]);
