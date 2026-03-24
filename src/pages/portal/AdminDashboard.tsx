@@ -60,10 +60,17 @@ const timetableSlots = [
   { start: "16:10", end: "17:00" },
 ];
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  portalTitle?: string;
+  portalRole?: string;
+}
+
+export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboardProps = {}) {
   const { toast } = useToast();
   const { signOut, user, role } = useAuth();
-  const isFinanceUser = role === 'finance' || role === 'admin_supervisor';
+  const isFinanceUser = role === 'finance' || role === 'admin_supervisor' || role === 'principal';
+  const displayTitle = portalTitle || "Admin Portal";
+  const displayRole = portalRole || "Admin";
   const navigate = useNavigate();
 
   // Announcements
@@ -598,10 +605,10 @@ export default function AdminDashboard() {
         <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
             <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
-            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Admin Portal</span>
+            <span className="font-heading text-sm sm:text-lg font-bold text-primary">{displayTitle}</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden sm:inline text-sm text-muted-foreground">Admin</span>
+            <span className="hidden sm:inline text-sm text-muted-foreground">{displayRole}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
             <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
@@ -610,7 +617,7 @@ export default function AdminDashboard() {
 
       <div className="container px-3 sm:px-4 py-4 sm:py-8">
         <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6 font-heading text-lg sm:text-2xl font-bold text-primary">
-          Admin Dashboard
+          {displayRole} Dashboard
         </motion.h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
