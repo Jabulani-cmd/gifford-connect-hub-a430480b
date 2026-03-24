@@ -975,14 +975,26 @@ export default function MessagingPanel() {
                   ))}
                 </div>
               )}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search users by name..."
-                  className="pl-8"
-                  value={userSearch}
-                  onChange={e => searchUsers(e.target.value)}
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users by name..."
+                    className="pl-8"
+                    value={userSearch}
+                    onChange={e => searchUsers(e.target.value)}
+                  />
+                </div>
+                <Select value={searchRoleFilter} onValueChange={v => { setSearchRoleFilter(v); if (userSearch.length >= 2) searchUsers(userSearch); }}>
+                  <SelectTrigger className="w-[110px] h-9 text-xs">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleFilterOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {userResults.length > 0 && (
                 <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
