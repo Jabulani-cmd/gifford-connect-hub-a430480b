@@ -1101,6 +1101,15 @@ function TabContent(props: TabContentProps) {
     );
   }
 
+  if (activeTab === "timetable") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Class Timetable — {child.full_name}</h2>
+        <StudentTimetableTab studentClassId={childClassId} studentId={child.id} />
+      </motion.div>
+    );
+  }
+
   if (activeTab === "exam-timetable") {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
