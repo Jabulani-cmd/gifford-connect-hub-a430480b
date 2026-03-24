@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import moeLogo from "@/assets/ministry-of-education-logo.png";
 import zimbabweFlag from "@/assets/zimbabwe-flag.jpg";
+import cambridgeLogo from "@/assets/cambridge-logo.png";
 
 export default function Footer() {
   return (
