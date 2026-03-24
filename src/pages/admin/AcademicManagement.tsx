@@ -1141,6 +1141,49 @@ export default function AcademicManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* Sports Schedule Edit Dialog */}
+      <Dialog open={!!sportsEditCell} onOpenChange={() => setSportsEditCell(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Sports/Club Slot</DialogTitle>
+            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start}–${sportsEditCell.slot.end}`}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="space-y-2"><Label>Activity</Label>
+              <Select value={sportsActivity} onValueChange={setSportsActivity}>
+                <SelectTrigger><SelectValue placeholder="Select activity (leave empty to clear)" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="__clear">— Clear —</SelectItem>
+                  {sportsActivityOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Type</Label>
+              <Select value={sportsType} onValueChange={setSportsType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sport">Sport</SelectItem>
+                  <SelectItem value="club">Club</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Coach / Supervisor</Label>
+              <Select value={sportsCoach} onValueChange={setSportsCoach}>
+                <SelectTrigger><SelectValue placeholder="Select coach" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Venue</Label>
+              <Input value={sportsVenue} onChange={e => setSportsVenue(e.target.value)} placeholder="e.g. Main Field" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSportsEditCell(null)}>Cancel</Button>
+            <Button onClick={() => { if (sportsActivity === "__clear") setSportsActivity(""); saveSportsEntry(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Exam Dialog */}
       <Dialog open={examDialogOpen} onOpenChange={setExamDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
