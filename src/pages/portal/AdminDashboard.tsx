@@ -121,6 +121,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [traditionCropSrc, setTraditionCropSrc] = useState<string | null>(null);
   const [traditionCropOpen, setTraditionCropOpen] = useState(false);
 
+  // CTA image
+  const [ctaImageUrl, setCtaImageUrl] = useState<string | null>(null);
+  const ctaFileRef = useRef<HTMLInputElement>(null);
+  const [ctaCropSrc, setCtaCropSrc] = useState<string | null>(null);
+  const [ctaCropOpen, setCtaCropOpen] = useState(false);
+
   // Principal photo
   const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string | null>(null);
   const principalFileRef = useRef<HTMLInputElement>(null);
