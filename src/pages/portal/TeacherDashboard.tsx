@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  LogOut, BookOpen, Bell, BarChart3, Calendar, ClipboardList,
+  LogOut, BookOpen, Bell, BarChart3, Calendar, CalendarDays, ClipboardList,
   FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
