@@ -69,6 +69,7 @@ import {
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
@@ -119,6 +120,11 @@ function statusBadge(status: string) {
 export default function FinanceManagement() {
   const { toast } = useToast();
   const { user, role } = useAuth();
+  const { rate, usdToZig } = useExchangeRate();
+  const autoZig = (usd: string) => {
+    const n = parseFloat(usd);
+    return isNaN(n) ? "" : (n * rate).toFixed(2);
+  };
   const isFinanceOrAdmin =
     role === "finance" || role === "admin" || role === "admin_supervisor" || role === "principal";
   const isFinanceClerk = role === "finance"; // needs approval for destructive actions
@@ -594,7 +600,7 @@ export default function FinanceManagement() {
       boarding_status: fee.boarding_status,
       description: fee.description || "",
       amount_usd: String(fee.amount_usd),
-      amount_zig: String(fee.amount_zig),
+      amount_zig: String((fee.amount_usd * rate).toFixed(2)),
     });
     setFeeDialogOpen(true);
   }
@@ -965,7 +971,7 @@ export default function FinanceManagement() {
         setSingleInvForm((f) => ({
           ...f,
           amount_usd: String(applicable[0].amount_usd),
-          amount_zig: String(applicable[0].amount_zig),
+          amount_zig: String((applicable[0].amount_usd * rate).toFixed(2)),
           description: applicable[0].description || "",
         }));
       } else {
@@ -2834,17 +2840,18 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={feeForm.amount_usd}
-                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                   placeholder="0.00"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Amount (ZiG)</Label>
+                <Label>Amount (ZiG) <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={feeForm.amount_zig}
-                  onChange={(e) => setFeeForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                   placeholder="0.00"
                 />
               </div>
@@ -3132,17 +3139,18 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={payForm.amount_usd}
-                  onChange={(e) => setPayForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setPayForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                   placeholder="0.00"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={payForm.amount_zig}
-                  onChange={(e) => setPayForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                   placeholder="0.00"
                 />
               </div>
@@ -3275,16 +3283,17 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={siForm.amount_usd}
-                  onChange={(e) => setSiForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setSiForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={siForm.amount_zig}
-                  onChange={(e) => setSiForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -3383,16 +3392,17 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={spForm.amount_usd}
-                  onChange={(e) => setSpForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setSpForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={spForm.amount_zig}
-                  onChange={(e) => setSpForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -3500,16 +3510,17 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={codForm.amount_usd}
-                  onChange={(e) => setCodForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setCodForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={codForm.amount_zig}
-                  onChange={(e) => setCodForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -3601,16 +3612,17 @@ export default function FinanceManagement() {
                   type="number"
                   step="0.01"
                   value={pcForm.amount_usd}
-                  onChange={(e) => setPcForm((p) => ({ ...p, amount_usd: e.target.value }))}
+                  onChange={(e) => setPcForm((p) => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={pcForm.amount_zig}
-                  onChange={(e) => setPcForm((p) => ({ ...p, amount_zig: e.target.value }))}
+                  readOnly
+                  className="bg-muted"
                 />
               </div>
             </div>

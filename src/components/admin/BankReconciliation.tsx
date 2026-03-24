@@ -13,12 +13,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Search, CheckCircle, AlertTriangle, Loader2, Printer } from "lucide-react";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function BankReconciliation() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { rate } = useExchangeRate();
+  const autoZig = (usd: string) => { const n = parseFloat(usd); return isNaN(n) ? "" : (n * rate).toFixed(2); };
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -306,11 +309,11 @@ export default function BankReconciliation() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Amount USD</Label>
-                <Input type="number" step="0.01" value={form.amount_usd} onChange={e => setForm(p => ({ ...p, amount_usd: e.target.value }))} />
+                <Input type="number" step="0.01" value={form.amount_usd} onChange={e => setForm(p => ({ ...p, amount_usd: e.target.value, amount_zig: autoZig(e.target.value) }))} />
               </div>
               <div className="space-y-1">
-                <Label>Amount ZiG</Label>
-                <Input type="number" step="0.01" value={form.amount_zig} onChange={e => setForm(p => ({ ...p, amount_zig: e.target.value }))} />
+                <Label>Amount ZiG <span className="text-xs text-muted-foreground">auto</span></Label>
+                <Input type="number" step="0.01" value={form.amount_zig} readOnly className="bg-muted" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
