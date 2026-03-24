@@ -121,6 +121,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [traditionCropSrc, setTraditionCropSrc] = useState<string | null>(null);
   const [traditionCropOpen, setTraditionCropOpen] = useState(false);
 
+  // CTA image
+  const [ctaImageUrl, setCtaImageUrl] = useState<string | null>(null);
+  const ctaFileRef = useRef<HTMLInputElement>(null);
+  const [ctaCropSrc, setCtaCropSrc] = useState<string | null>(null);
+  const [ctaCropOpen, setCtaCropOpen] = useState(false);
+
   // Principal photo
   const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string | null>(null);
   const principalFileRef = useRef<HTMLInputElement>(null);
@@ -161,12 +167,13 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   }, [ttSelectedClassId]);
 
   const fetchSiteSettings = async () => {
-    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image"]);
+    const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image", "cta_image"]);
     if (data) {
       data.forEach((s) => {
         if (s.setting_key === "achievements_image") setAchievementsImageUrl(s.setting_value);
         if (s.setting_key === "principal_photo") setPrincipalPhotoUrl(s.setting_value);
         if (s.setting_key === "tradition_image") setTraditionImageUrl(s.setting_value);
+        if (s.setting_key === "cta_image") setCtaImageUrl(s.setting_value);
       });
     }
   };
@@ -258,6 +265,37 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       }
       setTraditionImageUrl(url);
       toast({ title: "Tradition image updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
+  const handleCtaFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCtaCropSrc(reader.result as string);
+      setCtaCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (ctaFileRef.current) ctaFileRef.current.value = "";
+  };
+
+  const handleCtaCropComplete = async (blob: Blob) => {
+    setUploading(true);
+    try {
+      const file = new File([blob], `cta_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const url = await uploadFile(file, "site-images");
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("setting_key", "cta_image");
+      if (existing && existing.length > 0) {
+        await supabase.from("site_settings").update({ setting_value: url, updated_at: new Date().toISOString() }).eq("setting_key", "cta_image");
+      } else {
+        await supabase.from("site_settings").insert({ setting_key: "cta_image", setting_value: url });
+      }
+      setCtaImageUrl(url);
+      toast({ title: "CTA image updated!" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
@@ -1044,6 +1082,21 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                   </Button>
                   {traditionImageUrl && (
                     <img src={traditionImageUrl} alt="Tradition section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                  )}
+                </CardContent>
+               </Card>
+
+              {/* CTA Section Image */}
+              <Card>
+                <CardHeader><CardTitle className="font-heading">CTA Section Image</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">This image appears on the homepage next to the "Ready to Join the Gifford Family?" section.</p>
+                  <input type="file" accept="image/*" ref={ctaFileRef} onChange={handleCtaFileSelect} className="hidden" />
+                  <Button onClick={() => ctaFileRef.current?.click()} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
+                  </Button>
+                  {ctaImageUrl && (
+                    <img src={ctaImageUrl} alt="CTA section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
                   )}
                 </CardContent>
               </Card>

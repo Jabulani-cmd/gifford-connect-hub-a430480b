@@ -94,7 +94,7 @@ export default function Home() {
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
   const [traditionImage, setTraditionImage] = useState<string | null>(null);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [ctaImage, setCtaImage] = useState<string | null>(null);
   const [facilityImages, setFacilityImages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -108,11 +108,12 @@ export default function Home() {
       if (data) setAnnouncements(data);
     };
     const fetchSiteImages = async () => {
-      const { data } = await supabase.from("site_settings").select("setting_key, setting_value").in("setting_key", ["achievements_image", "tradition_image"]);
+      const { data } = await supabase.from("site_settings").select("setting_key, setting_value").in("setting_key", ["achievements_image", "tradition_image", "cta_image"]);
       if (data) {
         data.forEach((s) => {
           if (s.setting_key === "achievements_image") setAchievementsImage(s.setting_value);
           if (s.setting_key === "tradition_image") setTraditionImage(s.setting_value);
+          if (s.setting_key === "cta_image") setCtaImage(s.setting_value);
         });
       }
     };
@@ -450,6 +451,16 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
+          </div>
+
+          <div className="hidden lg:flex items-center justify-center">
+            {ctaImage ? (
+              <img src={ctaImage} alt="Join Gifford High School" className="h-80 w-80 rounded-xl object-cover shadow-lg" />
+            ) : (
+              <div className="flex h-80 w-80 items-center justify-center rounded-xl border-2 border-dashed border-white/30 bg-white/10">
+                <img src={schoolLogo} alt="Gifford High School" className="h-32 w-32 object-contain opacity-40" />
+              </div>
+            )}
           </div>
         </div>
       </section>
