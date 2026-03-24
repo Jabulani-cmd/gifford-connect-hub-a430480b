@@ -85,8 +85,8 @@ const highlights = [
 /* ---------- Facility images for the stats/facts carousel ---------- */
 const stats = [
   { value: "1927", label: "Year Founded" },
-  { value: "2000+", label: "Students" },
-  { value: "100+", label: "Teaching Staff" },
+  { value: "800+", label: "Students" },
+  { value: "45+", label: "Teaching Staff" },
   { value: "96%", label: "Pass Rate" },
 ];
 
