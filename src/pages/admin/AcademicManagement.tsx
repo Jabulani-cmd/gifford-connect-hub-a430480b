@@ -528,6 +528,7 @@ export default function AcademicManagement() {
           <TabsTrigger value="subjects"><BookOpen className="mr-1 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="teacher-assign"><UserCheck className="mr-1 h-4 w-4" /> Teacher Assignments</TabsTrigger>
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
+          <TabsTrigger value="sports-schedule"><Trophy className="mr-1 h-4 w-4" /> Sports & Clubs</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="exams"><GraduationCap className="mr-1 h-4 w-4" /> Exams</TabsTrigger>
           <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
