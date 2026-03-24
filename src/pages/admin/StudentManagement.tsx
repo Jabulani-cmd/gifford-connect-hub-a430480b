@@ -534,6 +534,15 @@ export default function StudentManagement() {
 
   return (
     <div className="space-y-6">
+      <Tabs defaultValue="students">
+        <TabsList className="mb-4">
+          <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="term-registration"><UserCheck className="mr-1 h-4 w-4" /> Term Registration</TabsTrigger>
+        </TabsList>
+        <TabsContent value="term-registration">
+          <TermRegistration />
+        </TabsContent>
+        <TabsContent value="students">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-2xl font-bold text-foreground">Student Management</h2>
         <div className="flex flex-wrap gap-2">
