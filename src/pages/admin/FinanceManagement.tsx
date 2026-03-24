@@ -120,6 +120,11 @@ function statusBadge(status: string) {
 export default function FinanceManagement() {
   const { toast } = useToast();
   const { user, role } = useAuth();
+  const { rate, usdToZig } = useExchangeRate();
+  const autoZig = (usd: string) => {
+    const n = parseFloat(usd);
+    return isNaN(n) ? "" : (n * rate).toFixed(2);
+  };
   const isFinanceOrAdmin =
     role === "finance" || role === "admin" || role === "admin_supervisor" || role === "principal";
   const isFinanceClerk = role === "finance"; // needs approval for destructive actions
