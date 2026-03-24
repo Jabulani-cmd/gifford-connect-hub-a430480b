@@ -284,11 +284,27 @@ export default function StudentManagement() {
   const [provisionResult, setProvisionResult] = useState<{ email: string; temp_password: string; admission_number: string } | null>(null);
   const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
 
-  useEffect(() => { fetchStudents(); fetchSubjects(); }, []);
+  // Boarding fields
+  const [hostels, setHostels] = useState<{ id: string; name: string; total_capacity: number; current_occupancy: number }[]>([]);
+  const [rooms, setRooms] = useState<{ id: string; hostel_id: string; room_number: string; capacity: number; current_occupancy: number }[]>([]);
+  const [selectedHostel, setSelectedHostel] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [bedNumber, setBedNumber] = useState("");
+
+  useEffect(() => { fetchStudents(); fetchSubjects(); fetchBoardingData(); }, []);
 
   const fetchSubjects = async () => {
     const { data } = await supabase.from("subjects").select("id, name, department").order("name");
     if (data) setDbSubjects(data);
+  };
+
+  const fetchBoardingData = async () => {
+    const [h, r] = await Promise.all([
+      supabase.from("hostels").select("id, name, total_capacity, current_occupancy").eq("is_active", true).order("name"),
+      supabase.from("rooms").select("id, hostel_id, room_number, capacity, current_occupancy").order("room_number"),
+    ]);
+    if (h.data) setHostels(h.data);
+    if (r.data) setRooms(r.data);
   };
 
   const fetchStudents = async () => {
@@ -316,6 +332,9 @@ export default function StudentManagement() {
     setFormData(emptyForm);
     setPhotoUrl(null);
     setErrors({});
+    setSelectedHostel("");
+    setSelectedRoom("");
+    setBedNumber("");
     setDialogOpen(true);
   };
 
@@ -343,6 +362,25 @@ export default function StudentManagement() {
     });
     setPhotoUrl(s.profile_photo_url);
     setErrors({});
+    // Load existing boarding allocation if boarder
+    if ((s as any).boarding_status === "boarder") {
+      supabase.from("bed_allocations").select("room_id, bed_number").eq("student_id", s.id).eq("status", "active").maybeSingle().then(({ data: alloc }) => {
+        if (alloc) {
+          const room = rooms.find(r => r.id === alloc.room_id);
+          setSelectedHostel(room ? room.hostel_id : "");
+          setSelectedRoom(alloc.room_id);
+          setBedNumber(alloc.bed_number || "");
+        } else {
+          setSelectedHostel("");
+          setSelectedRoom("");
+          setBedNumber("");
+        }
+      });
+    } else {
+      setSelectedHostel("");
+      setSelectedRoom("");
+      setBedNumber("");
+    }
     setDialogOpen(true);
   };
 
@@ -359,9 +397,50 @@ export default function StudentManagement() {
 
     const payload = { ...result.data, profile_photo_url: photoUrl };
 
+    // Helper to allocate boarding
+    const allocateBoarding = async (studentId: string) => {
+      if ((formData as any).boarding_status === "boarder" && selectedRoom) {
+        // Remove existing active allocation for this student
+        await supabase.from("bed_allocations").update({ status: "vacated", allocation_end_date: new Date().toISOString().split("T")[0] }).eq("student_id", studentId).eq("status", "active");
+        // Create new allocation
+        const { error: allocErr } = await supabase.from("bed_allocations").insert({
+          room_id: selectedRoom,
+          student_id: studentId,
+          bed_number: bedNumber || null,
+          status: "active",
+        });
+        if (allocErr) {
+          toast({ title: "Warning", description: "Student saved but hostel allocation failed: " + allocErr.message, variant: "destructive" });
+        } else {
+          // Update room & hostel occupancy
+          const room = rooms.find(r => r.id === selectedRoom);
+          if (room) {
+            await supabase.from("rooms").update({ current_occupancy: room.current_occupancy + 1 }).eq("id", room.id);
+            const hostel = hostels.find(h => h.id === room.hostel_id);
+            if (hostel) await supabase.from("hostels").update({ current_occupancy: hostel.current_occupancy + 1 }).eq("id", hostel.id);
+          }
+        }
+      } else if ((formData as any).boarding_status === "day") {
+        // If changed to day, vacate any active allocation
+        const { data: existing } = await supabase.from("bed_allocations").select("id, room_id").eq("student_id", studentId).eq("status", "active");
+        if (existing && existing.length > 0) {
+          for (const alloc of existing) {
+            await supabase.from("bed_allocations").update({ status: "vacated", allocation_end_date: new Date().toISOString().split("T")[0] }).eq("id", alloc.id);
+            const room = rooms.find(r => r.id === alloc.room_id);
+            if (room) {
+              await supabase.from("rooms").update({ current_occupancy: Math.max(0, room.current_occupancy - 1) }).eq("id", room.id);
+              const hostel = hostels.find(h => h.id === room.hostel_id);
+              if (hostel) await supabase.from("hostels").update({ current_occupancy: Math.max(0, hostel.current_occupancy - 1) }).eq("id", hostel.id);
+            }
+          }
+        }
+      }
+    };
+
     if (editingId) {
       const { error } = await supabase.from("students").update(payload).eq("id", editingId);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
+      await allocateBoarding(editingId);
       toast({ title: "Student updated!" });
     } else {
       // Generate a guaranteed-unique admission number using timestamp
@@ -427,6 +506,9 @@ export default function StudentManagement() {
       } catch (provErr: any) {
         toast({ title: "Student added but account creation failed", description: provErr?.message, variant: "destructive" });
       }
+
+      // Allocate boarding if applicable
+      await allocateBoarding(newStudent.id);
 
       toast({ title: "Student added!", description: `Student number: ${newStudent?.admission_number}` });
     }
@@ -817,7 +899,7 @@ export default function StudentManagement() {
 
             <div className="space-y-1">
               <Label>Boarding Status *</Label>
-              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => updateField("boarding_status", v)}>
+              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => { updateField("boarding_status", v); if (v === "day") { setSelectedHostel(""); setSelectedRoom(""); setBedNumber(""); } }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">Day Scholar</SelectItem>
@@ -825,6 +907,49 @@ export default function StudentManagement() {
                 </SelectContent>
               </Select>
             </div>
+
+            {(formData as any).boarding_status === "boarder" && (
+              <div className="col-span-full rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
+                <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Hostel Allocation
+                </p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hostel</Label>
+                    <Select value={selectedHostel} onValueChange={v => { setSelectedHostel(v); setSelectedRoom(""); }}>
+                      <SelectTrigger><SelectValue placeholder="Select hostel..." /></SelectTrigger>
+                      <SelectContent>
+                        {hostels.map(h => (
+                          <SelectItem key={h.id} value={h.id}>
+                            {h.name} ({h.current_occupancy}/{h.total_capacity})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Room</Label>
+                    <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={!selectedHostel}>
+                      <SelectTrigger><SelectValue placeholder="Select room..." /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.filter(r => r.hostel_id === selectedHostel).map(r => (
+                          <SelectItem key={r.id} value={r.id}>
+                            Room {r.room_number} ({r.current_occupancy}/{r.capacity})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bed Number (optional)</Label>
+                    <Input value={bedNumber} onChange={e => setBedNumber(e.target.value)} placeholder="e.g. B3" />
+                  </div>
+                </div>
+                {!selectedHostel && (
+                  <p className="text-xs text-muted-foreground">Select a hostel and room to allocate this student. You can also do this later from Boarding Management.</p>
+                )}
+              </div>
+            )}
             <div className="space-y-1">
               <Label>Enrollment Date</Label>
               <Input type="date" value={formData.enrollment_date || ""} onChange={e => updateField("enrollment_date", e.target.value)} />
