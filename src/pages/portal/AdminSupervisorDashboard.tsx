@@ -167,23 +167,24 @@ export default function AdminSupervisorDashboard() {
   return (
     <div className="min-h-screen bg-section-warm">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <img src={schoolLogo} alt="Logo" className="h-20 w-20 object-contain" />
+        <div className="container mx-auto flex items-center justify-between px-3 sm:px-4 py-2 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src={schoolLogo} alt="Logo" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
             <div>
-              <h1 className="font-heading text-lg font-bold text-primary">Admin Supervisor Portal</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <h1 className="font-heading text-sm sm:text-lg font-bold text-primary">Admin Supervisor</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {pendingCount > 0 && (
-              <Badge variant="destructive" className="animate-pulse">{pendingCount} Pending</Badge>
+              <Badge variant="destructive" className="animate-pulse text-[10px] sm:text-xs">{pendingCount}</Badge>
             )}
             <NotificationBell />
             <MessagingPanel />
-            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
+            <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:flex gap-2">
               <LogOut className="h-4 w-4" /> Sign Out
             </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
