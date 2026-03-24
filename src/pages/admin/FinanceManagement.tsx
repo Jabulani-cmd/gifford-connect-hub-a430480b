@@ -3147,11 +3147,11 @@ export default function FinanceManagement() {
               </div>
             )}
             {selectedStudent && studentInvoices.length === 0 && (
-              <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
-                <p className="text-sm text-accent font-medium">
-                  No invoice found for this student yet — this payment will create an advance invoice.
+               <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-sm text-destructive font-medium">
+                  No invoice found for this student. Please register them for the current term first.
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">A new invoice and receipt will be auto-generated.</p>
+                <p className="text-xs text-muted-foreground mt-1">Go to Student Management → Term Registration to create a term invoice.</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
