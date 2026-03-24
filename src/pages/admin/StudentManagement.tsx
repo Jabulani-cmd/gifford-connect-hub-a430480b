@@ -284,11 +284,27 @@ export default function StudentManagement() {
   const [provisionResult, setProvisionResult] = useState<{ email: string; temp_password: string; admission_number: string } | null>(null);
   const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
 
-  useEffect(() => { fetchStudents(); fetchSubjects(); }, []);
+  // Boarding fields
+  const [hostels, setHostels] = useState<{ id: string; name: string; total_capacity: number; current_occupancy: number }[]>([]);
+  const [rooms, setRooms] = useState<{ id: string; hostel_id: string; room_number: string; capacity: number; current_occupancy: number }[]>([]);
+  const [selectedHostel, setSelectedHostel] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [bedNumber, setBedNumber] = useState("");
+
+  useEffect(() => { fetchStudents(); fetchSubjects(); fetchBoardingData(); }, []);
 
   const fetchSubjects = async () => {
     const { data } = await supabase.from("subjects").select("id, name, department").order("name");
     if (data) setDbSubjects(data);
+  };
+
+  const fetchBoardingData = async () => {
+    const [h, r] = await Promise.all([
+      supabase.from("hostels").select("id, name, total_capacity, current_occupancy").eq("is_active", true).order("name"),
+      supabase.from("rooms").select("id, hostel_id, room_number, capacity, current_occupancy").order("room_number"),
+    ]);
+    if (h.data) setHostels(h.data);
+    if (r.data) setRooms(r.data);
   };
 
   const fetchStudents = async () => {
