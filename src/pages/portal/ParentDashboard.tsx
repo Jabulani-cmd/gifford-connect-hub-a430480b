@@ -334,6 +334,7 @@ export default function ParentDashboard() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             child={selectedChild || null}
+            childClassId={childClassId}
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
@@ -381,6 +382,7 @@ export default function ParentDashboard() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             child={selectedChild || null}
+            childClassId={childClassId}
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
@@ -558,6 +560,7 @@ interface TabContentProps {
   activeTab: TabId;
   setActiveTab: (tab: TabId) => void;
   child: ChildInfo | null;
+  childClassId: string | null;
   attendanceData: any[];
   attendancePercent: number;
   invoices: any[];
@@ -579,6 +582,7 @@ function TabContent(props: TabContentProps) {
     activeTab,
     setActiveTab,
     child,
+    childClassId,
     attendanceData,
     attendancePercent,
     invoices,
