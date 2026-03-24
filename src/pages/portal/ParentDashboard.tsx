@@ -42,7 +42,7 @@ import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/fin
 import { openPrintWindow } from "@/lib/finance/print";
 import StudentMarksTab from "@/components/student/StudentMarksTab"; // 👈 import for marks tab
 
-type TabId = "overview" | "grades" | "marks" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
