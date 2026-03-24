@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageSquare, Send, Plus, Users, User, Search, ArrowLeft,
-  Megaphone, AlertCircle, X, Loader2, ShieldAlert, Ban, Flag, MoreVertical
+  Megaphone, AlertCircle, X, Loader2, ShieldAlert, Ban, Flag, MoreVertical, BookUser
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
