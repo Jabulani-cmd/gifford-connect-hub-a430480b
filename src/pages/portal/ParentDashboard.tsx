@@ -334,6 +334,7 @@ export default function ParentDashboard() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             child={selectedChild || null}
+            childClassId={childClassId}
             attendanceData={attendanceData}
             attendancePercent={attendancePercent}
             invoices={invoices}
