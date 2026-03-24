@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,21 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 export default function BankReconciliation() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { rate } = useExchangeRate();
-  const autoZig = (usd: string) => { const n = parseFloat(usd); return isNaN(n) ? "" : (n * rate).toFixed(2); };
+  const { rate, usdToZig } = useExchangeRate();
+  const convertUsdToZig = useCallback(
+    (usdValue: any) => {
+      const usd = Number(usdValue);
+      return Number.isFinite(usd) ? Number(usdToZig(usd).toFixed(2)) : 0;
+    },
+    [usdToZig],
+  );
+  const autoZig = useCallback(
+    (usd: string) => {
+      const n = Number(usd);
+      return Number.isFinite(n) ? convertUsdToZig(n).toFixed(2) : "";
+    },
+    [convertUsdToZig],
+  );
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,7 +54,7 @@ export default function BankReconciliation() {
     notes: "",
   });
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => { fetchTransactions(); }, [rate]);
 
   async function fetchTransactions() {
     setLoading(true);
@@ -49,19 +62,22 @@ export default function BankReconciliation() {
       .from("bank_transactions")
       .select("*")
       .order("transaction_date", { ascending: false });
-    if (data) setTransactions(data);
+    if (data) {
+      setTransactions(data.map((tx: any) => ({ ...tx, amount_zig: convertUsdToZig(tx.amount_usd) })));
+    }
     setLoading(false);
   }
 
   async function saveTransaction() {
     setSaving(true);
+    const amountUsd = parseFloat(form.amount_usd) || 0;
     const { error } = await supabase.from("bank_transactions").insert({
       transaction_date: form.transaction_date,
       description: form.description,
       reference_number: form.reference_number || null,
       transaction_type: form.transaction_type,
-      amount_usd: parseFloat(form.amount_usd) || 0,
-      amount_zig: parseFloat(form.amount_zig) || 0,
+      amount_usd: amountUsd,
+      amount_zig: convertUsdToZig(amountUsd),
       bank_name: form.bank_name || null,
       account_number: form.account_number || null,
       notes: form.notes || null,
