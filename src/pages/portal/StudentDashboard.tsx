@@ -201,7 +201,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-background pb-20 md:pb-6">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur-md">
-        <div className="container flex h-14 items-center justify-between px-4">
+        <div className="container flex h-20 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <img src={schoolLogo} alt="Gifford High School" className="h-16 w-16 object-contain" />
             <span className="font-heading text-base font-bold text-foreground hidden sm:inline">Student Portal</span>
