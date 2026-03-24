@@ -69,6 +69,15 @@ export default function MessagingPanel() {
   const [search, setSearch] = useState("");
   const [totalUnread, setTotalUnread] = useState(0);
 
+  // Panel tab: "chats" or "contacts"
+  const [panelTab, setPanelTab] = useState<"chats" | "contacts">("chats");
+
+  // Contact directory state
+  const [contacts, setContacts] = useState<UserProfile[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactRoleFilter, setContactRoleFilter] = useState<string>("all");
+  const [contactsLoading, setContactsLoading] = useState(false);
+
   // New conversation dialog
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [newConvType, setNewConvType] = useState<"direct" | "group" | "broadcast">("direct");
@@ -78,6 +87,7 @@ export default function MessagingPanel() {
   const [userResults, setUserResults] = useState<UserProfile[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<UserProfile[]>([]);
   const [creating, setCreating] = useState(false);
+  const [searchRoleFilter, setSearchRoleFilter] = useState<string>("all");
 
   // Block & report
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
