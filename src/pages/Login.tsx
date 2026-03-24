@@ -43,24 +43,17 @@ export default function Login() {
   // Track whether a manual login was just performed
   const [justLoggedIn, setJustLoggedIn] = useState(false);
 
-  // Redirect if already logged in
+  // Only redirect after a manual login, not on page load with existing session
   useEffect(() => {
-    if (!authLoading && user) {
-      if (role) {
-        // Check if must change password first
-        if (user.user_metadata?.must_change_password) {
-          navigate("/change-password");
-          return;
-        }
-        if (justLoggedIn) {
-          toast({ title: "Logged in successfully!" });
-        }
-        redirectByRole(role);
+    if (!authLoading && user && role && justLoggedIn) {
+      if (user.user_metadata?.must_change_password) {
+        navigate("/change-password");
+        return;
       }
-      // Only show "no role" error if user explicitly just logged in and role is confirmed null
-      // (not during initial page load or redirect from registration)
+      toast({ title: "Logged in successfully!" });
+      redirectByRole(role);
     }
-  }, [authLoading, user, role]);
+  }, [authLoading, user, role, justLoggedIn]);
 
   const redirectByRole = (r: string) => {
     if (r === "student") navigate("/portal/student");
