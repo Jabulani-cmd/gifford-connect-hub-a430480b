@@ -62,7 +62,8 @@ const timetableSlots = [
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
+  const isFinanceUser = role === 'finance' || role === 'admin_supervisor';
   const navigate = useNavigate();
 
   // Announcements
