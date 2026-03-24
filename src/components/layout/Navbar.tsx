@@ -240,8 +240,8 @@ export default function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button className="flex-shrink-0 p-2 text-white lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
-          {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+        <button className="flex-shrink-0 ml-2 p-2 text-white lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+          {mobileOpen ? <X className="h-8 w-8" /> : <Menu className="h-8 w-8" />}
         </button>
       </div>
 
