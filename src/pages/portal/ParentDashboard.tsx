@@ -32,6 +32,7 @@ import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import StudentTimetableTab from "@/components/student/StudentTimetableTab";
 import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
@@ -41,7 +42,7 @@ import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/fin
 import { openPrintWindow } from "@/lib/finance/print";
 import StudentMarksTab from "@/components/student/StudentMarksTab"; // 👈 import for marks tab
 
-type TabId = "overview" | "grades" | "marks" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
@@ -101,6 +102,7 @@ export default function ParentDashboard() {
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [rankings, setRankings] = useState<any>(null);
+  const [childClassId, setChildClassId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -175,7 +177,7 @@ export default function ParentDashboard() {
   };
 
   const fetchChildData = async (studentId: string) => {
-    const [{ data: att }, { data: inv }, { data: pay }, { data: exm }] = await Promise.all([
+    const [{ data: att }, { data: inv }, { data: pay }, { data: exm }, { data: sc }] = await Promise.all([
       supabase
         .from("attendance")
         .select("*")
@@ -193,12 +195,19 @@ export default function ParentDashboard() {
         .eq("is_published", true)
         .order("academic_year", { ascending: false })
         .order("term", { ascending: false }),
+      supabase
+        .from("student_classes")
+        .select("class_id")
+        .eq("student_id", studentId)
+        .limit(1)
+        .single(),
     ]);
 
     setAttendanceData(att || []);
     setInvoices(inv || []);
     setChildPayments(pay || []);
     setExams(exm || []);
+    setChildClassId(sc?.class_id || null);
 
     if (exm && exm.length > 0) {
       setSelectedExamId(exm[0].id);
@@ -261,7 +270,8 @@ export default function ParentDashboard() {
   const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "overview", label: "Overview", icon: Users },
     { id: "grades", label: "Grades", icon: GraduationCap },
-    { id: "marks", label: "Marks", icon: ClipboardList }, // 👈 new marks tab
+    { id: "marks", label: "Marks", icon: ClipboardList },
+    { id: "timetable", label: "Timetable", icon: Calendar },
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
     { id: "attendance", label: "Attendance", icon: Calendar },
@@ -1087,6 +1097,15 @@ function TabContent(props: TabContentProps) {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Announcements</h2>
         <StudentAnnouncementsSection announcements={announcements} />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "timetable") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Class Timetable — {child.full_name}</h2>
+        <StudentTimetableTab studentClassId={childClassId} studentId={child.id} />
       </motion.div>
     );
   }

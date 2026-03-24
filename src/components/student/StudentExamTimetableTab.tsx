@@ -26,28 +26,29 @@ interface ExamTimetableEntry {
 interface Props {
   studentId?: string | null;
   formLevel?: string | null;
+  showAll?: boolean;
 }
 
-export default function StudentExamTimetableTab({ studentId, formLevel }: Props = {}) {
+export default function StudentExamTimetableTab({ studentId, formLevel, showAll }: Props = {}) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<ExamTimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [studentForm, setStudentForm] = useState<string | null>(formLevel || null);
 
   useEffect(() => {
-    if (formLevel) {
+    if (showAll) {
+      fetchAllTimetables();
+    } else if (formLevel) {
       setStudentForm(formLevel);
       fetchTimetable(formLevel);
     } else {
       fetchStudentInfo();
     }
-  }, [user, studentId, formLevel]);
+  }, [user, studentId, formLevel, showAll]);
 
   async function fetchStudentInfo() {
     if (!user?.id && !studentId) { setLoading(false); return; }
     
-    // If studentId is provided (e.g. from parent portal), look up by student ID
-    // Otherwise fall back to looking up by user_id (student portal)
     let query = supabase.from("students").select("form");
     if (studentId) {
       query = query.eq("id", studentId);
@@ -62,6 +63,24 @@ export default function StudentExamTimetableTab({ studentId, formLevel }: Props 
     } else {
       setLoading(false);
     }
+  }
+
+  async function fetchAllTimetables() {
+    const { data } = await supabase
+      .from("exam_timetable_entries")
+      .select(`
+        id, exam_date, start_time, end_time, venue, notes,
+        subjects(name, code),
+        exams!inner(name, form_level, term, academic_year, is_published)
+      `)
+      .eq("exams.is_published", true)
+      .gte("exam_date", new Date().toISOString().split("T")[0])
+      .order("exam_date")
+      .order("start_time");
+
+    if (data) setEntries(data as ExamTimetableEntry[]);
+    setStudentForm("all");
+    setLoading(false);
   }
 
   async function fetchTimetable(formLevel: string) {
@@ -112,7 +131,7 @@ export default function StudentExamTimetableTab({ studentId, formLevel }: Props 
           <Calendar className="h-5 w-5" />
           Exam Timetable
         </CardTitle>
-        <CardDescription>Your upcoming examination schedule</CardDescription>
+        <CardDescription>{showAll ? "All upcoming examination schedules" : "Your upcoming examination schedule"}</CardDescription>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
@@ -129,7 +148,7 @@ export default function StudentExamTimetableTab({ studentId, formLevel }: Props 
                   <h3 className="font-semibold text-lg">{examName}</h3>
                   {exam && (
                     <Badge variant="outline" className="text-xs">
-                      {exam.term} {exam.academic_year}
+                      {exam.form_level} · {exam.term} {exam.academic_year}
                     </Badge>
                   )}
                 </div>

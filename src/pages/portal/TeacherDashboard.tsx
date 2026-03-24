@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  LogOut, BookOpen, Bell, BarChart3, Calendar, ClipboardList,
+  LogOut, BookOpen, Bell, BarChart3, Calendar, CalendarDays, ClipboardList,
   FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
@@ -26,6 +26,7 @@ import EnhancedAnnouncementsTab from "@/components/teacher/EnhancedAnnouncements
 import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
 import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 import ExamResultsUpload from "@/components/teacher/ExamResultsUpload";
+import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -338,6 +339,7 @@ export default function TeacherDashboard() {
             <TabsTrigger value="attendance"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
+            <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
             <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
             <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
           </TabsList>
@@ -555,6 +557,11 @@ export default function TeacherDashboard() {
                 </table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* EXAM TIMETABLE */}
+          <TabsContent value="exam-timetable">
+            <StudentExamTimetableTab showAll />
           </TabsContent>
 
           {/* MY SCHEDULE */}
