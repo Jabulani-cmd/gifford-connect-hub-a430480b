@@ -278,7 +278,8 @@ Deno.serve(async (req) => {
       }
       const updatePayload: any = { password: newPassword };
       if (force_change) {
-        updatePayload.user_metadata = { must_change_password: true };
+        updatePayload.app_metadata = { must_change_password: true };
+        updatePayload.user_metadata = { must_change_password: true }; // legacy compat
       }
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, updatePayload);
       if (error) throw error;
