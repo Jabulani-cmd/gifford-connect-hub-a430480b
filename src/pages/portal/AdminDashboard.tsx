@@ -1084,6 +1084,21 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <img src={traditionImageUrl} alt="Tradition section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
                   )}
                 </CardContent>
+               </Card>
+
+              {/* CTA Section Image */}
+              <Card>
+                <CardHeader><CardTitle className="font-heading">CTA Section Image</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">This image appears on the homepage next to the "Ready to Join the Gifford Family?" section.</p>
+                  <input type="file" accept="image/*" ref={ctaFileRef} onChange={handleCtaFileSelect} className="hidden" />
+                  <Button onClick={() => ctaFileRef.current?.click()} disabled={uploading}>
+                    <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
+                  </Button>
+                  {ctaImageUrl && (
+                    <img src={ctaImageUrl} alt="CTA section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                  )}
+                </CardContent>
               </Card>
             </div>
           </TabsContent>
