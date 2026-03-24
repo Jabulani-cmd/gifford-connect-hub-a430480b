@@ -46,7 +46,7 @@ const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) 
   const slide = heroSlides[current % heroSlides.length];
 
   return (
-    <section ref={ref} className="relative h-screen w-full overflow-hidden">
+    <section ref={ref} className="relative w-full overflow-hidden bg-primary" style={{ minHeight: "60vh", height: "100vh", maxHeight: "100svh" }}>
       {/* Background images */}
       {images.map((img, i) => (
         <img
