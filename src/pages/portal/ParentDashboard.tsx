@@ -351,6 +351,8 @@ export default function ParentDashboard() {
             rankings={rankings}
             avgMark={avgMark}
             announcements={announcements}
+            rate={rate}
+            usdToZig={usdToZig}
           />
         </main>
       </div>
@@ -399,6 +401,8 @@ export default function ParentDashboard() {
             rankings={rankings}
             avgMark={avgMark}
             announcements={announcements}
+            rate={rate}
+            usdToZig={usdToZig}
           />
         </main>
       </div>
@@ -577,6 +581,8 @@ interface TabContentProps {
   rankings: any;
   avgMark: number;
   announcements: any[];
+  rate: number;
+  usdToZig: (usd: number) => number;
 }
 
 function TabContent(props: TabContentProps) {
@@ -599,6 +605,8 @@ function TabContent(props: TabContentProps) {
     rankings,
     avgMark,
     announcements,
+    rate,
+    usdToZig,
   } = props;
 
   if (!child) return null;
