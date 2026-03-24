@@ -302,6 +302,19 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     setUploading(false);
   };
 
+  const handleDeleteSiteImage = async (settingKey: string, setter: (v: string | null) => void) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+    setUploading(true);
+    try {
+      await supabase.from("site_settings").delete().eq("setting_key", settingKey);
+      setter(null);
+      toast({ title: "Image deleted successfully" });
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
     if (data) setAnnouncements(data);
@@ -1062,7 +1075,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Principal Photo"}
                   </Button>
                   {principalPhotoUrl && (
-                    <img src={principalPhotoUrl} alt="Principal" className="mt-2 h-48 w-36 rounded-lg border object-cover object-top" />
+                    <div className="relative mt-2 inline-block">
+                      <img src={principalPhotoUrl} alt="Principal" className="h-48 w-36 rounded-lg border object-cover object-top" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("principal_photo", setPrincipalPhotoUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1077,7 +1095,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
                   {achievementsImageUrl && (
-                    <img src={achievementsImageUrl} alt="Achievements section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                    <div className="relative mt-2">
+                      <img src={achievementsImageUrl} alt="Achievements section" className="rounded-lg border max-h-64 w-full object-cover" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("achievements_image", setAchievementsImageUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1092,7 +1115,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
                   {traditionImageUrl && (
-                    <img src={traditionImageUrl} alt="Tradition section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                    <div className="relative mt-2">
+                      <img src={traditionImageUrl} alt="Tradition section" className="rounded-lg border max-h-64 w-full object-cover" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("tradition_image", setTraditionImageUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
                </Card>
@@ -1107,7 +1135,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
                   {ctaImageUrl && (
-                    <img src={ctaImageUrl} alt="CTA section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                    <div className="relative mt-2">
+                      <img src={ctaImageUrl} alt="CTA section" className="rounded-lg border max-h-64 w-full object-cover" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("cta_image", setCtaImageUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
