@@ -32,6 +32,7 @@ import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import StudentTimetableTab from "@/components/student/StudentTimetableTab";
 import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
