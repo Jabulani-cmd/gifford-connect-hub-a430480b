@@ -984,10 +984,12 @@ function TabContent(props: TabContentProps) {
               </p>
               <p className="text-sm text-muted-foreground">
                 {feeBalance > 0 ? "Outstanding Balance" : feeBalance < 0 ? "Credit Balance" : "No Outstanding Balance"}
+                {feeBalance !== 0 && ` (ZiG ${usdToZig(Math.abs(feeBalance)).toFixed(2)})`}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Total Invoiced: ${totalInvoiced.toFixed(2)} · Total Paid: ${totalPaidAll.toFixed(2)}
+                Total Invoiced: ${totalInvoiced.toFixed(2)} (ZiG {usdToZig(totalInvoiced).toFixed(2)}) · Total Paid: ${totalPaidAll.toFixed(2)}
               </p>
+              <p className="text-xs text-muted-foreground">Rate: 1 USD = {rate} ZiG</p>
             </div>
           </CardContent>
         </Card>
