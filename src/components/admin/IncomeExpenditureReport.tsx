@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { Search, Printer, Loader2, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -15,6 +16,22 @@ const months = ["January", "February", "March", "April", "May", "June", "July", 
 export default function IncomeExpenditureReport() {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
+  const { rate, usdToZig } = useExchangeRate();
+
+  const convertUsdToZig = useCallback(
+    (usdValue: any) => {
+      const usd = Number(usdValue);
+      return Number.isFinite(usd) ? Number(usdToZig(usd).toFixed(2)) : 0;
+    },
+    [usdToZig],
+  );
+  const normalizeAmount = useCallback(
+    (row: any) => ({
+      ...row,
+      amount_zig: convertUsdToZig(row.amount_usd),
+    }),
+    [convertUsdToZig],
+  );
 
   const [payments, setPayments] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -24,7 +41,7 @@ export default function IncomeExpenditureReport() {
   const [selectedMonth, setSelectedMonth] = useState(String(currentMonth));
   const [search, setSearch] = useState("");
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [rate]);
 
   async function fetchData() {
     setLoading(true);
@@ -33,9 +50,9 @@ export default function IncomeExpenditureReport() {
       supabase.from("expenses").select("*").order("expense_date", { ascending: false }),
       supabase.from("supplier_payments").select("*, supplier_invoices(supplier_name)").order("payment_date", { ascending: false }),
     ]);
-    if (payRes.data) setPayments(payRes.data);
-    if (expRes.data) setExpenses(expRes.data);
-    if (spRes.data) setSupplierPayments(spRes.data);
+    if (payRes.data) setPayments(payRes.data.map(normalizeAmount));
+    if (expRes.data) setExpenses(expRes.data.map(normalizeAmount));
+    if (spRes.data) setSupplierPayments(spRes.data.map(normalizeAmount));
     setLoading(false);
   }
 
