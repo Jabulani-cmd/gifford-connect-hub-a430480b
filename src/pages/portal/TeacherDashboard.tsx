@@ -26,6 +26,7 @@ import EnhancedAnnouncementsTab from "@/components/teacher/EnhancedAnnouncements
 import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
 import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 import ExamResultsUpload from "@/components/teacher/ExamResultsUpload";
+import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
