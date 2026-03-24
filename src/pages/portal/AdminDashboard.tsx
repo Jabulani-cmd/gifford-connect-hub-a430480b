@@ -1127,10 +1127,12 @@ export default function AdminDashboard() {
             <GoLiveChecklist />
           </TabsContent>
 
-          {/* Finance Tab */}
-          <TabsContent value="finance">
-            <FinanceManagement />
-          </TabsContent>
+          {/* Finance Tab - only for finance clerks and admin supervisors */}
+          {isFinanceUser && (
+            <TabsContent value="finance">
+              <FinanceManagement />
+            </TabsContent>
+          )}
 
           {/* User Manual Tab */}
           <TabsContent value="manual">
