@@ -172,6 +172,21 @@ export default function TermRegistration() {
       // Update student's subject_combination
       await supabase.from("students").update({ subject_combination: selectedSubjects.join(", "), boarding_status: boardingStatus }).eq("id", selectedStudent.id);
 
+      // Allocate student to class based on form + stream
+      const matchClass = dbClasses.find(c => c.form_level === selectedStudent.form && (!selectedStudent.stream || c.stream === selectedStudent.stream))
+        || dbClasses.find(c => c.form_level === selectedStudent.form);
+      if (matchClass) {
+        const { data: existingSc } = await supabase.from("student_classes").select("id").eq("student_id", selectedStudent.id).eq("class_id", matchClass.id).maybeSingle();
+        if (!existingSc) {
+          await supabase.from("student_classes").insert({ student_id: selectedStudent.id, class_id: matchClass.id });
+        }
+        // Also ensure enrollment exists
+        const { data: existingEnr } = await supabase.from("enrollments").select("id").eq("student_id", selectedStudent.id).eq("academic_year", academicYear).maybeSingle();
+        if (!existingEnr) {
+          await supabase.from("enrollments").insert({ student_id: selectedStudent.id, class_id: matchClass.id, academic_year: academicYear, enrollment_date: new Date().toISOString().split("T")[0] });
+        }
+      }
+
       toast({ title: "Student registered", description: `${selectedStudent.full_name} registered for ${term} ${academicYear}${invoiceId ? " with invoice created." : "."}` });
       setRegDialogOpen(false);
       fetchAll();
