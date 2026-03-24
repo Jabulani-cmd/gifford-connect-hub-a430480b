@@ -171,9 +171,10 @@ export default function StudentFeeTab({ studentId }: Props) {
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Term</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right">Total (USD)</TableHead>
+                    <TableHead className="text-right">Total (ZiG)</TableHead>
+                    <TableHead className="text-right">Paid (USD)</TableHead>
+                    <TableHead className="text-right">Balance (USD)</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -189,13 +190,14 @@ export default function StudentFeeTab({ studentId }: Props) {
                           {inv.term} {inv.academic_year}
                         </TableCell>
                         <TableCell className="text-right">${fmt(inv.total_usd)}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">ZiG {fmt(usdToZig(inv.total_usd))}</TableCell>
                         <TableCell className="text-right">${fmt(actualPaid)}</TableCell>
                         <TableCell className="text-right">
                           {(() => {
                             if (balance < 0) {
                               return <span className="text-green-600">+${fmt(Math.abs(balance))} credit</span>;
                             }
-                            return fmt(balance);
+                            return `$${fmt(balance)}`;
                           })()}
                         </TableCell>
                         <TableCell className="text-center">
