@@ -995,6 +995,8 @@ export default function StudentManagement() {
           )}
         </DialogContent>
       </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

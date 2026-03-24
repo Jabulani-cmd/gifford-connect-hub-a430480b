@@ -1215,7 +1215,7 @@ export default function FinanceManagement() {
       let invoiceId = payForm.invoice_id || null;
       let invoiceNumber: string | null = null;
 
-      // If no invoice selected, always attach to an existing fee invoice first
+      // If no invoice selected, find the existing term invoice for this student
       if (!invoiceId) {
         const now = new Date();
         const currentYear = now.getFullYear().toString();
@@ -1229,51 +1229,35 @@ export default function FinanceManagement() {
           .order("created_at", { ascending: false });
 
         if (existingInvs && existingInvs.length > 0) {
+          // Priority: 1) Current term fee invoice (unpaid/partial), 2) Any unpaid/partial, 3) Current term any, 4) Most recent non-advance
           const preferredInvoice =
-            existingInvs.find((inv) => {
-              const status = String(inv.status || "").toLowerCase();
-              return status === "unpaid" || status === "partial";
-            }) ||
-            existingInvs.find(
-              (inv) =>
-                String(inv.academic_year) === currentYear &&
-                inv.term === currentTerm &&
-                inv.notes !== "Auto-generated for advance payment",
+            existingInvs.find((inv) =>
+              String(inv.academic_year) === currentYear &&
+              inv.term === currentTerm &&
+              (inv.status === "unpaid" || inv.status === "partial") &&
+              inv.notes !== "Auto-generated for advance payment"
+            ) ||
+            existingInvs.find((inv) => inv.status === "unpaid" || inv.status === "partial") ||
+            existingInvs.find((inv) =>
+              String(inv.academic_year) === currentYear &&
+              inv.term === currentTerm
             ) ||
             existingInvs.find((inv) => inv.notes !== "Auto-generated for advance payment") ||
             existingInvs[0];
 
           invoiceId = preferredInvoice.id;
           invoiceNumber = preferredInvoice.invoice_number;
-        } else {
-          // Only create an advance invoice if the student has no invoice history at all
-          const invNum = genInvoiceNum();
-          const { data: newInv, error: invErr } = await supabase
-            .from("invoices")
-            .insert({
-              invoice_number: invNum,
-              student_id: selectedStudent.id,
-              academic_year: new Date().getFullYear().toString(),
-              term: "Term 1",
-              total_usd: usd,
-              total_zig: zig,
-              due_date: null,
-              status: "paid",
-              paid_usd: usd,
-              paid_zig: zig,
-              notes: "Auto-generated for advance payment",
-            })
-            .select()
-            .single();
-          if (invErr) throw invErr;
-          invoiceId = newInv.id;
-          invoiceNumber = invNum;
-          await supabase.from("invoice_items").insert({
-            invoice_id: newInv.id,
-            description: "Advance Payment",
-            amount_usd: usd,
-            amount_zig: zig,
+        }
+
+        // If truly no invoice exists at all, show error — student should be term-registered first
+        if (!invoiceId) {
+          toast({
+            title: "No invoice found",
+            description: "Please register the student for the current term first (Student Management → Term Registration). This will create the invoice automatically.",
+            variant: "destructive",
           });
+          setPayLoading(false);
+          return;
         }
       }
 
