@@ -559,6 +559,11 @@ export default function TeacherDashboard() {
             </Card>
           </TabsContent>
 
+          {/* EXAM TIMETABLE */}
+          <TabsContent value="exam-timetable">
+            <StudentExamTimetableTab />
+          </TabsContent>
+
           {/* MY SCHEDULE */}
           <TabsContent value="schedule">
             <PersonalTimetableEditor />
