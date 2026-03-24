@@ -990,7 +990,7 @@ export default function MessagingPanel() {
                     onChange={e => searchUsers(e.target.value)}
                   />
                 </div>
-                <Select value={searchRoleFilter} onValueChange={v => { setSearchRoleFilter(v); if (userSearch.length >= 2) searchUsers(userSearch); }}>
+                <Select value={searchRoleFilter} onValueChange={setSearchRoleFilter}>
                   <SelectTrigger className="w-[110px] h-9 text-xs">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
