@@ -2196,6 +2196,66 @@ export type Database = {
         }
         Relationships: []
       }
+      sports_schedule: {
+        Row: {
+          academic_year: string | null
+          activity_name: string
+          activity_type: string
+          class_id: string | null
+          coach_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          start_time: string
+          term: string | null
+          venue: string | null
+        }
+        Insert: {
+          academic_year?: string | null
+          activity_name: string
+          activity_type?: string
+          class_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          start_time: string
+          term?: string | null
+          venue?: string | null
+        }
+        Update: {
+          academic_year?: string | null
+          activity_name?: string
+          activity_type?: string
+          class_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+          term?: string | null
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sports_schedule_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sports_schedule_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff: {
         Row: {
           address: string | null
