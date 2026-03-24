@@ -340,7 +340,8 @@ export default function TeacherDashboard() {
         </motion.div>
 
         <Tabs defaultValue="materials" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="flex-wrap sm:flex-wrap h-auto gap-1 w-max sm:w-auto">
             <TabsTrigger value="materials"><FileText className="mr-1 h-4 w-4" /> Materials</TabsTrigger>
             <TabsTrigger value="assessments"><ClipboardList className="mr-1 h-4 w-4" /> Assessments</TabsTrigger>
             <TabsTrigger value="exam-results"><GraduationCap className="mr-1 h-4 w-4" /> Exam Results</TabsTrigger>
