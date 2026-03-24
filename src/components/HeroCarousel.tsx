@@ -40,7 +40,13 @@ const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) 
     return () => clearInterval(interval);
   }, [images.length]);
 
-  if (images.length === 0) return null;
+  if (images.length === 0) {
+    return (
+      <section ref={ref} className="relative w-full overflow-hidden bg-primary" style={{ minHeight: "60vh", height: "100vh", maxHeight: "100svh" }}>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+      </section>
+    );
+  }
 
   const goTo = (index: number) => setCurrent(index);
   const slide = heroSlides[current % heroSlides.length];
