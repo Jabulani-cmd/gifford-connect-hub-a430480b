@@ -332,6 +332,9 @@ export default function StudentManagement() {
     setFormData(emptyForm);
     setPhotoUrl(null);
     setErrors({});
+    setSelectedHostel("");
+    setSelectedRoom("");
+    setBedNumber("");
     setDialogOpen(true);
   };
 
