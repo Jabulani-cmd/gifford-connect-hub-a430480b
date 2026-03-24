@@ -118,7 +118,8 @@ Deno.serve(async (req) => {
           email: adminEmail,
           password: adminPassword,
           email_confirm: true,
-          user_metadata: { full_name: "System Administrator", must_change_password: true },
+          user_metadata: { full_name: "System Administrator" },
+          app_metadata: { must_change_password: true },
         });
 
       if (createError) throw createError;
