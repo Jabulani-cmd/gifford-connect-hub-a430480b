@@ -17,7 +17,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timeSlots = ["07:30", "08:30", "10:00", "11:00", "13:00"];
+const timeSlots = [
+  { start: "07:30", end: "08:10" },
+  { start: "08:10", end: "08:50" },
+  { start: "08:50", end: "09:30" },
+  { start: "09:50", end: "10:30" },
+  { start: "10:30", end: "11:10" },
+  { start: "11:10", end: "11:50" },
+  { start: "11:50", end: "12:30" },
+  { start: "12:30", end: "13:10" },
+  { start: "13:50", end: "14:30" },
+  { start: "14:30", end: "15:10" },
+  { start: "15:30", end: "16:10" },
+  { start: "16:10", end: "17:00" },
+];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -159,9 +172,10 @@ export default function ParentTeacherDashboard() {
 
   const fetchTimetable = async (classId: string) => {
     const { data } = await supabase
-      .from("timetable")
+      .from("timetable_entries")
       .select("*, subjects(name)")
-      .eq("class_id", classId);
+      .eq("class_id", classId)
+      .order("start_time");
     if (data) setTimetableData(data);
   };
 
@@ -235,8 +249,10 @@ export default function ParentTeacherDashboard() {
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "User";
 
-  const getTimetableCell = (timeSlot: string, dayIndex: number) => {
-    const entry = timetableData.find(t => t.time_slot === timeSlot && t.day_of_week === dayIndex);
+  const getTimetableCell = (startTime: string, dayIndex: number) => {
+    const entry = timetableData.find(
+      (t) => t.start_time === startTime && (t.day_of_week === dayIndex || t.day_of_week === dayIndex + 1),
+    );
     return entry?.subjects?.name || "—";
   };
 
@@ -475,11 +491,11 @@ export default function ParentTeacherDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {timeSlots.map(time => (
-                        <tr key={time} className="border-t">
-                          <td className="px-3 py-2 font-medium">{time}</td>
-                          {[1, 2, 3, 4, 5].map(d => (
-                            <td key={d} className="px-3 py-2 text-center">{getTimetableCell(time, d)}</td>
+                      {timeSlots.map((slot) => (
+                        <tr key={slot.start} className="border-t">
+                          <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
+                          {days.map((_, dayIndex) => (
+                            <td key={`${slot.start}-${dayIndex}`} className="px-3 py-2 text-center">{getTimetableCell(slot.start, dayIndex)}</td>
                           ))}
                         </tr>
                       ))}

@@ -43,6 +43,21 @@ const classOptions = ["A", "B", "C", "D"];
 const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities", "Technical", "Arts", "Sports"];
 const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
 const meetingTypes = ["sdc", "parent-teacher", "general"];
+const timetableDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const timetableSlots = [
+  { start: "07:30", end: "08:10" },
+  { start: "08:10", end: "08:50" },
+  { start: "08:50", end: "09:30" },
+  { start: "09:50", end: "10:30" },
+  { start: "10:30", end: "11:10" },
+  { start: "11:10", end: "11:50" },
+  { start: "11:50", end: "12:30" },
+  { start: "12:30", end: "13:10" },
+  { start: "13:50", end: "14:30" },
+  { start: "14:30", end: "15:10" },
+  { start: "15:30", end: "16:10" },
+  { start: "16:10", end: "17:00" },
+];
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -110,6 +125,14 @@ export default function AdminDashboard() {
   // Teacher registration
   const [teacherForm, setTeacherForm] = useState({ full_name: "", email: "", password: "", department: "", phone: "" });
 
+  // Timetable management
+  const [ttClasses, setTtClasses] = useState<any[]>([]);
+  const [ttSubjects, setTtSubjects] = useState<any[]>([]);
+  const [ttSelectedClassId, setTtSelectedClassId] = useState("");
+  const [ttGrid, setTtGrid] = useState<Record<string, string>>({});
+  const [ttLoading, setTtLoading] = useState(false);
+  const [ttSaving, setTtSaving] = useState(false);
+
   useEffect(() => {
     fetchAnnouncements();
     fetchCarouselImages();
@@ -117,7 +140,16 @@ export default function AdminDashboard() {
     fetchDownloads();
     fetchMeetings();
     fetchSiteSettings();
+    fetchTimetableMeta();
   }, []);
+
+  useEffect(() => {
+    if (ttSelectedClassId) {
+      fetchClassTimetable(ttSelectedClassId);
+    } else {
+      setTtGrid({});
+    }
+  }, [ttSelectedClassId]);
 
   const fetchSiteSettings = async () => {
     const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image"]);
@@ -242,6 +274,127 @@ export default function AdminDashboard() {
   const fetchMeetings = async () => {
     const { data } = await supabase.from("meetings").select("*").order("meeting_date", { ascending: true });
     if (data) setMeetings(data);
+  };
+
+  const getTimetableCellKey = (dayIndex: number, startTime: string) => `${dayIndex}-${startTime}`;
+
+  const fetchTimetableMeta = async () => {
+    const [{ data: classRows }, { data: subjectRows }] = await Promise.all([
+      supabase.from("classes").select("id, name").order("name"),
+      supabase.from("subjects").select("id, name").order("name"),
+    ]);
+
+    if (classRows) {
+      setTtClasses(classRows);
+      if (!ttSelectedClassId && classRows.length > 0) {
+        setTtSelectedClassId(classRows[0].id);
+      }
+    }
+    if (subjectRows) {
+      setTtSubjects(subjectRows);
+    }
+  };
+
+  const fetchClassTimetable = async (classId: string) => {
+    setTtLoading(true);
+    const { data, error } = await supabase
+      .from("timetable_entries")
+      .select("day_of_week, start_time, subjects(name)")
+      .eq("class_id", classId)
+      .in("day_of_week", [0, 1, 2, 3, 4]);
+
+    if (error) {
+      toast({ title: "Failed to load timetable", description: error.message, variant: "destructive" });
+      setTtLoading(false);
+      return;
+    }
+
+    const nextGrid: Record<string, string> = {};
+    (data || []).forEach((entry: any) => {
+      const key = getTimetableCellKey(entry.day_of_week, entry.start_time);
+      nextGrid[key] = entry.subjects?.name || "";
+    });
+    setTtGrid(nextGrid);
+    setTtLoading(false);
+  };
+
+  const saveTimetable = async () => {
+    if (!ttSelectedClassId) {
+      toast({ title: "Select a class first", variant: "destructive" });
+      return;
+    }
+
+    if (ttSubjects.length === 0) {
+      toast({ title: "No subjects found", variant: "destructive" });
+      return;
+    }
+
+    setTtSaving(true);
+
+    const subjectMap = new Map(ttSubjects.map((s) => [String(s.name).trim().toLowerCase(), s.id]));
+    const unknownSubjects = new Set<string>();
+    const rows: any[] = [];
+
+    timetableSlots.forEach((slot) => {
+      timetableDays.forEach((_, dayIndex) => {
+        const key = getTimetableCellKey(dayIndex, slot.start);
+        const rawSubject = (ttGrid[key] || "").trim();
+        if (!rawSubject) return;
+
+        const subjectId = subjectMap.get(rawSubject.toLowerCase());
+        if (!subjectId) {
+          unknownSubjects.add(rawSubject);
+          return;
+        }
+
+        rows.push({
+          class_id: ttSelectedClassId,
+          day_of_week: dayIndex,
+          start_time: slot.start,
+          end_time: slot.end,
+          subject_id: subjectId,
+          teacher_id: null,
+          room: null,
+        });
+      });
+    });
+
+    if (unknownSubjects.size > 0) {
+      setTtSaving(false);
+      toast({
+        title: "Unknown subject names",
+        description: `These names do not match configured subjects: ${Array.from(unknownSubjects).join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const slotStarts = timetableSlots.map((slot) => slot.start);
+    const { error: deleteError } = await supabase
+      .from("timetable_entries")
+      .delete()
+      .eq("class_id", ttSelectedClassId)
+      .in("day_of_week", [0, 1, 2, 3, 4])
+      .in("start_time", slotStarts);
+
+    if (deleteError) {
+      setTtSaving(false);
+      toast({ title: "Failed to save timetable", description: deleteError.message, variant: "destructive" });
+      return;
+    }
+
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from("timetable_entries").insert(rows);
+      if (insertError) {
+        setTtSaving(false);
+        toast({ title: "Failed to save timetable", description: insertError.message, variant: "destructive" });
+        return;
+      }
+    }
+
+    await fetchClassTimetable(ttSelectedClassId);
+    setTtSaving(false);
+    toast({ title: "Timetable saved!" });
   };
 
   const addAnnouncement = async () => {
@@ -797,46 +950,44 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="mb-4 flex items-center gap-4">
                   <Label>Class:</Label>
-                  <Select>
+                  <Select value={ttSelectedClassId} onValueChange={setTtSelectedClassId}>
                     <SelectTrigger className="w-40"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
-                      {gradeOptions.flatMap(g => classOptions.map(c => (
-                        <SelectItem key={`${g}${c}`} value={`${g}${c}`}>{g}{c}</SelectItem>
-                      )))}
+                      {ttClasses.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={() => toast({ title: "Timetable saved!" })}>Save Timetable</Button>
+                  <Button variant="outline" onClick={saveTimetable} disabled={!ttSelectedClassId || ttSaving}>
+                    {ttSaving ? "Saving..." : "Save Timetable"}
+                  </Button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
                         <th className="px-3 py-2">Time</th>
-                        {["Mon","Tue","Wed","Thu","Fri"].map(d => <th key={d} className="px-3 py-2">{d}</th>)}
+                        {timetableDays.map((d) => <th key={d} className="px-3 py-2">{d}</th>)}
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        "07:30",
-                        "08:10",
-                        "08:50",
-                        "09:50",
-                        "10:30",
-                        "11:10",
-                        "11:50",
-                        "12:30",
-                        "13:50",
-                        "14:30",
-                        "15:30",
-                        "16:10",
-                      ].map(time => (
-                        <tr key={time} className="border-t">
-                          <td className="px-3 py-2 font-medium">{time}</td>
-                          {[1,2,3,4,5].map(d => (
-                            <td key={d} className="px-1 py-1">
-                              <Input className="h-8 text-xs text-center" placeholder="Subject" />
-                            </td>
-                          ))}
+                      {timetableSlots.map((slot) => (
+                        <tr key={slot.start} className="border-t">
+                          <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
+                          {timetableDays.map((_, dayIndex) => {
+                            const key = getTimetableCellKey(dayIndex, slot.start);
+                            return (
+                              <td key={key} className="px-1 py-1">
+                                <Input
+                                  className="h-8 text-xs text-center"
+                                  placeholder={ttLoading ? "Loading..." : "Subject"}
+                                  value={ttGrid[key] || ""}
+                                  onChange={(e) => setTtGrid((prev) => ({ ...prev, [key]: e.target.value }))}
+                                  disabled={ttLoading || !ttSelectedClassId}
+                                />
+                              </td>
+                            );
+                          })}
                         </tr>
                       ))}
                     </tbody>
