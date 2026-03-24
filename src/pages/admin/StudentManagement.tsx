@@ -855,7 +855,7 @@ export default function StudentManagement() {
 
             <div className="space-y-1">
               <Label>Boarding Status *</Label>
-              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => updateField("boarding_status", v)}>
+              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => { updateField("boarding_status", v); if (v === "day") { setSelectedHostel(""); setSelectedRoom(""); setBedNumber(""); } }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">Day Scholar</SelectItem>
@@ -863,6 +863,49 @@ export default function StudentManagement() {
                 </SelectContent>
               </Select>
             </div>
+
+            {(formData as any).boarding_status === "boarder" && (
+              <div className="col-span-full rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
+                <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Hostel Allocation
+                </p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hostel</Label>
+                    <Select value={selectedHostel} onValueChange={v => { setSelectedHostel(v); setSelectedRoom(""); }}>
+                      <SelectTrigger><SelectValue placeholder="Select hostel..." /></SelectTrigger>
+                      <SelectContent>
+                        {hostels.map(h => (
+                          <SelectItem key={h.id} value={h.id}>
+                            {h.name} ({h.current_occupancy}/{h.total_capacity})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Room</Label>
+                    <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={!selectedHostel}>
+                      <SelectTrigger><SelectValue placeholder="Select room..." /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.filter(r => r.hostel_id === selectedHostel).map(r => (
+                          <SelectItem key={r.id} value={r.id}>
+                            Room {r.room_number} ({r.current_occupancy}/{r.capacity})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bed Number (optional)</Label>
+                    <Input value={bedNumber} onChange={e => setBedNumber(e.target.value)} placeholder="e.g. B3" />
+                  </div>
+                </div>
+                {!selectedHostel && (
+                  <p className="text-xs text-muted-foreground">Select a hostel and room to allocate this student. You can also do this later from Boarding Management.</p>
+                )}
+              </div>
+            )}
             <div className="space-y-1">
               <Label>Enrollment Date</Label>
               <Input type="date" value={formData.enrollment_date || ""} onChange={e => updateField("enrollment_date", e.target.value)} />
