@@ -536,7 +536,7 @@ export default function MessagingPanel() {
       {/* Floating button */}
       <Button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+        className="fixed bottom-24 right-6 z-40 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-6"
         size="icon"
       >
         <MessageSquare className="h-6 w-6" />
