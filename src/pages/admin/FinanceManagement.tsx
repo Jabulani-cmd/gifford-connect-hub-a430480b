@@ -1195,36 +1195,49 @@ export default function FinanceManagement() {
       let invoiceId = payForm.invoice_id || null;
       let invoiceNumber: string | null = null;
 
-      // If no invoice selected (advance payment), auto-create one
+      // If no invoice selected, try to find existing unpaid/partial invoice first
       if (!invoiceId) {
-        const invNum = genInvoiceNum();
-        const { data: newInv, error: invErr } = await supabase
+        const { data: existingInvs } = await supabase
           .from("invoices")
-          .insert({
-            invoice_number: invNum,
-            student_id: selectedStudent.id,
-            academic_year: new Date().getFullYear().toString(),
-            term: "Term 1",
-            total_usd: usd,
-            total_zig: zig,
-            due_date: null,
-            status: "paid",
-            paid_usd: usd,
-            paid_zig: zig,
-            notes: "Auto-generated for advance payment",
-          })
-          .select()
-          .single();
-        if (invErr) throw invErr;
-        invoiceId = newInv.id;
-        invoiceNumber = invNum;
-        // Create invoice item
-        await supabase.from("invoice_items").insert({
-          invoice_id: newInv.id,
-          description: "Advance Payment",
-          amount_usd: usd,
-          amount_zig: zig,
-        });
+          .select("*")
+          .eq("student_id", selectedStudent.id)
+          .in("status", ["unpaid", "partial"])
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (existingInvs && existingInvs.length > 0) {
+          invoiceId = existingInvs[0].id;
+          invoiceNumber = existingInvs[0].invoice_number;
+        } else {
+          // Only create advance invoice if truly no invoice exists
+          const invNum = genInvoiceNum();
+          const { data: newInv, error: invErr } = await supabase
+            .from("invoices")
+            .insert({
+              invoice_number: invNum,
+              student_id: selectedStudent.id,
+              academic_year: new Date().getFullYear().toString(),
+              term: "Term 1",
+              total_usd: usd,
+              total_zig: zig,
+              due_date: null,
+              status: "paid",
+              paid_usd: usd,
+              paid_zig: zig,
+              notes: "Auto-generated for advance payment",
+            })
+            .select()
+            .single();
+          if (invErr) throw invErr;
+          invoiceId = newInv.id;
+          invoiceNumber = invNum;
+          await supabase.from("invoice_items").insert({
+            invoice_id: newInv.id,
+            description: "Advance Payment",
+            amount_usd: usd,
+            amount_zig: zig,
+          });
+        }
       }
 
       const { error } = await supabase.from("payments").insert({
