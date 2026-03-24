@@ -66,6 +66,7 @@ import {
   ChevronDown,
   Truck,
 } from "lucide-react";
+import { safeHtml } from "@/lib/utils";
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
