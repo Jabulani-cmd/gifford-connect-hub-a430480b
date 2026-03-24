@@ -444,7 +444,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 uppercase tracking-wider text-xs font-semibold px-10">
+                <Button size="lg" variant="outline" className="border-secondary bg-secondary/10 text-white hover:bg-secondary/20 uppercase tracking-wider text-xs font-semibold px-10">
                   Contact Us
                 </Button>
               </Link>
