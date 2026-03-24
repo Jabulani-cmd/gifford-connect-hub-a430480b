@@ -119,6 +119,15 @@ export default function AcademicManagement() {
   const [ttTeacher, setTtTeacher] = useState("");
   const [ttRoom, setTtRoom] = useState("");
 
+  // Sports schedule state
+  const [sportsEntries, setSportsEntries] = useState<any[]>([]);
+  const [sportsViewClass, setSportsViewClass] = useState("");
+  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start: string; end: string } } | null>(null);
+  const [sportsActivity, setSportsActivity] = useState("");
+  const [sportsVenue, setSportsVenue] = useState("");
+  const [sportsCoach, setSportsCoach] = useState("");
+  const [sportsType, setSportsType] = useState("sport");
+
   const [attClass, setAttClass] = useState("");
   const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
   const [attRecords, setAttRecords] = useState<Record<string, string>>({});
