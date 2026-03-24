@@ -150,15 +150,8 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (selectedTTClass) {
-      supabase.from("timetable_entries").select("*, subjects(name)").eq("class_id", selectedTTClass).then(({ data }) => {
-        if (data) {
-          // Map timetable_entries columns to match the expected format
-          const mapped = (data || []).map((t: any) => ({
-            ...t,
-            time_slot: t.start_time,
-          }));
-          setTimetableData(mapped);
-        }
+      supabase.from("timetable_entries").select("*, subjects(name), staff:teacher_id(full_name)").eq("class_id", selectedTTClass).order("start_time").then(({ data }) => {
+        if (data) setTimetableData(data || []);
       });
     }
   }, [selectedTTClass]);
@@ -261,8 +254,23 @@ export default function TeacherDashboard() {
   const handleLogout = async () => { await signOut(); navigate("/login"); };
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "Teacher";
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-  const timeSlots = ["07:30", "08:30", "10:00", "11:00", "13:00"];
-  const getTimetableCell = (ts: string, di: number) => timetableData.find(t => t.time_slot === ts && t.day_of_week === di)?.subjects?.name || "—";
+  const ttTimeSlots = [
+    { start: "07:30", end: "08:10" },
+    { start: "08:10", end: "08:50" },
+    { start: "08:50", end: "09:30" },
+    { start: "09:30", end: "09:50", isBreak: true, label: "Break" },
+    { start: "09:50", end: "10:30" },
+    { start: "10:30", end: "11:10" },
+    { start: "11:10", end: "11:50" },
+    { start: "11:50", end: "12:30" },
+    { start: "12:30", end: "13:30", isBreak: true, label: "Lunch" },
+    { start: "13:30", end: "14:10" },
+    { start: "14:10", end: "14:50" },
+  ];
+  const getTimetableCell = (start: string, di: number) => {
+    const entry = timetableData.find(t => t.start_time === start && t.day_of_week === di);
+    return entry?.subjects?.name || "—";
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
@@ -518,11 +526,32 @@ export default function TeacherDashboard() {
                 </Select>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm border">
-                  <thead className="bg-muted"><tr><th className="border px-3 py-2">Time</th>{days.map(d => <th key={d} className="border px-3 py-2">{d}</th>)}</tr></thead>
-                  <tbody>{timeSlots.map(ts => (
-                    <tr key={ts}><td className="border px-3 py-2 font-medium">{ts}</td>{days.map((_, di) => <td key={di} className="border px-3 py-2 text-center">{getTimetableCell(ts, di)}</td>)}</tr>
-                  ))}</tbody>
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="border px-3 py-2 text-left">Time</th>
+                      {days.map(d => <th key={d} className="border px-3 py-2">{d}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ttTimeSlots.map((slot, si) => (
+                      <tr key={si} className={slot.isBreak ? "bg-muted/50" : ""}>
+                        <td className="border px-3 py-2 font-medium text-xs whitespace-nowrap">
+                          {slot.start}–{slot.end}
+                          {slot.isBreak && <span className="block text-muted-foreground">{slot.label}</span>}
+                        </td>
+                        {slot.isBreak ? (
+                          <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label}</td>
+                        ) : (
+                          days.map((_, di) => (
+                            <td key={di} className="border px-3 py-2 text-center text-xs">
+                              {getTimetableCell(slot.start, di)}
+                            </td>
+                          ))
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </CardContent>
             </Card>
