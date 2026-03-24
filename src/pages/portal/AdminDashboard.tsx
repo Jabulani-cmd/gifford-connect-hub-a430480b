@@ -1000,9 +1000,6 @@ export default function AdminDashboard() {
 
           {/* Site Images Tab */}
           <TabsContent value="site-images">
-            <div className="mb-6 max-w-md">
-              <ExchangeRateCard />
-            </div>
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Principal Photo */}
               <Card>
