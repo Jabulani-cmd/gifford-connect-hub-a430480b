@@ -167,7 +167,7 @@ export default function AdminSupervisorDashboard() {
   return (
     <div className="min-h-screen bg-section-warm">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <img src={schoolLogo} alt="Logo" className="h-20 w-20 object-contain" />
             <div>
