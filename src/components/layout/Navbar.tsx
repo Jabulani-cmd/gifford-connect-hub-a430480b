@@ -187,17 +187,6 @@ export default function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
       {/* Top utility bar — only visible on non-home or scrolled */}
-      {(!isHome || scrolled) ? null : (
-        <div className="hidden border-b border-white/10 lg:block">
-          <div className="container flex h-8 items-center justify-end gap-4 text-xs text-white/60">
-            <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
-            <span className="text-white/30">•</span>
-            <Link to="/alumni" className="hover:text-white transition-colors">Alumni</Link>
-            <span className="text-white/30">•</span>
-            <Link to="/login" className="hover:text-white transition-colors">Portal Login</Link>
-          </div>
-        </div>
-      )}
 
       <div className="container flex items-center justify-between py-2 pr-2 md:py-4">
         <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
