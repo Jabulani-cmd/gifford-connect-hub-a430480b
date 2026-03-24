@@ -288,12 +288,15 @@ export default function AcademicManagement() {
 
     if (existing) {
       if (!ttSubject) {
-        await supabase.from("timetable_entries").delete().eq("id", existing.id);
+        const { error } = await supabase.from("timetable_entries").delete().eq("id", existing.id);
+        if (error) { toast({ title: "Error deleting entry", description: error.message, variant: "destructive" }); return; }
       } else {
-        await supabase.from("timetable_entries").update(payload).eq("id", existing.id);
+        const { error } = await supabase.from("timetable_entries").update(payload).eq("id", existing.id);
+        if (error) { toast({ title: "Error updating entry", description: error.message, variant: "destructive" }); return; }
       }
     } else if (ttSubject) {
-      await supabase.from("timetable_entries").insert(payload);
+      const { error } = await supabase.from("timetable_entries").insert(payload);
+      if (error) { toast({ title: "Error saving entry", description: error.message, variant: "destructive" }); return; }
     }
 
     toast({ title: "Timetable updated" });
