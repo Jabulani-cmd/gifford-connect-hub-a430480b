@@ -529,6 +529,13 @@ export type Database = {
             referencedRelation: "staff"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "class_subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       classes: {
@@ -568,6 +575,13 @@ export type Database = {
             columns: ["class_teacher_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_class_teacher_id_fkey"
+            columns: ["class_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
             referencedColumns: ["id"]
           },
         ]
@@ -698,6 +712,13 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1390,10 +1411,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hostels_assistant_housemaster_id_fkey"
+            columns: ["assistant_housemaster_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hostels_housemaster_id_fkey"
             columns: ["housemaster_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostels_housemaster_id_fkey"
+            columns: ["housemaster_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1660,6 +1695,13 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2377,6 +2419,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sports_schedule_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3191,6 +3240,13 @@ export type Database = {
             referencedRelation: "staff"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "timetable_entries_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_blocks: {
@@ -3294,7 +3350,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      staff_public: {
+        Row: {
+          bio: string | null
+          category: string | null
+          department: string | null
+          full_name: string | null
+          id: string | null
+          photo_url: string | null
+          title: string | null
+        }
+        Insert: {
+          bio?: string | null
+          category?: string | null
+          department?: string | null
+          full_name?: string | null
+          id?: string | null
+          photo_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          bio?: string | null
+          category?: string | null
+          department?: string | null
+          full_name?: string | null
+          id?: string | null
+          photo_url?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       column_exists: { Args: { col: string; tbl: string }; Returns: boolean }
