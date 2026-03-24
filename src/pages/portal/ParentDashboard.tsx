@@ -1061,10 +1061,11 @@ function TabContent(props: TabContentProps) {
                           <td className="px-3 py-2 text-muted-foreground">
                             {inv.term} {inv.academic_year}
                           </td>
-                          <td className="px-3 py-2 text-center">${Number(inv.total_usd || 0).toFixed(2)}</td>
+                          <td className="px-3 py-2 text-center">${Number(inv.total_usd || 0).toFixed(2)}<br/><span className="text-xs text-muted-foreground">ZiG {usdToZig(Number(inv.total_usd || 0)).toFixed(2)}</span></td>
                           <td className="px-3 py-2 text-center text-emerald-600">${paid.toFixed(2)}</td>
                           <td className={`px-3 py-2 text-center font-bold ${bal < 0 ? "text-emerald-600" : bal > 0 ? "text-red-600" : ""}`}>
                             {bal < 0 ? `+$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
+                            <br/><span className="text-xs font-normal text-muted-foreground">ZiG {usdToZig(Math.abs(bal)).toFixed(2)}</span>
                           </td>
                           <td className="px-3 py-2 text-center">
                             <Badge
