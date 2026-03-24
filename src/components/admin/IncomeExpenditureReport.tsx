@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { safeHtml } from "@/lib/utils";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -131,13 +132,13 @@ export default function IncomeExpenditureReport() {
 
     if (searchedPayments.length > 0) {
       printWin.document.write(`<h3>Income (${searchedPayments.length} transactions)</h3><table><tr><th>Date</th><th>Receipt</th><th>Student</th><th>Method</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-      searchedPayments.forEach(p => printWin.document.write(`<tr><td>${p.payment_date}</td><td>${p.receipt_number}</td><td>${p.students?.full_name || "—"}</td><td>${p.payment_method}</td><td class="right">${fmt(p.amount_usd)}</td><td class="right">${fmt(p.amount_zig)}</td></tr>`));
+      searchedPayments.forEach(p => printWin.document.write(`<tr><td>${safeHtml(p.payment_date)}</td><td>${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.students?.full_name || "—")}</td><td>${safeHtml(p.payment_method)}</td><td class="right">${fmt(p.amount_usd)}</td><td class="right">${fmt(p.amount_zig)}</td></tr>`));
       printWin.document.write(`</table>`);
     }
 
     if (searchedExpenses.length > 0) {
       printWin.document.write(`<h3>Expenses (${searchedExpenses.length} transactions)</h3><table><tr><th>Date</th><th>Category</th><th>Description</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-      searchedExpenses.forEach(e => printWin.document.write(`<tr><td>${e.expense_date}</td><td>${e.category}</td><td>${e.description}</td><td class="right">${fmt(e.amount_usd)}</td><td class="right">${fmt(e.amount_zig)}</td></tr>`));
+      searchedExpenses.forEach(e => printWin.document.write(`<tr><td>${safeHtml(e.expense_date)}</td><td>${safeHtml(e.category)}</td><td>${safeHtml(e.description)}</td><td class="right">${fmt(e.amount_usd)}</td><td class="right">${fmt(e.amount_zig)}</td></tr>`));
       printWin.document.write(`</table>`);
     }
 

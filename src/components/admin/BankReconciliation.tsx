@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { safeHtml } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -150,7 +151,7 @@ export default function BankReconciliation() {
     printWin.document.write(`<p>Reconciled: ${reconciledCount} | Unreconciled: ${unreconciledCount} | Disputed: ${disputedCount}</p>`);
     printWin.document.write(`<table><tr><th>Date</th><th>Description</th><th>Ref</th><th>Bank</th><th>Type</th><th class="right">USD</th><th>Status</th></tr>`);
     filtered.forEach(tx => {
-      printWin.document.write(`<tr><td>${tx.transaction_date}</td><td>${tx.description}</td><td>${tx.reference_number || "—"}</td><td>${tx.bank_name || "—"}</td><td>${tx.transaction_type}</td><td class="right ${tx.transaction_type}">${tx.transaction_type === "credit" ? "+" : "-"}${fmt(tx.amount_usd)}</td><td>${tx.reconciliation_status}</td></tr>`);
+      printWin.document.write(`<tr><td>${safeHtml(tx.transaction_date)}</td><td>${safeHtml(tx.description)}</td><td>${safeHtml(tx.reference_number || "—")}</td><td>${safeHtml(tx.bank_name || "—")}</td><td>${safeHtml(tx.transaction_type)}</td><td class="right ${tx.transaction_type}">${tx.transaction_type === "credit" ? "+" : "-"}${fmt(tx.amount_usd)}</td><td>${safeHtml(tx.reconciliation_status)}</td></tr>`);
     });
     printWin.document.write(`</table></body></html>`);
     printWin.document.close();
