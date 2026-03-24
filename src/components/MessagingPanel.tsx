@@ -302,6 +302,51 @@ export default function MessagingPanel() {
   };
 
   // Search users with role info
+  // Fetch contact directory
+  const fetchContacts = useCallback(async () => {
+    if (!user) return;
+    setContactsLoading(true);
+
+    let query = supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .neq("id", user.id)
+      .order("full_name", { ascending: true })
+      .limit(100);
+
+    if (contactSearch.length >= 2) {
+      query = query.ilike("full_name", `%${contactSearch}%`);
+    }
+
+    const { data: profiles } = await query;
+    if (!profiles) { setContacts([]); setContactsLoading(false); return; }
+
+    const userIds = profiles.map(p => p.id);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("user_id", userIds);
+
+    const roleMap: Record<string, string> = {};
+    roles?.forEach(r => { roleMap[r.user_id] = r.role; });
+
+    let results: UserProfile[] = profiles
+      .filter(p => !blockedIds.includes(p.id))
+      .map(p => ({ ...p, role: roleMap[p.id] || "user" }));
+
+    if (contactRoleFilter !== "all") {
+      results = results.filter(p => p.role === contactRoleFilter);
+    }
+
+    setContacts(results);
+    setContactsLoading(false);
+  }, [user, contactSearch, contactRoleFilter, blockedIds]);
+
+  // Fetch contacts when tab switches or filters change
+  useEffect(() => {
+    if (panelTab === "contacts") fetchContacts();
+  }, [panelTab, fetchContacts]);
+
   const searchUsers = async (query: string) => {
     setUserSearch(query);
     if (query.length < 2) { setUserResults([]); return; }
@@ -325,13 +370,17 @@ export default function MessagingPanel() {
     const roleMap: Record<string, string> = {};
     roles?.forEach(r => { roleMap[r.user_id] = r.role; });
 
-    // Filter out blocked users
-    const results: UserProfile[] = profiles
+    // Filter out blocked users and apply role filter
+    let results: UserProfile[] = profiles
       .filter(p => !blockedIds.includes(p.id))
       .map(p => ({
         ...p,
         role: roleMap[p.id] || "user",
       }));
+
+    if (searchRoleFilter !== "all") {
+      results = results.filter(p => p.role === searchRoleFilter);
+    }
 
     setUserResults(results);
   };
