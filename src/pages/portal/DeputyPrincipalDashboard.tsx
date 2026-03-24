@@ -39,14 +39,15 @@ export default function DeputyPrincipalDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-36 items-center justify-between">
+        <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High School crest" className="h-32 w-32 object-contain" />
-            <span className="font-heading text-lg font-bold text-primary">Deputy Principal's Portal</span>
+            <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Deputy Principal</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Deputy Principal</span>
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden sm:inline text-sm text-muted-foreground">Deputy Principal</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
