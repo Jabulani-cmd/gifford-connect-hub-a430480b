@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Bell, BarChart3, Calendar, CalendarDays, ClipboardList,
-  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff
+  FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff,
+  TrendingUp, FolderOpen, MessageSquare
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,10 @@ import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
 import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 import ExamResultsUpload from "@/components/teacher/ExamResultsUpload";
 import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import LessonPlansTab from "@/components/teacher/LessonPlansTab";
+import StudentProgressTracker from "@/components/teacher/StudentProgressTracker";
+import ResourceLibraryTab from "@/components/teacher/ResourceLibraryTab";
+import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -344,6 +349,10 @@ export default function TeacherDashboard() {
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
             <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
+            <TabsTrigger value="lesson-plans"><BookOpen className="mr-1 h-4 w-4" /> Lesson Plans</TabsTrigger>
+            <TabsTrigger value="progress"><TrendingUp className="mr-1 h-4 w-4" /> Progress</TabsTrigger>
+            <TabsTrigger value="resources"><FolderOpen className="mr-1 h-4 w-4" /> Resources</TabsTrigger>
+            <TabsTrigger value="parent-log"><MessageSquare className="mr-1 h-4 w-4" /> Parent Log</TabsTrigger>
             <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
             <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
           </TabsList>
@@ -566,6 +575,26 @@ export default function TeacherDashboard() {
           {/* EXAM TIMETABLE */}
           <TabsContent value="exam-timetable">
             <StudentExamTimetableTab showAll />
+          </TabsContent>
+
+          {/* LESSON PLANS */}
+          <TabsContent value="lesson-plans">
+            <LessonPlansTab userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
+          {/* STUDENT PROGRESS */}
+          <TabsContent value="progress">
+            <StudentProgressTracker userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
+          {/* RESOURCE LIBRARY */}
+          <TabsContent value="resources">
+            <ResourceLibraryTab userId={user!.id} subjects={subjects} />
+          </TabsContent>
+
+          {/* PARENT COMMUNICATION LOG */}
+          <TabsContent value="parent-log">
+            <ParentCommunicationLog userId={user!.id} students={students} />
           </TabsContent>
 
           {/* MY SCHEDULE */}
