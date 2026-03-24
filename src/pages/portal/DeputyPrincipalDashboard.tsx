@@ -77,15 +77,17 @@ export default function DeputyPrincipalDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="students" className="space-y-6">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="students"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
-            <TabsTrigger value="staff"><Briefcase className="mr-1 h-4 w-4" /> Staff Overview</TabsTrigger>
-            <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
-            <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
-            <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
+        <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="flex-wrap h-auto gap-1 w-max sm:w-auto">
+            <TabsTrigger value="students" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Students</TabsTrigger>
+            <TabsTrigger value="staff" className="text-xs sm:text-sm"><Briefcase className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Staff</TabsTrigger>
+            <TabsTrigger value="academics" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Academics</TabsTrigger>
+            <TabsTrigger value="communication" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Comms</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
+            <TabsTrigger value="timetable" className="text-xs sm:text-sm"><Calendar className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Timetable</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
           <TabsContent value="staff"><StaffManagementFull /></TabsContent>

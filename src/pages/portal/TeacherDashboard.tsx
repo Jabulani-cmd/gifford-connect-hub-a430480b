@@ -342,22 +342,23 @@ export default function TeacherDashboard() {
         <Tabs defaultValue="materials" className="space-y-4">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
           <TabsList className="flex-wrap sm:flex-wrap h-auto gap-1 w-max sm:w-auto">
-            <TabsTrigger value="materials"><FileText className="mr-1 h-4 w-4" /> Materials</TabsTrigger>
-            <TabsTrigger value="assessments"><ClipboardList className="mr-1 h-4 w-4" /> Assessments</TabsTrigger>
-            <TabsTrigger value="exam-results"><GraduationCap className="mr-1 h-4 w-4" /> Exam Results</TabsTrigger>
-            <TabsTrigger value="marks"><BarChart3 className="mr-1 h-4 w-4" /> Marks</TabsTrigger>
-            <TabsTrigger value="homework"><BookOpen className="mr-1 h-4 w-4" /> Homework</TabsTrigger>
-            <TabsTrigger value="attendance"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
-            <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
-            <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
-            <TabsTrigger value="lesson-plans"><BookOpen className="mr-1 h-4 w-4" /> Lesson Plans</TabsTrigger>
-            <TabsTrigger value="progress"><TrendingUp className="mr-1 h-4 w-4" /> Progress</TabsTrigger>
-            <TabsTrigger value="resources"><FolderOpen className="mr-1 h-4 w-4" /> Resources</TabsTrigger>
-            <TabsTrigger value="parent-log"><MessageSquare className="mr-1 h-4 w-4" /> Parent Log</TabsTrigger>
-            <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
-            <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
+            <TabsTrigger value="materials" className="text-xs sm:text-sm"><FileText className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Materials</TabsTrigger>
+            <TabsTrigger value="assessments" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Assessments</TabsTrigger>
+            <TabsTrigger value="exam-results" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Results</TabsTrigger>
+            <TabsTrigger value="marks" className="text-xs sm:text-sm"><BarChart3 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Marks</TabsTrigger>
+            <TabsTrigger value="homework" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Homework</TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
+            <TabsTrigger value="announcements" className="text-xs sm:text-sm"><Bell className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Notices</TabsTrigger>
+            <TabsTrigger value="timetable" className="text-xs sm:text-sm"><Calendar className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Timetable</TabsTrigger>
+            <TabsTrigger value="exam-timetable" className="text-xs sm:text-sm"><CalendarDays className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Exam TT</TabsTrigger>
+            <TabsTrigger value="lesson-plans" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Lessons</TabsTrigger>
+            <TabsTrigger value="progress" className="text-xs sm:text-sm"><TrendingUp className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Progress</TabsTrigger>
+            <TabsTrigger value="resources" className="text-xs sm:text-sm"><FolderOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resources</TabsTrigger>
+            <TabsTrigger value="parent-log" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Parents</TabsTrigger>
+            <TabsTrigger value="schedule" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Schedule</TabsTrigger>
+            <TabsTrigger value="leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Leave</TabsTrigger>
           </TabsList>
+          </div>
 
           {/* MATERIALS - Enhanced */}
           <TabsContent value="materials">
