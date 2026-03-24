@@ -1275,32 +1275,9 @@ export default function FinanceManagement() {
       });
       if (error) throw error;
 
-      // Update invoice paid amounts — always update since we always have an invoiceId now
-      if (invoiceId) {
-        // Re-fetch the invoice to get current paid amounts (in case of concurrent updates)
-        const { data: currentInv } = await supabase
-          .from("invoices")
-          .select("*")
-          .eq("id", invoiceId)
-          .single();
-        if (currentInv) {
-          const newPaidUsd = parseFloat(currentInv.paid_usd) + usd;
-          const newPaidZig = parseFloat(currentInv.paid_zig) + zig;
-          const totalUsd = parseFloat(currentInv.total_usd);
-          const totalZig = parseFloat(currentInv.total_zig);
-          let newStatus = "partial";
-          if (newPaidUsd >= totalUsd) newStatus = "paid";
-          else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
-          await supabase
-            .from("invoices")
-            .update({
-              paid_usd: newPaidUsd,
-              paid_zig: newPaidZig,
-              status: newStatus,
-            })
-            .eq("id", invoiceId);
-          if (!invoiceNumber) invoiceNumber = currentInv.invoice_number;
-        }
+      if (!invoiceNumber && invoiceId) {
+        const matchedInvoice = studentInvoices.find((inv) => inv.id === invoiceId);
+        invoiceNumber = matchedInvoice?.invoice_number || null;
       }
 
       toast({ title: "Payment recorded", description: `Receipt: ${receiptNumber}` });
@@ -1417,18 +1394,6 @@ export default function FinanceManagement() {
     if (!confirm(`Delete payment ${payment.receipt_number}? This will reverse the paid amounts on the linked invoice.`))
       return;
     try {
-      const { data: invoice } = await supabase.from("invoices").select("*").eq("id", payment.invoice_id).single();
-      if (invoice) {
-        const newPaidUsd = Math.max(0, Number(invoice.paid_usd) - Number(payment.amount_usd));
-        const newPaidZig = Math.max(0, Number(invoice.paid_zig) - Number(payment.amount_zig));
-        let newStatus = "partial";
-        if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
-        else if (newPaidUsd >= Number(invoice.total_usd) && newPaidZig >= Number(invoice.total_zig)) newStatus = "paid";
-        await supabase
-          .from("invoices")
-          .update({ paid_usd: newPaidUsd, paid_zig: newPaidZig, status: newStatus })
-          .eq("id", payment.invoice_id);
-      }
       await supabase.from("audit_logs").insert({
         action: "delete_payment",
         table_name: "payments",
