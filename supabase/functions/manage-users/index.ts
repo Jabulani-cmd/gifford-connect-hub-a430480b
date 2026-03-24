@@ -56,7 +56,23 @@ Deno.serve(async (req) => {
         _user_id: userId,
         _role: "admin_supervisor",
       });
-      if (!isAdmin && !isPrincipal && !isAdminSupervisor && action !== "get-students" && action !== "seed-admin") {
+      // get-students: allow teachers and HODs in addition to admins
+      const { data: isTeacher } = await supabaseAdmin.rpc("has_role", {
+        _user_id: userId,
+        _role: "teacher",
+      });
+      const { data: isHod } = await supabaseAdmin.rpc("has_role", {
+        _user_id: userId,
+        _role: "hod",
+      });
+      if (action === "get-students") {
+        if (!isAdmin && !isPrincipal && !isAdminSupervisor && !isTeacher && !isHod) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else if (!isAdmin && !isPrincipal && !isAdminSupervisor) {
         return new Response(JSON.stringify({ error: "Forbidden" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
