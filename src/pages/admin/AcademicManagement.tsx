@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   BookOpen, Plus, Pencil, Trash2, Users, Clock, Calendar,
   CheckCircle, XCircle, AlertCircle, Search, Loader2,
-  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList, UserCheck
+  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList, UserCheck, Trophy
 } from "lucide-react";
 import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
 import TermReportsTab from "@/components/admin/TermReportsTab";
