@@ -831,7 +831,7 @@ export default function FinanceManagement() {
       <h2>Payments</h2>
        table<thead>   <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
       <tbody>
-      ${stmtPayments.map((p) => `     <tr><td class="mono">${p.receipt_number}</td><td>${p.payment_date}</td><td class="mono">${p.invoices?.invoice_number || "—"}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${p.payment_method}</td></tr>`).join("")}
+      ${stmtPayments.map((p) => `     <tr><td class="mono">${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.payment_date)}</td><td class="mono">${safeHtml(p.invoices?.invoice_number || "—")}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${safeHtml(p.payment_method)}</td></tr>`).join("")}
       </tbody>   </table>
       <div class="summary">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
