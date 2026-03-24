@@ -27,6 +27,10 @@ import BulkMarksUpload from "@/components/teacher/BulkMarksUpload";
 import StaffLeaveRequest from "@/components/teacher/StaffLeaveRequest";
 import ExamResultsUpload from "@/components/teacher/ExamResultsUpload";
 import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTab";
+import LessonPlansTab from "@/components/teacher/LessonPlansTab";
+import StudentProgressTracker from "@/components/teacher/StudentProgressTracker";
+import ResourceLibraryTab from "@/components/teacher/ResourceLibraryTab";
+import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
