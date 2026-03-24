@@ -203,13 +203,13 @@ export default function Navbar() {
           <img
             src={schoolLogo}
             alt="Gifford High School crest"
-            className="h-14 w-14 flex-shrink-0 object-contain md:h-20 md:w-20"
+            className="h-20 w-20 flex-shrink-0 object-contain md:h-28 md:w-28"
           />
           <div className="flex flex-col justify-center leading-tight">
-            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-2xl">
+            <span className="block font-heading text-xl font-bold tracking-tight text-white md:text-3xl">
               Gifford High School
             </span>
-            <span className="block text-[10px] italic text-white/60 md:text-xs">
+            <span className="block text-xs italic text-white/60 md:text-sm">
               Hinc Orior — From Here I Arise
             </span>
           </div>
