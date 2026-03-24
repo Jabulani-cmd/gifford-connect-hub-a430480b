@@ -62,7 +62,8 @@ const timetableSlots = [
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
+  const isFinanceUser = role === 'finance' || role === 'admin_supervisor';
   const navigate = useNavigate();
 
   // Announcements
@@ -718,10 +719,13 @@ export default function AdminDashboard() {
               <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
               <TabsTrigger value="awards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-4 w-4" /> Awards</TabsTrigger>
               <TabsTrigger value="attendance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-              {/* Finance */}
-              <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+              {isFinanceUser && (
+                <>
+                  <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
+                  {/* Finance */}
+                  <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
+                </>
+              )}
               {/* Communication & Reports */}
               <TabsTrigger value="meetings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-4 w-4" /> Meetings</TabsTrigger>
               <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
@@ -1123,10 +1127,12 @@ export default function AdminDashboard() {
             <GoLiveChecklist />
           </TabsContent>
 
-          {/* Finance Tab */}
-          <TabsContent value="finance">
-            <FinanceManagement />
-          </TabsContent>
+          {/* Finance Tab - only for finance clerks and admin supervisors */}
+          {isFinanceUser && (
+            <TabsContent value="finance">
+              <FinanceManagement />
+            </TabsContent>
+          )}
 
           {/* User Manual Tab */}
           <TabsContent value="manual">
