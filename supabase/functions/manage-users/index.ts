@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Verify caller is admin (except for seed/public actions)
-    if (action !== "seed-admin" && action !== "seed-teacher" && action !== "register-parent") {
+    // Verify caller is admin (except for public actions)
+    if (action !== "register-parent") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -56,7 +56,23 @@ Deno.serve(async (req) => {
         _user_id: userId,
         _role: "admin_supervisor",
       });
-      if (!isAdmin && !isPrincipal && !isAdminSupervisor && action !== "get-students") {
+      // get-students: allow teachers and HODs in addition to admins
+      const { data: isTeacher } = await supabaseAdmin.rpc("has_role", {
+        _user_id: userId,
+        _role: "teacher",
+      });
+      const { data: isHod } = await supabaseAdmin.rpc("has_role", {
+        _user_id: userId,
+        _role: "hod",
+      });
+      if (action === "get-students") {
+        if (!isAdmin && !isPrincipal && !isAdminSupervisor && !isTeacher && !isHod) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else if (!isAdmin && !isPrincipal && !isAdminSupervisor) {
         return new Response(JSON.stringify({ error: "Forbidden" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -68,8 +84,9 @@ Deno.serve(async (req) => {
     if (action === "seed-admin") {
       const { data: existingUsers } =
         await supabaseAdmin.auth.admin.listUsers();
+      const adminCheckEmail = Deno.env.get("ADMIN_SEED_EMAIL") || "admin@giffordhigh.com";
       const adminExists = existingUsers?.users?.some(
-        (u) => u.email === "admin@giffordhigh.com"
+        (u) => u.email === adminCheckEmail
       );
       if (adminExists) {
         return new Response(
@@ -78,12 +95,20 @@ Deno.serve(async (req) => {
         );
       }
 
+      const adminEmail = Deno.env.get("ADMIN_SEED_EMAIL") || "admin@giffordhigh.com";
+      const adminPassword = Deno.env.get("ADMIN_SEED_PASSWORD");
+      if (!adminPassword) {
+        return new Response(JSON.stringify({ error: "ADMIN_SEED_PASSWORD secret not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const { data: newUser, error: createError } =
         await supabaseAdmin.auth.admin.createUser({
-          email: "admin@giffordhigh.com",
-          password: "GiffordAdmin2026$",
+          email: adminEmail,
+          password: adminPassword,
           email_confirm: true,
-          user_metadata: { full_name: "System Administrator" },
+          user_metadata: { full_name: "System Administrator", must_change_password: true },
         });
 
       if (createError) throw createError;
