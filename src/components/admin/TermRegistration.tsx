@@ -34,6 +34,7 @@ export default function TermRegistration() {
   const [loading, setLoading] = useState(true);
   const [dbSubjects, setDbSubjects] = useState<any[]>([]);
   const [feeStructures, setFeeStructures] = useState<any[]>([]);
+  const [dbClasses, setDbClasses] = useState<any[]>([]);
 
   // Single student registration dialog
   const [regDialogOpen, setRegDialogOpen] = useState(false);
