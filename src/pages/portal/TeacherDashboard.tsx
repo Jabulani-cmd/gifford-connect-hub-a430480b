@@ -533,11 +533,32 @@ export default function TeacherDashboard() {
                 </Select>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm border">
-                  <thead className="bg-muted"><tr><th className="border px-3 py-2">Time</th>{days.map(d => <th key={d} className="border px-3 py-2">{d}</th>)}</tr></thead>
-                  <tbody>{timeSlots.map(ts => (
-                    <tr key={ts}><td className="border px-3 py-2 font-medium">{ts}</td>{days.map((_, di) => <td key={di} className="border px-3 py-2 text-center">{getTimetableCell(ts, di)}</td>)}</tr>
-                  ))}</tbody>
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="border px-3 py-2 text-left">Time</th>
+                      {days.map(d => <th key={d} className="border px-3 py-2">{d}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ttTimeSlots.map((slot, si) => (
+                      <tr key={si} className={slot.isBreak ? "bg-muted/50" : ""}>
+                        <td className="border px-3 py-2 font-medium text-xs whitespace-nowrap">
+                          {slot.start}–{slot.end}
+                          {slot.isBreak && <span className="block text-muted-foreground">{slot.label}</span>}
+                        </td>
+                        {slot.isBreak ? (
+                          <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label}</td>
+                        ) : (
+                          days.map((_, di) => (
+                            <td key={di} className="border px-3 py-2 text-center text-xs">
+                              {getTimetableCell(slot.start, di)}
+                            </td>
+                          ))
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </CardContent>
             </Card>
