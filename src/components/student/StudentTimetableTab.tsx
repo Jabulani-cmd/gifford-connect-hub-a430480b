@@ -58,8 +58,9 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
     }
   };
 
-  // Admin saves day_of_week as 0-4 (Mon=0), selectedDay is 1-5 (Mon=1)
-  const dayEntries = entries.filter((e) => e.day_of_week === selectedDay || e.day_of_week === selectedDay - 1);
+  // Admin saves day_of_week as 0-indexed (Mon=0), selectedDay is 1-indexed (Mon=1)
+  // Support both conventions for backward compatibility
+  const dayEntries = entries.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay);
   const isDetailed = entries.length > 0 && entries[0].start_time;
 
   if (loading) {

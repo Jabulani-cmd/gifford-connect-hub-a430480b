@@ -275,6 +275,21 @@ export default function TermRegistration() {
           registered_by: user?.id || null,
           invoice_id: invoiceId,
         });
+
+        // Allocate student to class
+        const matchClass = dbClasses.find(c => c.form_level === student.form && (!student.stream || c.stream === student.stream))
+          || dbClasses.find(c => c.form_level === student.form);
+        if (matchClass) {
+          const { data: existingSc } = await supabase.from("student_classes").select("id").eq("student_id", student.id).eq("class_id", matchClass.id).maybeSingle();
+          if (!existingSc) {
+            await supabase.from("student_classes").insert({ student_id: student.id, class_id: matchClass.id });
+          }
+          const { data: existingEnr } = await supabase.from("enrollments").select("id").eq("student_id", student.id).eq("academic_year", academicYear).maybeSingle();
+          if (!existingEnr) {
+            await supabase.from("enrollments").insert({ student_id: student.id, class_id: matchClass.id, academic_year: academicYear, enrollment_date: new Date().toISOString().split("T")[0] });
+          }
+        }
+
         successCount++;
       } catch {
         errorCount++;
