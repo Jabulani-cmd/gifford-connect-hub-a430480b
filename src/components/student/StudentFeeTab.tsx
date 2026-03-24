@@ -20,6 +20,7 @@ interface Props {
 
 export default function StudentFeeTab({ studentId }: Props) {
   const { toast } = useToast();
+  const { rate, usdToZig } = useExchangeRate();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
