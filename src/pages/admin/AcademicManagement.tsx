@@ -595,7 +595,7 @@ export default function AcademicManagement() {
               <div><CardTitle className="font-heading">Timetable</CardTitle><CardDescription>Visual weekly timetable with clash detection</CardDescription></div>
               <Select value={ttViewClass} onValueChange={setTtViewClass}>
                 <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
-                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent className="max-h-60 overflow-y-auto">{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </CardHeader>
             <CardContent>
