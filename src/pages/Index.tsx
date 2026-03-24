@@ -113,6 +113,7 @@ export default function Home() {
         data.forEach((s) => {
           if (s.setting_key === "achievements_image") setAchievementsImage(s.setting_value);
           if (s.setting_key === "tradition_image") setTraditionImage(s.setting_value);
+          if (s.setting_key === "cta_image") setCtaImage(s.setting_value);
         });
       }
     };
