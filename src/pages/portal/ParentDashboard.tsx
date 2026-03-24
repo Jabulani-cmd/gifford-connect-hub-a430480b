@@ -1049,15 +1049,18 @@ function TabContent(props: TabContentProps) {
                   </thead>
                   <tbody>
                     {invoices.map((inv: any) => {
-                      const bal = (inv.total_usd || 0) - (inv.paid_usd || 0);
+                      const paid = childPayments
+                        .filter((p: any) => p.invoice_id === inv.id)
+                        .reduce((sum: number, p: any) => sum + Number(p.amount_usd || 0), 0);
+                      const bal = Number(inv.total_usd || 0) - paid;
                       return (
                         <tr key={inv.id} className="border-b last:border-0">
                           <td className="px-3 py-2 font-medium text-foreground">{inv.invoice_number}</td>
                           <td className="px-3 py-2 text-muted-foreground">
                             {inv.term} {inv.academic_year}
                           </td>
-                          <td className="px-3 py-2 text-center">${inv.total_usd}</td>
-                          <td className="px-3 py-2 text-center text-emerald-600">${inv.paid_usd}</td>
+                          <td className="px-3 py-2 text-center">${Number(inv.total_usd || 0).toFixed(2)}</td>
+                          <td className="px-3 py-2 text-center text-emerald-600">${paid.toFixed(2)}</td>
                           <td className={`px-3 py-2 text-center font-bold ${bal < 0 ? "text-emerald-600" : bal > 0 ? "text-red-600" : ""}`}>
                             {bal < 0 ? `+$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
                           </td>
