@@ -3146,6 +3146,10 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      recalculate_invoice_payment_totals: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
