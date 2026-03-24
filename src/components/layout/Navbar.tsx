@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import zimbabweFlag from "@/assets/zimbabwe-flag.jpg";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -198,7 +199,7 @@ export default function Navbar() {
         </div>
       )}
 
-      <div className="container flex items-center justify-between py-2 md:py-4">
+      <div className="container flex items-center justify-between py-2 pr-2 md:py-4">
         <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
           <img
             src={schoolLogo}
@@ -239,10 +240,22 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile toggle */}
-        <button className="flex-shrink-0 ml-2 p-2 text-white lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
-          {mobileOpen ? <X className="h-8 w-8" /> : <Menu className="h-8 w-8" />}
-        </button>
+        <div className="ml-2 flex flex-shrink-0 items-center gap-2">
+          <img
+            src={zimbabweFlag}
+            alt="Flag of Zimbabwe"
+            className="h-6 w-10 rounded object-cover shadow-md sm:h-7 sm:w-12 lg:h-8 lg:w-14"
+          />
+
+          {/* Mobile toggle */}
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/90 lg:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
