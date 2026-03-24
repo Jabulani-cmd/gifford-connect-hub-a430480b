@@ -705,7 +705,55 @@ export default function AcademicManagement() {
           </Card>
         </TabsContent>
 
-        {/* ═══ ATTENDANCE ═══ */}
+        {/* ═══ SPORTS & CLUBS SCHEDULE ═══ */}
+        <TabsContent value="sports-schedule">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+              <div><CardTitle className="font-heading">Sports & Clubs Schedule</CardTitle><CardDescription>Manage after-school sports and clubs timetable (15:30–17:00)</CardDescription></div>
+              <Select value={sportsViewClass} onValueChange={setSportsViewClass}>
+                <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              {!sportsViewClass ? <p className="text-center py-8 text-muted-foreground">Select a class to view/edit sports & clubs schedule.</p> : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th className="px-2 py-2 border text-left min-w-[80px]">Time</th>
+                        {dayNames.map((d, i) => <th key={i} className="px-2 py-2 border text-center min-w-[120px]">{d}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sportsSlots.map((slot, si) => (
+                        <tr key={si}>
+                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start}–{slot.end}</td>
+                          {dayNames.map((_, di) => {
+                            const entry = getSportsEntry(di, slot.start, slot.end);
+                            return (
+                              <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
+                                onClick={() => { setSportsEditCell({ day: di, slot }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
+                                {entry ? (
+                                  <div className="text-xs">
+                                    <p className="font-semibold text-accent">{entry.activity_name}</p>
+                                    <p className="text-muted-foreground">{entry.staff?.full_name?.split(" ").pop() || ""}</p>
+                                    {entry.venue && <p className="text-muted-foreground">{entry.venue}</p>}
+                                  </div>
+                                ) : <span className="text-xs text-muted-foreground">—</span>}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="attendance">
           <Card>
             <CardHeader>
