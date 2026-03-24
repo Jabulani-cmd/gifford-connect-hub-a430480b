@@ -287,15 +287,16 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-20 items-center justify-between">
+        <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High" className="h-16 w-16 object-contain" />
-            <span className="font-heading text-lg font-bold text-primary">Teacher Portal</span>
+            <img src={schoolLogo} alt="Gifford High" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Teacher Portal</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
             <NotificationBell />
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
