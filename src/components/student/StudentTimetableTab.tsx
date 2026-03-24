@@ -15,13 +15,17 @@ interface Props {
 
 export default function StudentTimetableTab({ studentClassId, studentId }: Props) {
   const [entries, setEntries] = useState<any[]>([]);
+  const [sportsSchedule, setSportsSchedule] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sportsActivities, setSportsActivities] = useState<string[]>([]);
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
   const [selectedDay, setSelectedDay] = useState(today >= 1 && today <= 5 ? today : 1);
 
   useEffect(() => {
-    if (studentClassId) fetchTimetable();
+    if (studentClassId) {
+      fetchTimetable();
+      fetchSportsSchedule();
+    }
     if (studentId) fetchSports();
   }, [studentClassId, studentId]);
 
@@ -46,6 +50,16 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
     setLoading(false);
   };
 
+  const fetchSportsSchedule = async () => {
+    if (!studentClassId) return;
+    const { data } = await supabase
+      .from("sports_schedule")
+      .select("*, staff:coach_id(full_name)")
+      .eq("class_id", studentClassId)
+      .order("start_time");
+    if (data) setSportsSchedule(data);
+  };
+
   const fetchSports = async () => {
     if (!studentId) return;
     const { data } = await supabase
@@ -59,8 +73,8 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
   };
 
   // Admin saves day_of_week as 0-indexed (Mon=0), selectedDay is 1-indexed (Mon=1)
-  // Support both conventions for backward compatibility
   const dayEntries = entries.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay);
+  const daySports = sportsSchedule.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay);
   const isDetailed = entries.length > 0 && entries[0].start_time;
 
   if (loading) {
@@ -89,7 +103,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         ))}
       </div>
 
-      {/* Schedule */}
+      {/* Academic Schedule */}
       {dayEntries.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
@@ -99,6 +113,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         </Card>
       ) : (
         <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Academic Classes</h3>
           {dayEntries.map((e, i) => (
             <Card key={e.id || i}>
               <CardContent className="flex items-center gap-3 p-3">
@@ -128,12 +143,47 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         </div>
       )}
 
-      {/* Sports & Extracurricular Activities Section */}
+      {/* Sports & Clubs Schedule */}
+      {daySports.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-secondary" />
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sports & Clubs (After School)</h3>
+          </div>
+          {daySports.map((e, i) => (
+            <Card key={e.id || i} className="border-secondary/20">
+              <CardContent className="flex items-center gap-3 p-3">
+                <div className="flex flex-col items-center justify-center min-w-[50px] text-center">
+                  <span className="text-xs font-bold text-foreground">{e.start_time}</span>
+                  <span className="text-[10px] text-muted-foreground">{e.end_time}</span>
+                </div>
+                <div className="h-10 w-0.5 bg-secondary/50 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{e.activity_name}</p>
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{e.activity_type}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {e.staff?.full_name && (
+                      <span className="text-[11px] text-muted-foreground">{e.staff.full_name}</span>
+                    )}
+                    {e.venue && (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">{e.venue}</Badge>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Registered Sports Activities */}
       {sportsActivities.length > 0 && (
         <div className="space-y-2 pt-2">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-secondary" />
-            <h3 className="text-sm font-semibold text-foreground">Sports & Activities</h3>
+            <h3 className="text-sm font-semibold text-foreground">My Registered Activities</h3>
           </div>
           <Card>
             <CardContent className="p-3">
