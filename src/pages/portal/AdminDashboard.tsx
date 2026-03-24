@@ -617,7 +617,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
       <div className="container px-3 sm:px-4 py-4 sm:py-8">
         <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6 font-heading text-lg sm:text-2xl font-bold text-primary">
-          Admin Dashboard
+          {displayRole} Dashboard
         </motion.h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
