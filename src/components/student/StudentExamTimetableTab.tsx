@@ -23,24 +23,38 @@ interface ExamTimetableEntry {
   } | null;
 }
 
-export default function StudentExamTimetableTab() {
+interface Props {
+  studentId?: string | null;
+  formLevel?: string | null;
+}
+
+export default function StudentExamTimetableTab({ studentId, formLevel }: Props = {}) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<ExamTimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [studentForm, setStudentForm] = useState<string | null>(null);
+  const [studentForm, setStudentForm] = useState<string | null>(formLevel || null);
 
   useEffect(() => {
-    fetchStudentInfo();
-  }, [user]);
+    if (formLevel) {
+      setStudentForm(formLevel);
+      fetchTimetable(formLevel);
+    } else {
+      fetchStudentInfo();
+    }
+  }, [user, studentId, formLevel]);
 
   async function fetchStudentInfo() {
-    if (!user?.id) return;
+    if (!user?.id && !studentId) { setLoading(false); return; }
     
-    const { data: student } = await supabase
-      .from("students")
-      .select("form")
-      .eq("user_id", user.id)
-      .single();
+    // If studentId is provided (e.g. from parent portal), look up by student ID
+    // Otherwise fall back to looking up by user_id (student portal)
+    let query = supabase.from("students").select("form");
+    if (studentId) {
+      query = query.eq("id", studentId);
+    } else {
+      query = query.eq("user_id", user!.id);
+    }
+    const { data: student } = await query.single();
 
     if (student?.form) {
       setStudentForm(student.form);
