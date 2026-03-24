@@ -169,6 +169,10 @@ export default function AcademicManagement() {
     const { data } = await supabase.from("timetable_entries").select("*, subjects(name), staff:teacher_id(full_name), classes(name)").order("day_of_week");
     if (data) setTimetableEntries(data);
   }
+  async function fetchSportsSchedule() {
+    const { data } = await supabase.from("sports_schedule").select("*, staff:coach_id(full_name), classes(name)").order("day_of_week");
+    if (data) setSportsEntries(data);
+  }
   async function fetchClassSubjects() {
     const { data } = await supabase.from("class_subjects").select("*, classes(name), subjects(name), staff:teacher_id(full_name)").order("created_at");
     if (data) setClassSubjects(data);
