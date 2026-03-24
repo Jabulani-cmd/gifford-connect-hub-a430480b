@@ -397,9 +397,50 @@ export default function StudentManagement() {
 
     const payload = { ...result.data, profile_photo_url: photoUrl };
 
+    // Helper to allocate boarding
+    const allocateBoarding = async (studentId: string) => {
+      if ((formData as any).boarding_status === "boarder" && selectedRoom) {
+        // Remove existing active allocation for this student
+        await supabase.from("bed_allocations").update({ status: "vacated", allocation_end_date: new Date().toISOString().split("T")[0] }).eq("student_id", studentId).eq("status", "active");
+        // Create new allocation
+        const { error: allocErr } = await supabase.from("bed_allocations").insert({
+          room_id: selectedRoom,
+          student_id: studentId,
+          bed_number: bedNumber || null,
+          status: "active",
+        });
+        if (allocErr) {
+          toast({ title: "Warning", description: "Student saved but hostel allocation failed: " + allocErr.message, variant: "destructive" });
+        } else {
+          // Update room & hostel occupancy
+          const room = rooms.find(r => r.id === selectedRoom);
+          if (room) {
+            await supabase.from("rooms").update({ current_occupancy: room.current_occupancy + 1 }).eq("id", room.id);
+            const hostel = hostels.find(h => h.id === room.hostel_id);
+            if (hostel) await supabase.from("hostels").update({ current_occupancy: hostel.current_occupancy + 1 }).eq("id", hostel.id);
+          }
+        }
+      } else if ((formData as any).boarding_status === "day") {
+        // If changed to day, vacate any active allocation
+        const { data: existing } = await supabase.from("bed_allocations").select("id, room_id").eq("student_id", studentId).eq("status", "active");
+        if (existing && existing.length > 0) {
+          for (const alloc of existing) {
+            await supabase.from("bed_allocations").update({ status: "vacated", allocation_end_date: new Date().toISOString().split("T")[0] }).eq("id", alloc.id);
+            const room = rooms.find(r => r.id === alloc.room_id);
+            if (room) {
+              await supabase.from("rooms").update({ current_occupancy: Math.max(0, room.current_occupancy - 1) }).eq("id", room.id);
+              const hostel = hostels.find(h => h.id === room.hostel_id);
+              if (hostel) await supabase.from("hostels").update({ current_occupancy: Math.max(0, hostel.current_occupancy - 1) }).eq("id", hostel.id);
+            }
+          }
+        }
+      }
+    };
+
     if (editingId) {
       const { error } = await supabase.from("students").update(payload).eq("id", editingId);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setSaving(false); return; }
+      await allocateBoarding(editingId);
       toast({ title: "Student updated!" });
     } else {
       // Generate a guaranteed-unique admission number using timestamp
