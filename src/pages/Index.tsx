@@ -452,6 +452,16 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
+          <div className="hidden lg:flex items-center justify-center">
+            {ctaImage ? (
+              <img src={ctaImage} alt="Join Gifford High School" className="h-80 w-80 rounded-xl object-cover shadow-lg" />
+            ) : (
+              <div className="flex h-80 w-80 items-center justify-center rounded-xl border-2 border-dashed border-white/30 bg-white/10">
+                <img src={schoolLogo} alt="Gifford High School" className="h-32 w-32 object-contain opacity-40" />
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </Layout>
