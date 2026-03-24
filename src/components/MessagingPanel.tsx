@@ -492,7 +492,26 @@ export default function MessagingPanel() {
     setSelectedUsers([]);
     setUserSearch("");
     setUserResults([]);
+    setSearchRoleFilter("all");
   };
+
+  // Quick message from contact directory
+  const startDirectFromContact = (contact: UserProfile) => {
+    setSelectedUsers([contact]);
+    setNewConvType("direct");
+    setNewConvOpen(true);
+  };
+
+  const roleFilterOptions = [
+    { value: "all", label: "All Roles" },
+    { value: "admin", label: "Admin" },
+    { value: "teacher", label: "Teacher" },
+    { value: "student", label: "Student" },
+    { value: "parent", label: "Parent" },
+    { value: "finance", label: "Finance" },
+    { value: "principal", label: "Principal" },
+    { value: "hod", label: "HOD" },
+  ];
 
   // Block a user
   const blockUser = async (targetId: string, targetName: string) => {
