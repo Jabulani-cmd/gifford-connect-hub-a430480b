@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Trophy } from "lucide-react";
@@ -16,74 +16,190 @@ interface Props {
 export default function StudentTimetableTab({ studentClassId, studentId }: Props) {
   const [entries, setEntries] = useState<any[]>([]);
   const [sportsSchedule, setSportsSchedule] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sportsActivities, setSportsActivities] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [resolvedClassId, setResolvedClassId] = useState<string | null | undefined>(undefined);
+
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
   const [selectedDay, setSelectedDay] = useState(today >= 1 && today <= 5 ? today : 1);
 
   useEffect(() => {
-    if (studentClassId) {
-      fetchTimetable();
-      fetchSportsSchedule();
-    }
-    if (studentId) fetchSports();
+    let mounted = true;
+
+    const resolveClassId = async () => {
+      if (studentClassId) {
+        if (mounted) setResolvedClassId(studentClassId);
+        return;
+      }
+
+      if (!studentId) {
+        if (mounted) setResolvedClassId(null);
+        return;
+      }
+
+      const { data: student } = await supabase
+        .from("students")
+        .select("form, stream")
+        .eq("id", studentId)
+        .maybeSingle();
+
+      if (!student?.form) {
+        if (mounted) setResolvedClassId(null);
+        return;
+      }
+
+      let classId: string | null = null;
+
+      if (student.stream) {
+        const { data: exact } = await supabase
+          .from("classes")
+          .select("id")
+          .eq("form_level", student.form)
+          .eq("stream", student.stream)
+          .limit(1)
+          .maybeSingle();
+        classId = exact?.id || null;
+      }
+
+      if (!classId) {
+        const { data: fallback } = await supabase
+          .from("classes")
+          .select("id")
+          .eq("form_level", student.form)
+          .order("name")
+          .limit(1)
+          .maybeSingle();
+        classId = fallback?.id || null;
+      }
+
+      if (mounted) setResolvedClassId(classId);
+    };
+
+    resolveClassId();
+
+    return () => {
+      mounted = false;
+    };
   }, [studentClassId, studentId]);
 
-  const fetchTimetable = async () => {
-    setLoading(true);
-    const { data: entries } = await supabase
-      .from("timetable_entries")
-      .select("*, subjects(name), staff(full_name), classes(name)")
-      .eq("class_id", studentClassId!)
-      .order("start_time");
+  useEffect(() => {
+    let mounted = true;
 
-    if (entries && entries.length > 0) {
-      setEntries(entries);
-    } else {
+    const fetchTimetable = async (classId: string) => {
+      const { data: detailed } = await supabase
+        .from("timetable_entries")
+        .select("*, subjects(name), staff(full_name), classes(name)")
+        .eq("class_id", classId)
+        .order("start_time");
+
+      if (detailed && detailed.length > 0) {
+        return detailed;
+      }
+
       const { data: basic } = await supabase
         .from("timetable")
         .select("*, subjects(name)")
-        .eq("class_id", studentClassId!)
+        .eq("class_id", classId)
         .order("time_slot");
-      setEntries(basic || []);
-    }
-    setLoading(false);
-  };
 
-  const fetchSportsSchedule = async () => {
-    if (!studentClassId) return;
-    const { data } = await supabase
-      .from("sports_schedule")
-      .select("*, staff:coach_id(full_name)")
-      .eq("class_id", studentClassId)
-      .order("start_time");
-    if (data) setSportsSchedule(data);
-  };
+      return basic || [];
+    };
 
-  const fetchSports = async () => {
-    if (!studentId) return;
-    const { data } = await supabase
-      .from("students")
-      .select("sports_activities")
-      .eq("id", studentId)
-      .single();
-    if (data?.sports_activities) {
-      setSportsActivities(data.sports_activities as string[]);
-    }
-  };
+    const fetchSportsSchedule = async (classId: string) => {
+      const { data } = await supabase
+        .from("sports_schedule")
+        .select("*")
+        .eq("class_id", classId)
+        .order("start_time");
 
-  // Admin saves day_of_week as 0-indexed (Mon=0), selectedDay is 1-indexed (Mon=1)
-  const dayEntries = entries.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay);
-  const daySports = sportsSchedule.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay);
+      return data || [];
+    };
+
+    const load = async () => {
+      if (resolvedClassId === undefined) return;
+
+      if (!resolvedClassId) {
+        if (!mounted) return;
+        setEntries([]);
+        setSportsSchedule([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      const [academic, sports] = await Promise.all([
+        fetchTimetable(resolvedClassId),
+        fetchSportsSchedule(resolvedClassId),
+      ]);
+
+      if (!mounted) return;
+      setEntries(academic);
+      setSportsSchedule(sports);
+      setLoading(false);
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [resolvedClassId]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSports = async () => {
+      if (!studentId) {
+        if (mounted) setSportsActivities([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("students")
+        .select("sports_activities")
+        .eq("id", studentId)
+        .maybeSingle();
+
+      if (!mounted) return;
+      setSportsActivities((data?.sports_activities as string[]) || []);
+    };
+
+    fetchSports();
+
+    return () => {
+      mounted = false;
+    };
+  }, [studentId]);
+
+  const dayEntries = useMemo(
+    () => entries.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay),
+    [entries, selectedDay],
+  );
+
+  const daySports = useMemo(
+    () => sportsSchedule.filter((e) => e.day_of_week === selectedDay - 1 || e.day_of_week === selectedDay),
+    [sportsSchedule, selectedDay],
+  );
+
   const isDetailed = entries.length > 0 && entries[0].start_time;
 
   if (loading) {
     return <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />)}</div>;
   }
 
+  if (!resolvedClassId) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center">
+          <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">No class assignment found for this student yet.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* Day Selector */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {[1, 2, 3, 4, 5].map((d) => (
           <button
@@ -93,83 +209,63 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
               selectedDay === d
                 ? "bg-secondary text-secondary-foreground"
                 : today === d
-                  ? "bg-secondary/10 text-secondary border border-secondary/30"
+                  ? "border border-secondary/30 bg-secondary/10 text-secondary"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             {shortDays[d - 1]}
-            {today === d && <span className="block text-[9px] mt-0.5">Today</span>}
+            {today === d && <span className="mt-0.5 block text-[9px]">Today</span>}
           </button>
         ))}
       </div>
 
-      {/* Academic Schedule */}
-      {dayEntries.length === 0 ? (
+      {dayEntries.length === 0 && daySports.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No classes scheduled for {dayNames[selectedDay - 1]}.</p>
+            <p className="text-sm text-muted-foreground">No activities scheduled for {dayNames[selectedDay - 1]}.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Academic Classes</h3>
           {dayEntries.map((e, i) => (
             <Card key={e.id || i}>
               <CardContent className="flex items-center gap-3 p-3">
-                <div className="flex flex-col items-center justify-center min-w-[50px] text-center">
-                  <span className="text-xs font-bold text-foreground">
-                    {isDetailed ? e.start_time : e.time_slot}
-                  </span>
-                  {isDetailed && e.end_time && (
-                    <span className="text-[10px] text-muted-foreground">{e.end_time}</span>
-                  )}
+                <div className="min-w-[50px] text-center">
+                  <span className="text-xs font-bold text-foreground">{isDetailed ? e.start_time : e.time_slot}</span>
+                  {isDetailed && e.end_time && <span className="block text-[10px] text-muted-foreground">{e.end_time}</span>}
                 </div>
-                <div className="h-10 w-0.5 bg-secondary/30 rounded-full" />
+                <div className="h-10 w-0.5 rounded-full bg-secondary/30" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{e.subjects?.name || "Free Period"}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {e.staff?.full_name && (
-                      <span className="text-[11px] text-muted-foreground">{e.staff.full_name}</span>
-                    )}
+                  <div className="mt-0.5 flex items-center gap-2">
+                    {e.staff?.full_name && <span className="text-[11px] text-muted-foreground">{e.staff.full_name}</span>}
                     {e.room && (
-                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">{e.room}</Badge>
+                      <Badge variant="outline" className="px-1.5 py-0 text-[9px]">
+                        {e.room}
+                      </Badge>
                     )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
 
-      {/* Sports & Clubs Schedule */}
-      {daySports.length > 0 && (
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-secondary" />
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sports & Clubs (After School)</h3>
-          </div>
           {daySports.map((e, i) => (
-            <Card key={e.id || i} className="border-secondary/20">
+            <Card key={e.id || `sport-${i}`}>
               <CardContent className="flex items-center gap-3 p-3">
-                <div className="flex flex-col items-center justify-center min-w-[50px] text-center">
+                <div className="min-w-[50px] text-center">
                   <span className="text-xs font-bold text-foreground">{e.start_time}</span>
-                  <span className="text-[10px] text-muted-foreground">{e.end_time}</span>
+                  <span className="block text-[10px] text-muted-foreground">{e.end_time}</span>
                 </div>
-                <div className="h-10 w-0.5 bg-secondary/50 rounded-full" />
+                <div className="h-10 w-0.5 rounded-full bg-secondary/30" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{e.activity_name}</p>
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{e.activity_type}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {e.staff?.full_name && (
-                      <span className="text-[11px] text-muted-foreground">{e.staff.full_name}</span>
-                    )}
-                    {e.venue && (
-                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">{e.venue}</Badge>
-                    )}
+                  <p className="text-sm font-medium">{e.activity_name || "Sports & Club"}</p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    {e.venue && <span className="text-[11px] text-muted-foreground">{e.venue}</span>}
+                    <Badge variant="secondary" className="text-[9px]">
+                      Sports/Club
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -178,12 +274,11 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         </div>
       )}
 
-      {/* Registered Sports Activities */}
       {sportsActivities.length > 0 && (
         <div className="space-y-2 pt-2">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-secondary" />
-            <h3 className="text-sm font-semibold text-foreground">My Registered Activities</h3>
+            <h3 className="text-sm font-semibold text-foreground">Sports & Activities</h3>
           </div>
           <Card>
             <CardContent className="p-3">
