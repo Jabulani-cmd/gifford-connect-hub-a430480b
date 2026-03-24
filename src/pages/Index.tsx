@@ -10,7 +10,7 @@ import HeroCarousel from "@/components/HeroCarousel";
 import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
-import cambridgeLogo from "@/assets/cambridge-logo.png";
+
 import { supabase } from "@/integrations/supabase/client";
 
 /* ---------- Principal Photo Component ---------- */
