@@ -1523,6 +1523,11 @@ export default function FinanceManagement() {
         ))}
       </div>
 
+      {/* Exchange Rate */}
+      <div className="max-w-md">
+        <ExchangeRateCard />
+      </div>
+
       <Tabs defaultValue="fee-structures" className="space-y-4">
         <TabsList className="flex-wrap">
           <TabsTrigger value="fee-structures">
