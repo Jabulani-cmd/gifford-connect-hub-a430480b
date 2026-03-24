@@ -79,8 +79,8 @@ function DesktopDropdown({ item }: { item: NavItem }) {
     <div ref={ref} className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <Link
         to={item.path}
-        className={`flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
-          isActive ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
+        className={`flex items-center gap-1 px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors hover:text-secondary ${
+          isActive ? "text-white" : "text-white/80"
         }`}
       >
         {item.label}
@@ -166,22 +166,57 @@ function MobileAccordion({ item, onClose }: { item: NavItem; onClose: () => void
 }
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const isHome = location.pathname === "/";
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  // On homepage: transparent overlay navbar that becomes solid on scroll
+  // On other pages: always solid black
+  const navBg = !isHome || scrolled
+    ? "bg-primary shadow-lg"
+    : "bg-gradient-to-b from-black/70 to-transparent";
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-primary/10 bg-primary text-primary-foreground backdrop-blur">
-      <div className="container flex h-28 items-center justify-between md:h-36">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
+      {/* Top utility bar — only visible on non-home or scrolled */}
+      {(!isHome || scrolled) ? null : (
+        <div className="hidden border-b border-white/10 lg:block">
+          <div className="container flex h-8 items-center justify-end gap-4 text-xs text-white/60">
+            <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+            <span className="text-white/30">•</span>
+            <Link to="/alumni" className="hover:text-white transition-colors">Alumni</Link>
+            <span className="text-white/30">•</span>
+            <Link to="/login" className="hover:text-white transition-colors">Portal Login</Link>
+          </div>
+        </div>
+      )}
+
+      <div className="container flex items-center justify-between py-3 md:py-4">
         <Link to="/" className="flex items-center gap-3">
-          <img src={schoolLogo} alt="Gifford High School crest" className="h-[104px] w-[104px] flex-shrink-0 object-contain md:h-[120px] md:w-[120px]" />
+          <img
+            src={schoolLogo}
+            alt="Gifford High School crest"
+            className="h-14 w-14 flex-shrink-0 object-contain md:h-20 md:w-20"
+          />
           <div className="flex flex-col justify-center leading-tight">
-            <span className="block font-heading text-2xl font-bold tracking-tight text-primary-foreground md:text-3xl md:whitespace-nowrap">Gifford High School</span>
-            <span className="block text-xs italic text-primary-foreground/70 md:text-sm">Hinc Orior — From Here I Arise</span>
+            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-2xl">
+              Gifford High School
+            </span>
+            <span className="block text-[10px] italic text-white/60 md:text-xs">
+              Hinc Orior — From Here I Arise
+            </span>
           </div>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden items-center gap-0.5 lg:flex">
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-0 lg:flex">
           {navLinks.map((item) =>
             item.children ? (
               <DesktopDropdown key={item.path} item={item} />
@@ -189,8 +224,8 @@ export default function Navbar() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
-                  location.pathname === item.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
+                className={`px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors hover:text-secondary ${
+                  location.pathname === item.path ? "text-white" : "text-white/80"
                 }`}
               >
                 {item.label}
@@ -198,34 +233,36 @@ export default function Navbar() {
             )
           )}
           <Link to="/login">
-            <Button size="sm" className="ml-2 bg-secondary text-secondary-foreground hover:bg-secondary/90">Portal Login</Button>
+            <Button size="sm" className="ml-3 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs uppercase tracking-wider font-semibold">
+              Portal Login
+            </Button>
           </Link>
         </div>
 
         {/* Mobile toggle */}
-        <button className="text-primary-foreground lg:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        <button className="text-white lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
       {/* Mobile menu */}
       <AnimatePresence>
-        {open && (
+        {mobileOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-primary-foreground/10 bg-primary lg:hidden"
+            className="overflow-hidden border-t border-white/10 bg-primary lg:hidden"
           >
             <div className="container flex flex-col gap-1 py-4">
               {navLinks.map((item) =>
                 item.children ? (
-                  <MobileAccordion key={item.path} item={item} onClose={() => setOpen(false)} />
+                  <MobileAccordion key={item.path} item={item} onClose={() => setMobileOpen(false)} />
                 ) : (
                   <Link
                     key={item.path}
                     to={item.path}
-                    onClick={() => setOpen(false)}
+                    onClick={() => setMobileOpen(false)}
                     className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
                       location.pathname === item.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
                     }`}
@@ -234,7 +271,7 @@ export default function Navbar() {
                   </Link>
                 )
               )}
-              <Link to="/login" onClick={() => setOpen(false)}>
+              <Link to="/login" onClick={() => setMobileOpen(false)}>
                 <Button size="sm" className="mt-2 w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">Portal Login</Button>
               </Link>
             </div>
