@@ -108,7 +108,7 @@ export default function Home() {
       if (data) setAnnouncements(data);
     };
     const fetchSiteImages = async () => {
-      const { data } = await supabase.from("site_settings").select("setting_key, setting_value").in("setting_key", ["achievements_image", "tradition_image"]);
+      const { data } = await supabase.from("site_settings").select("setting_key, setting_value").in("setting_key", ["achievements_image", "tradition_image", "cta_image"]);
       if (data) {
         data.forEach((s) => {
           if (s.setting_key === "achievements_image") setAchievementsImage(s.setting_value);
