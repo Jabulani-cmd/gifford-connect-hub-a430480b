@@ -121,10 +121,41 @@ export default function FinanceManagement() {
   const { toast } = useToast();
   const { user, role } = useAuth();
   const { rate, usdToZig } = useExchangeRate();
-  const autoZig = (usd: string) => {
-    const n = parseFloat(usd);
-    return isNaN(n) ? "" : (n * rate).toFixed(2);
+  const toNumber = (value: any) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
   };
+  const convertUsdToZig = useCallback((usdValue: any) => Number(usdToZig(toNumber(usdValue)).toFixed(2)), [usdToZig]);
+  const autoZig = useCallback(
+    (usd: string) => {
+      const n = Number(usd);
+      return Number.isFinite(n) ? convertUsdToZig(n).toFixed(2) : "";
+    },
+    [convertUsdToZig],
+  );
+  const normalizeAmountRecord = useCallback(
+    (row: any) => ({
+      ...row,
+      amount_zig: convertUsdToZig(row.amount_usd),
+    }),
+    [convertUsdToZig],
+  );
+  const normalizeInvoiceRecord = useCallback(
+    (row: any) => ({
+      ...row,
+      total_zig: convertUsdToZig(row.total_usd),
+      paid_zig: convertUsdToZig(row.paid_usd),
+    }),
+    [convertUsdToZig],
+  );
+  const normalizeSupplierInvoiceRecord = useCallback(
+    (row: any) => ({
+      ...row,
+      amount_zig: convertUsdToZig(row.amount_usd),
+      paid_zig: convertUsdToZig(row.paid_usd),
+    }),
+    [convertUsdToZig],
+  );
   const isFinanceOrAdmin =
     role === "finance" || role === "admin" || role === "admin_supervisor" || role === "principal";
   const isFinanceClerk = role === "finance"; // needs approval for destructive actions
@@ -324,6 +355,7 @@ export default function FinanceManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
       fetchFeeStructures(),
       fetchInvoices(),
@@ -334,7 +366,9 @@ export default function FinanceManagement() {
       fetchSupplierPayments(),
       fetchRestrictionSettings(),
     ]).finally(() => setLoading(false));
+  }, [rate]);
 
+  useEffect(() => {
     // Realtime subscription for payments
     const channel = supabase
       .channel("finance-payments-realtime")
@@ -351,7 +385,7 @@ export default function FinanceManagement() {
   // ═══ FETCH FUNCTIONS ═══
   async function fetchFeeStructures() {
     const { data } = await supabase.from("fee_structures").select("*").order("created_at", { ascending: false });
-    if (data) setFeeStructures(data);
+    if (data) setFeeStructures(data.map((fee: any) => ({ ...fee, amount_zig: convertUsdToZig(fee.amount_usd) })));
   }
 
   async function fetchInvoices() {
@@ -360,9 +394,10 @@ export default function FinanceManagement() {
       .select("*, students(full_name, admission_number, form)")
       .order("created_at", { ascending: false });
     if (data) {
-      setInvoices(data);
+      const normalized = data.map(normalizeInvoiceRecord);
+      setInvoices(normalized);
       // compute debtors
-      const owing = data.filter((inv: any) => inv.status !== "paid");
+      const owing = normalized.filter((inv: any) => inv.status !== "paid");
       setDebtors(owing);
     }
   }
@@ -372,22 +407,22 @@ export default function FinanceManagement() {
       .from("payments")
       .select("*, students(full_name, admission_number), invoices(invoice_number)")
       .order("created_at", { ascending: false });
-    if (data) setPayments(data);
+    if (data) setPayments(data.map(normalizeAmountRecord));
   }
 
   async function fetchExpenses() {
     const { data } = await supabase.from("expenses").select("*").order("expense_date", { ascending: false });
-    if (data) setExpenses(data);
+    if (data) setExpenses(data.map(normalizeAmountRecord));
   }
 
   async function fetchPettyCash() {
     const { data } = await supabase.from("petty_cash").select("*").order("transaction_date", { ascending: false });
-    if (data) setPettyCash(data);
+    if (data) setPettyCash(data.map(normalizeAmountRecord));
   }
 
   async function fetchSupplierInvoices() {
     const { data } = await supabase.from("supplier_invoices").select("*").order("created_at", { ascending: false });
-    if (data) setSupplierInvoices(data);
+    if (data) setSupplierInvoices(data.map(normalizeSupplierInvoiceRecord));
   }
 
   async function fetchSupplierPayments() {
@@ -395,17 +430,18 @@ export default function FinanceManagement() {
       .from("supplier_payments")
       .select("*, supplier_invoices(supplier_name, invoice_number)")
       .order("payment_date", { ascending: false });
-    if (data) setSupplierPayments(data);
+    if (data) setSupplierPayments(data.map(normalizeAmountRecord));
   }
 
   async function savePettyCash() {
     setPcLoading(true);
+    const amountUsd = parseFloat(pcForm.amount_usd) || 0;
     const payload = {
       transaction_date: pcForm.transaction_date,
       transaction_type: pcForm.transaction_type,
       description: pcForm.description,
-      amount_usd: parseFloat(pcForm.amount_usd) || 0,
-      amount_zig: parseFloat(pcForm.amount_zig) || 0,
+      amount_usd: amountUsd,
+      amount_zig: convertUsdToZig(amountUsd),
       reference_number: pcForm.reference_number || null,
       recorded_by: user?.id,
     };
@@ -435,6 +471,7 @@ export default function FinanceManagement() {
 
   async function saveSupplierInvoice() {
     setSiLoading(true);
+    const amountUsd = parseFloat(siForm.amount_usd) || 0;
     const payload = {
       supplier_name: siForm.supplier_name,
       supplier_contact: siForm.supplier_contact || null,
@@ -442,8 +479,8 @@ export default function FinanceManagement() {
       invoice_date: siForm.invoice_date,
       due_date: siForm.due_date || null,
       description: siForm.description || null,
-      amount_usd: parseFloat(siForm.amount_usd) || 0,
-      amount_zig: parseFloat(siForm.amount_zig) || 0,
+      amount_usd: amountUsd,
+      amount_zig: convertUsdToZig(amountUsd),
       recorded_by: user?.id,
     };
     const { error } = await supabase.from("supplier_invoices").insert(payload);
@@ -477,7 +514,7 @@ export default function FinanceManagement() {
     if (!spInvoice) return;
     setSpLoading(true);
     const payUsd = parseFloat(spForm.amount_usd) || 0;
-    const payZig = parseFloat(spForm.amount_zig) || 0;
+    const payZig = convertUsdToZig(payUsd);
     const { error } = await supabase.from("supplier_payments").insert({
       supplier_invoice_id: spInvoice.id,
       payment_date: spForm.payment_date,
@@ -513,7 +550,7 @@ export default function FinanceManagement() {
     // Create a supplier invoice marked as paid + a matching payment
     const invNumber = `COD-${Date.now()}`;
     const amtUsd = parseFloat(codForm.amount_usd) || 0;
-    const amtZig = parseFloat(codForm.amount_zig) || 0;
+    const amtZig = convertUsdToZig(amtUsd);
     const { data: inv, error: invErr } = await supabase
       .from("supplier_invoices")
       .insert({
@@ -600,7 +637,7 @@ export default function FinanceManagement() {
       boarding_status: fee.boarding_status,
       description: fee.description || "",
       amount_usd: String(fee.amount_usd),
-      amount_zig: String((fee.amount_usd * rate).toFixed(2)),
+      amount_zig: convertUsdToZig(fee.amount_usd).toFixed(2),
     });
     setFeeDialogOpen(true);
   }
@@ -613,7 +650,7 @@ export default function FinanceManagement() {
       boarding_status: fee.boarding_status,
       description: fee.description,
       amount_usd: fee.amount_usd,
-      amount_zig: fee.amount_zig,
+      amount_zig: convertUsdToZig(fee.amount_usd),
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -625,14 +662,15 @@ export default function FinanceManagement() {
 
   async function saveFee() {
     setFeeLoading(true);
+    const amountUsd = parseFloat(feeForm.amount_usd) || 0;
     const payload = {
       academic_year: feeForm.academic_year,
       term: feeForm.term,
       form: feeForm.form,
       boarding_status: feeForm.boarding_status,
       description: feeForm.description || null,
-      amount_usd: parseFloat(feeForm.amount_usd) || 0,
-      amount_zig: parseFloat(feeForm.amount_zig) || 0,
+      amount_usd: amountUsd,
+      amount_zig: convertUsdToZig(amountUsd),
     };
     if (editingFee) {
       const { error } = await supabase.from("fee_structures").update(payload).eq("id", editingFee.id);
@@ -755,8 +793,8 @@ export default function FinanceManagement() {
         .eq("student_id", student.id)
         .order("payment_date", { ascending: false }),
     ]);
-    setStmtInvoices(invRes.data || []);
-    setStmtPayments(payRes.data || []);
+    setStmtInvoices((invRes.data || []).map(normalizeInvoiceRecord));
+    setStmtPayments((payRes.data || []).map(normalizeAmountRecord));
     setStmtLoading(false);
   }
 
@@ -961,17 +999,20 @@ export default function FinanceManagement() {
       .eq("term", singleInvForm.term)
       .eq("is_active", true);
     if (fs) {
-      const applicable = fs.filter(
-        (f) =>
-          (!f.form || f.form === student.form) && (!f.boarding_status || f.boarding_status === student.boarding_status),
-      );
+      const applicable = fs
+        .filter(
+          (f) =>
+            (!f.form || f.form === student.form) &&
+            (!f.boarding_status || f.boarding_status === student.boarding_status),
+        )
+        .map((f) => ({ ...f, amount_zig: convertUsdToZig(f.amount_usd) }));
       setAvailableFeeStructures(applicable);
       if (applicable.length > 0) {
         setSelectedFeeStructure(applicable[0]);
         setSingleInvForm((f) => ({
           ...f,
           amount_usd: String(applicable[0].amount_usd),
-          amount_zig: String((applicable[0].amount_usd * rate).toFixed(2)),
+          amount_zig: convertUsdToZig(applicable[0].amount_usd).toFixed(2),
           description: applicable[0].description || "",
         }));
       } else {
@@ -987,7 +1028,7 @@ export default function FinanceManagement() {
       return;
     }
     const usd = parseFloat(singleInvForm.amount_usd) || 0;
-    const zig = parseFloat(singleInvForm.amount_zig) || 0;
+    const zig = convertUsdToZig(usd);
     if (usd === 0 && zig === 0) {
       toast({ title: "Enter an amount", variant: "destructive" });
       return;
@@ -1099,7 +1140,7 @@ export default function FinanceManagement() {
         items: invoiceItems.map((it: any) => ({
           description: it.description,
           amount_usd: it.amount_usd,
-          amount_zig: it.amount_zig,
+          amount_zig: convertUsdToZig(it.amount_usd),
         })),
         totals: { total_usd: inv.total_usd, total_zig: inv.total_zig, paid_usd: inv.paid_usd, paid_zig: inv.paid_zig },
       });
@@ -1129,7 +1170,7 @@ export default function FinanceManagement() {
         items: invoiceItems.map((it: any) => ({
           description: it.description,
           amount_usd: it.amount_usd,
-          amount_zig: it.amount_zig,
+          amount_zig: convertUsdToZig(it.amount_usd),
         })),
         totals: { total_usd: inv.total_usd, total_zig: inv.total_zig, paid_usd: inv.paid_usd, paid_zig: inv.paid_zig },
       });
@@ -1184,8 +1225,9 @@ export default function FinanceManagement() {
       .eq("student_id", student.id)
       .order("created_at", { ascending: false });
     if (data) {
+      const normalized = data.map(normalizeInvoiceRecord);
       // Prefer unpaid/partial invoices first, but show all
-      const sorted = [...data].sort((a, b) => {
+      const sorted = [...normalized].sort((a, b) => {
         const order = { unpaid: 0, partial: 1, paid: 2 };
         return (order[a.status] ?? 2) - (order[b.status] ?? 2);
       });
@@ -1210,7 +1252,7 @@ export default function FinanceManagement() {
       return;
     }
     const usd = parseFloat(payForm.amount_usd) || 0;
-    const zig = parseFloat(payForm.amount_zig) || 0;
+    const zig = convertUsdToZig(usd);
     if (usd === 0 && zig === 0) {
       toast({ title: "Enter an amount", variant: "destructive" });
       return;
@@ -1342,12 +1384,13 @@ export default function FinanceManagement() {
       return;
     }
     setExpLoading(true);
+    const amountUsd = parseFloat(expForm.amount_usd) || 0;
     const { error } = await supabase.from("expenses").insert({
       expense_date: expForm.expense_date,
       category: expForm.category,
       description: expForm.description,
-      amount_usd: parseFloat(expForm.amount_usd) || 0,
-      amount_zig: parseFloat(expForm.amount_zig) || 0,
+      amount_usd: amountUsd,
+      amount_zig: convertUsdToZig(amountUsd),
       payment_method: expForm.payment_method,
       reference_number: expForm.reference_number || null,
       recorded_by: user?.id || null,
