@@ -1150,17 +1150,25 @@ export default function FinanceManagement() {
     setSelectedStudent(student);
     setStudentResults([]);
     setPayForm((p) => ({ ...p, student_search: student.full_name }));
-    // Fetch invoices that are not fully paid OR have a credit (paid_usd > total_usd)
+    // Fetch ALL invoices for this student so we can always pay against existing ones
     const { data } = await supabase
       .from("invoices")
       .select("*")
       .eq("student_id", student.id)
-      .or(`status.ne.paid,paid_usd.gt.total_usd`) // include unpaid, partial, and overpaid
-      .order("created_at");
+      .order("created_at", { ascending: false });
     if (data) {
-      setStudentInvoices(data);
-      if (data.length === 1) {
-        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: data[0].id }));
+      // Prefer unpaid/partial invoices first, but show all
+      const sorted = [...data].sort((a, b) => {
+        const order = { unpaid: 0, partial: 1, paid: 2 };
+        return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+      });
+      setStudentInvoices(sorted);
+      // Auto-select the first unpaid/partial invoice
+      const firstUnpaid = sorted.find((i) => i.status === "unpaid" || i.status === "partial");
+      if (firstUnpaid) {
+        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: firstUnpaid.id }));
+      } else if (sorted.length === 1) {
+        setPayForm((p) => ({ ...p, student_search: student.full_name, invoice_id: sorted[0].id }));
       }
     }
   }
@@ -1187,36 +1195,49 @@ export default function FinanceManagement() {
       let invoiceId = payForm.invoice_id || null;
       let invoiceNumber: string | null = null;
 
-      // If no invoice selected (advance payment), auto-create one
+      // If no invoice selected, try to find existing unpaid/partial invoice first
       if (!invoiceId) {
-        const invNum = genInvoiceNum();
-        const { data: newInv, error: invErr } = await supabase
+        const { data: existingInvs } = await supabase
           .from("invoices")
-          .insert({
-            invoice_number: invNum,
-            student_id: selectedStudent.id,
-            academic_year: new Date().getFullYear().toString(),
-            term: "Term 1",
-            total_usd: usd,
-            total_zig: zig,
-            due_date: null,
-            status: "paid",
-            paid_usd: usd,
-            paid_zig: zig,
-            notes: "Auto-generated for advance payment",
-          })
-          .select()
-          .single();
-        if (invErr) throw invErr;
-        invoiceId = newInv.id;
-        invoiceNumber = invNum;
-        // Create invoice item
-        await supabase.from("invoice_items").insert({
-          invoice_id: newInv.id,
-          description: "Advance Payment",
-          amount_usd: usd,
-          amount_zig: zig,
-        });
+          .select("*")
+          .eq("student_id", selectedStudent.id)
+          .in("status", ["unpaid", "partial"])
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (existingInvs && existingInvs.length > 0) {
+          invoiceId = existingInvs[0].id;
+          invoiceNumber = existingInvs[0].invoice_number;
+        } else {
+          // Only create advance invoice if truly no invoice exists
+          const invNum = genInvoiceNum();
+          const { data: newInv, error: invErr } = await supabase
+            .from("invoices")
+            .insert({
+              invoice_number: invNum,
+              student_id: selectedStudent.id,
+              academic_year: new Date().getFullYear().toString(),
+              term: "Term 1",
+              total_usd: usd,
+              total_zig: zig,
+              due_date: null,
+              status: "paid",
+              paid_usd: usd,
+              paid_zig: zig,
+              notes: "Auto-generated for advance payment",
+            })
+            .select()
+            .single();
+          if (invErr) throw invErr;
+          invoiceId = newInv.id;
+          invoiceNumber = invNum;
+          await supabase.from("invoice_items").insert({
+            invoice_id: newInv.id,
+            description: "Advance Payment",
+            amount_usd: usd,
+            amount_zig: zig,
+          });
+        }
       }
 
       const { error } = await supabase.from("payments").insert({
@@ -1233,16 +1254,21 @@ export default function FinanceManagement() {
       });
       if (error) throw error;
 
-      // Update invoice paid amounts (if paying against existing invoice)
-      if (payForm.invoice_id) {
-        const invoice = studentInvoices.find((i) => i.id === payForm.invoice_id);
-        if (invoice) {
-          const newPaidUsd = parseFloat(invoice.paid_usd) + usd;
-          const newPaidZig = parseFloat(invoice.paid_zig) + zig;
-          const totalUsd = parseFloat(invoice.total_usd);
-          const totalZig = parseFloat(invoice.total_zig);
+      // Update invoice paid amounts — always update since we always have an invoiceId now
+      if (invoiceId) {
+        // Re-fetch the invoice to get current paid amounts (in case of concurrent updates)
+        const { data: currentInv } = await supabase
+          .from("invoices")
+          .select("*")
+          .eq("id", invoiceId)
+          .single();
+        if (currentInv) {
+          const newPaidUsd = parseFloat(currentInv.paid_usd) + usd;
+          const newPaidZig = parseFloat(currentInv.paid_zig) + zig;
+          const totalUsd = parseFloat(currentInv.total_usd);
+          const totalZig = parseFloat(currentInv.total_zig);
           let newStatus = "partial";
-          if (newPaidUsd >= totalUsd && newPaidZig >= totalZig) newStatus = "paid";
+          if (newPaidUsd >= totalUsd) newStatus = "paid";
           else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
           await supabase
             .from("invoices")
@@ -1251,8 +1277,8 @@ export default function FinanceManagement() {
               paid_zig: newPaidZig,
               status: newStatus,
             })
-            .eq("id", payForm.invoice_id);
-          invoiceNumber = invoice.invoice_number;
+            .eq("id", invoiceId);
+          if (!invoiceNumber) invoiceNumber = currentInv.invoice_number;
         }
       }
 
