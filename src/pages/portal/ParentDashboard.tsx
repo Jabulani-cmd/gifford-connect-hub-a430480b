@@ -580,6 +580,7 @@ function TabContent(props: TabContentProps) {
     activeTab,
     setActiveTab,
     child,
+    childClassId,
     attendanceData,
     attendancePercent,
     invoices,
