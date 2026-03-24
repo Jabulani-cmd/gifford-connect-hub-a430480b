@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import moeLogo from "@/assets/ministry-of-education-logo.png";
 
 export default function Footer() {
   return (
