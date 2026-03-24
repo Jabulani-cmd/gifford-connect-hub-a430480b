@@ -814,19 +814,19 @@ export default function FinanceManagement() {
     const totalInvoicedZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
     const totalPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
     const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${stmtStudent.full_name}</title>
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${safeHtml(stmtStudent.full_name)}</title>
       <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
       table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
       .right{text-align:right}.mono{font-family:monospace}.summary{margin-top:16px;padding:12px;border:2px solid #333;display:inline-block}
       .red{color:#c00}.green{color:#060}@media print{body{padding:15px}}</style></head><body>
       <h1>Gifford High School</h1>
       <p><strong>Student Financial Statement</strong></p>
-      <p>Student: <strong>${stmtStudent.full_name}</strong> | Adm #: <strong>${stmtStudent.admission_number}</strong> | Form: <strong>${stmtStudent.form}</strong></p>
+      <p>Student: <strong>${safeHtml(stmtStudent.full_name)}</strong> | Adm #: <strong>${safeHtml(stmtStudent.admission_number)}</strong> | Form: <strong>${safeHtml(stmtStudent.form)}</strong></p>
       <p>Date: ${new Date().toLocaleDateString()}</p>
       <h2>Invoices</h2>
        table<thead> th<th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th> </thead>
       <tbody>
-      ${stmtInvoices.map((i) => `     <tr><td class="mono">${i.invoice_number}</td><td>${i.term}</td><td>${i.academic_year}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${i.status}</td></tr>`).join("")}
+      ${stmtInvoices.map((i) => `     <tr><td class="mono">${safeHtml(i.invoice_number)}</td><td>${safeHtml(i.term)}</td><td>${safeHtml(i.academic_year)}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${safeHtml(i.status)}</td></tr>`).join("")}
       </tbody>   </table>
       <h2>Payments</h2>
        table<thead>   <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
