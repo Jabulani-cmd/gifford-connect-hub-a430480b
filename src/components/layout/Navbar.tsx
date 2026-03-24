@@ -21,6 +21,7 @@ const navLinks: NavItem[] = [
       { label: "News", path: "/news" },
       { label: "School Projects", path: "/school-projects" },
       { label: "Facilities", path: "/facilities" },
+      { label: "Boarding", path: "/boarding" },
     ],
   },
   {
@@ -37,7 +38,6 @@ const navLinks: NavItem[] = [
       { label: "Fees", path: "/fees" },
     ],
   },
-  { label: "Boarding", path: "/boarding" },
   {
     label: "Sports & Culture",
     path: "/sports-culture",
