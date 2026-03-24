@@ -10,6 +10,7 @@ import HeroCarousel from "@/components/HeroCarousel";
 import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
+import cambridgeLogo from "@/assets/cambridge-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
 /* ---------- Principal Photo Component ---------- */
@@ -452,7 +453,7 @@ export default function Home() {
           </div>
 
           <div className="flex justify-center lg:justify-end">
-            <img src={schoolLogo} alt="Gifford High School" className="h-48 w-48 object-contain opacity-20 md:h-64 md:w-64" />
+            <img src={cambridgeLogo} alt="University of Cambridge" className="h-96 w-96 object-contain opacity-90 md:h-[32rem] md:w-[32rem]" />
           </div>
         </div>
       </section>
