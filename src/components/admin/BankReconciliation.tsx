@@ -20,6 +20,8 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 export default function BankReconciliation() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { rate } = useExchangeRate();
+  const autoZig = (usd: string) => { const n = parseFloat(usd); return isNaN(n) ? "" : (n * rate).toFixed(2); };
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
