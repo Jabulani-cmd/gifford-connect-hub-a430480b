@@ -84,8 +84,9 @@ Deno.serve(async (req) => {
     if (action === "seed-admin") {
       const { data: existingUsers } =
         await supabaseAdmin.auth.admin.listUsers();
+      const adminCheckEmail = Deno.env.get("ADMIN_SEED_EMAIL") || "admin@giffordhigh.com";
       const adminExists = existingUsers?.users?.some(
-        (u) => u.email === "admin@giffordhigh.com"
+        (u) => u.email === adminCheckEmail
       );
       if (adminExists) {
         return new Response(
