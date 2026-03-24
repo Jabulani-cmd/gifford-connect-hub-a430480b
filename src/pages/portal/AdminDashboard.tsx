@@ -816,7 +816,20 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {["07:30","08:30","10:00","11:00","13:00"].map(time => (
+                      {[
+                        "07:30",
+                        "08:10",
+                        "08:50",
+                        "09:50",
+                        "10:30",
+                        "11:10",
+                        "11:50",
+                        "12:30",
+                        "13:50",
+                        "14:30",
+                        "15:30",
+                        "16:10",
+                      ].map(time => (
                         <tr key={time} className="border-t">
                           <td className="px-3 py-2 font-medium">{time}</td>
                           {[1,2,3,4,5].map(d => (
