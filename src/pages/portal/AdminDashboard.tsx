@@ -596,7 +596,7 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High School crest" className="h-16 w-16 object-contain" />
+            <img src={schoolLogo} alt="Gifford High School crest" className="h-32 w-32 object-contain" />
             <span className="font-heading text-lg font-bold text-primary">Admin Portal</span>
           </div>
           <div className="flex items-center gap-3">
