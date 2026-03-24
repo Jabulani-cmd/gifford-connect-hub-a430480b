@@ -536,7 +536,7 @@ export default function MessagingPanel() {
       {/* Floating button */}
       <Button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+        className="fixed bottom-24 right-6 z-40 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground md:bottom-6"
         size="icon"
       >
         <MessageSquare className="h-6 w-6" />
@@ -554,7 +554,7 @@ export default function MessagingPanel() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl sm:w-[420px]"
+            className="fixed bottom-24 right-6 z-50 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl sm:w-[420px] md:bottom-6"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b bg-primary px-4 py-3">
