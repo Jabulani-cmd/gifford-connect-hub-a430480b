@@ -23,6 +23,7 @@ import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
 import PasswordManagement from "@/components/admin/PasswordManagement";
+import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
