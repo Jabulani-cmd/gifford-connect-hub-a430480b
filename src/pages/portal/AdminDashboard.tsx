@@ -1075,7 +1075,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Principal Photo"}
                   </Button>
                   {principalPhotoUrl && (
-                    <img src={principalPhotoUrl} alt="Principal" className="mt-2 h-48 w-36 rounded-lg border object-cover object-top" />
+                    <div className="relative mt-2 inline-block">
+                      <img src={principalPhotoUrl} alt="Principal" className="h-48 w-36 rounded-lg border object-cover object-top" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("principal_photo", setPrincipalPhotoUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
