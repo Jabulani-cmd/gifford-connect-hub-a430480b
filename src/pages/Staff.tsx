@@ -13,7 +13,6 @@ type StaffMember = {
   department: string | null;
   bio: string | null;
   photo_url: string | null;
-  email: string | null;
   category: string;
 };
 
