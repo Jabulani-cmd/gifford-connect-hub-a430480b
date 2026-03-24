@@ -330,7 +330,41 @@ export default function AcademicManagement() {
     fetchTimetable();
   }
 
-  // ═══ ATTENDANCE ═══
+  // ═══ SPORTS SCHEDULE ═══
+  const filteredSports = sportsEntries.filter(e => e.class_id === sportsViewClass);
+
+  function getSportsEntry(day: number, start: string, end: string) {
+    return filteredSports.find(e => e.day_of_week === day && e.start_time === start && e.end_time === end);
+  }
+
+  async function saveSportsEntry() {
+    if (!sportsEditCell || !sportsViewClass) return;
+    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start, sportsEditCell.slot.end);
+
+    const payload = {
+      class_id: sportsViewClass, activity_name: sportsActivity, activity_type: sportsType,
+      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start, end_time: sportsEditCell.slot.end,
+      venue: sportsVenue || null, coach_id: sportsCoach || null,
+    };
+
+    if (existing) {
+      if (!sportsActivity) {
+        const { error } = await supabase.from("sports_schedule").delete().eq("id", existing.id);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      } else {
+        const { error } = await supabase.from("sports_schedule").update(payload).eq("id", existing.id);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      }
+    } else if (sportsActivity) {
+      const { error } = await supabase.from("sports_schedule").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+
+    toast({ title: "Sports schedule updated" });
+    setSportsEditCell(null);
+    fetchSportsSchedule();
+  }
+
   const attStudents = students.filter(s => {
     const cls = classes.find(c => c.id === attClass);
     return cls && s.form === cls.form_level && (!cls.stream || s.stream === cls.stream);
