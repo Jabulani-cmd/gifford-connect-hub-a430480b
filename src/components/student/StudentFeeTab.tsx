@@ -174,7 +174,9 @@ export default function StudentFeeTab({ studentId }: Props) {
                 </TableHeader>
                 <TableBody>
                   {invoices.map((inv) => {
-                    const balance = inv.total_usd - inv.paid_usd;
+                    const invPayments = payments.filter((p) => p.invoice_id === inv.id);
+                    const actualPaid = invPayments.reduce((sum, p) => sum + parseFloat(p.amount_usd || 0), 0);
+                    const balance = inv.total_usd - actualPaid;
                     return (
                       <TableRow key={inv.id}>
                         <TableCell className="font-mono text-xs">{inv.invoice_number}</TableCell>
@@ -182,7 +184,7 @@ export default function StudentFeeTab({ studentId }: Props) {
                           {inv.term} {inv.academic_year}
                         </TableCell>
                         <TableCell className="text-right">${fmt(inv.total_usd)}</TableCell>
-                        <TableCell className="text-right">${fmt(inv.paid_usd)}</TableCell>
+                        <TableCell className="text-right">${fmt(actualPaid)}</TableCell>
                         <TableCell className="text-right">
                           {(() => {
                             if (balance < 0) {
