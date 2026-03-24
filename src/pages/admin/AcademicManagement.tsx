@@ -44,9 +44,22 @@ const timeSlots = [
   { start: "10:30", end: "11:10" },
   { start: "11:10", end: "11:50" },
   { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:30", isBreak: true, label: "Lunch" },
-  { start: "13:30", end: "14:10" },
-  { start: "14:10", end: "14:50" },
+  { start: "12:30", end: "13:10" },
+  { start: "13:10", end: "13:50", isBreak: true, label: "Lunch" },
+  { start: "13:50", end: "14:30" },
+  { start: "14:30", end: "15:10" },
+  { start: "15:10", end: "15:30", isBreak: true, label: "Break" },
+];
+
+const sportsSlots = [
+  { start: "15:30", end: "16:10" },
+  { start: "16:10", end: "17:00" },
+];
+
+const sportsActivityOptions = [
+  "Rugby", "Soccer", "Cricket", "Hockey", "Tennis", "Netball", "Basketball",
+  "Athletics", "Swimming", "Volleyball", "Chess Club", "Drama Club", "Debate Club",
+  "Music Club", "Science Club", "Art Club", "Computer Club", "Scouts", "Cadets",
 ];
 
 // ZIMSEC grading
