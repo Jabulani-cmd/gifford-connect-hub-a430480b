@@ -507,6 +507,9 @@ export default function StudentManagement() {
         toast({ title: "Student added but account creation failed", description: provErr?.message, variant: "destructive" });
       }
 
+      // Allocate boarding if applicable
+      await allocateBoarding(newStudent.id);
+
       toast({ title: "Student added!", description: `Student number: ${newStudent?.admission_number}` });
     }
     setSaving(false);
