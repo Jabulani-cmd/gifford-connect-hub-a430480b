@@ -53,8 +53,8 @@ export default function HODDashboard() {
         </div>
       </header>
 
-      <div className="container py-8">
-        <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 font-heading text-2xl font-bold text-primary">
+      <div className="container px-3 sm:px-4 py-4 sm:py-8">
+        <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6 font-heading text-lg sm:text-2xl font-bold text-primary">
           HOD Dashboard
         </motion.h1>
 
