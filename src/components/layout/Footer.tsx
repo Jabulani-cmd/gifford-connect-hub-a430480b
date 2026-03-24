@@ -4,6 +4,7 @@ import schoolLogo from "@/assets/school-logo.png";
 import moeLogo from "@/assets/ministry-of-education-logo.png";
 import zimbabweFlag from "@/assets/zimbabwe-flag.jpg";
 import cambridgeLogo from "@/assets/cambridge-logo.png";
+import zimsecLogo from "@/assets/zimsec-logo.png";
 
 export default function Footer() {
   return (
@@ -58,6 +59,7 @@ export default function Footer() {
             <img src={moeLogo} alt="Ministry of Education logo" className="h-24 w-24 object-contain" />
             <img src={zimbabweFlag} alt="Flag of Zimbabwe" className="h-16 w-24 rounded object-cover shadow-md" />
             <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-24 object-contain" />
+            <img src={zimsecLogo} alt="ZIMSEC" className="h-24 w-24 object-contain" />
           </div>
           <span className="mb-3 block text-xs text-primary-foreground/70">Ministry of Primary and Secondary Education</span>
           <p>© {new Date().getFullYear()} Gifford High School. All rights reserved.</p>
