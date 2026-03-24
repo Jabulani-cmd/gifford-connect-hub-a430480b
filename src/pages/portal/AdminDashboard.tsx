@@ -693,9 +693,9 @@ export default function AdminDashboard() {
           />
         )}
 
-        <Tabs defaultValue="announcements" className="space-y-6">
-          <div className="rounded-xl border bg-card p-1.5">
-            <TabsList className="flex-wrap gap-1 bg-transparent h-auto p-0">
+        <Tabs defaultValue="announcements" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide rounded-xl border bg-card p-1.5">
+            <TabsList className="flex-wrap gap-1 bg-transparent h-auto p-0 w-max sm:w-auto">
               {/* Content Management */}
               <TabsTrigger value="announcements" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
               <TabsTrigger value="carousel" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
