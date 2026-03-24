@@ -198,18 +198,18 @@ export default function Navbar() {
         </div>
       )}
 
-      <div className="container flex items-center justify-between py-3 md:py-4">
-        <Link to="/" className="flex items-center gap-3">
+      <div className="container flex items-center justify-between py-2 md:py-4">
+        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0">
           <img
             src={schoolLogo}
             alt="Gifford High School crest"
-            className="h-20 w-20 flex-shrink-0 object-contain md:h-28 md:w-28"
+            className="h-12 w-12 flex-shrink-0 object-contain md:h-20 md:w-20 lg:h-28 lg:w-28"
           />
-          <div className="flex flex-col justify-center leading-tight">
-            <span className="block font-heading text-xl font-bold tracking-tight text-white md:text-3xl">
+          <div className="flex flex-col justify-center leading-tight min-w-0">
+            <span className="block font-heading text-base font-bold tracking-tight text-white md:text-xl lg:text-3xl truncate">
               Gifford High School
             </span>
-            <span className="block text-xs italic text-white/60 md:text-sm">
+            <span className="block text-[10px] italic text-white/60 md:text-xs lg:text-sm truncate">
               Hinc Orior — From Here I Arise
             </span>
           </div>
