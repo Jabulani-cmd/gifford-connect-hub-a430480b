@@ -362,6 +362,25 @@ export default function StudentManagement() {
     });
     setPhotoUrl(s.profile_photo_url);
     setErrors({});
+    // Load existing boarding allocation if boarder
+    if ((s as any).boarding_status === "boarder") {
+      supabase.from("bed_allocations").select("room_id, bed_number").eq("student_id", s.id).eq("status", "active").maybeSingle().then(({ data: alloc }) => {
+        if (alloc) {
+          const room = rooms.find(r => r.id === alloc.room_id);
+          setSelectedHostel(room ? room.hostel_id : "");
+          setSelectedRoom(alloc.room_id);
+          setBedNumber(alloc.bed_number || "");
+        } else {
+          setSelectedHostel("");
+          setSelectedRoom("");
+          setBedNumber("");
+        }
+      });
+    } else {
+      setSelectedHostel("");
+      setSelectedRoom("");
+      setBedNumber("");
+    }
     setDialogOpen(true);
   };
 
