@@ -173,6 +173,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
         if (s.setting_key === "achievements_image") setAchievementsImageUrl(s.setting_value);
         if (s.setting_key === "principal_photo") setPrincipalPhotoUrl(s.setting_value);
         if (s.setting_key === "tradition_image") setTraditionImageUrl(s.setting_value);
+        if (s.setting_key === "cta_image") setCtaImageUrl(s.setting_value);
       });
     }
   };
