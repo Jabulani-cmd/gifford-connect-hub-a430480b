@@ -138,7 +138,7 @@ export default function IncomeExpenditureReport() {
 
     if (searchedExpenses.length > 0) {
       printWin.document.write(`<h3>Expenses (${searchedExpenses.length} transactions)</h3><table><tr><th>Date</th><th>Category</th><th>Description</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-      searchedExpenses.forEach(e => printWin.document.write(`<tr><td>${e.expense_date}</td><td>${e.category}</td><td>${e.description}</td><td class="right">${fmt(e.amount_usd)}</td><td class="right">${fmt(e.amount_zig)}</td></tr>`));
+      searchedExpenses.forEach(e => printWin.document.write(`<tr><td>${safeHtml(e.expense_date)}</td><td>${safeHtml(e.category)}</td><td>${safeHtml(e.description)}</td><td class="right">${fmt(e.amount_usd)}</td><td class="right">${fmt(e.amount_zig)}</td></tr>`));
       printWin.document.write(`</table>`);
     }
 
