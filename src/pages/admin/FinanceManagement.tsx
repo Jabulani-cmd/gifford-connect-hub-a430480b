@@ -971,7 +971,7 @@ export default function FinanceManagement() {
         setSingleInvForm((f) => ({
           ...f,
           amount_usd: String(applicable[0].amount_usd),
-          amount_zig: String(applicable[0].amount_zig),
+          amount_zig: String((applicable[0].amount_usd * rate).toFixed(2)),
           description: applicable[0].description || "",
         }));
       } else {

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Search, CheckCircle, AlertTriangle, Loader2, Printer } from "lucide-react";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
