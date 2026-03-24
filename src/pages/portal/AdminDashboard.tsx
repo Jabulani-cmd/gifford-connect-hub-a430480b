@@ -1135,7 +1135,12 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <Upload className="mr-1 h-4 w-4" /> {uploading ? "Uploading…" : "Upload Image"}
                   </Button>
                   {ctaImageUrl && (
-                    <img src={ctaImageUrl} alt="CTA section" className="mt-2 rounded-lg border max-h-64 w-full object-cover" />
+                    <div className="relative mt-2">
+                      <img src={ctaImageUrl} alt="CTA section" className="rounded-lg border max-h-64 w-full object-cover" />
+                      <Button variant="destructive" size="icon" className="absolute right-1 top-1 h-7 w-7" onClick={() => handleDeleteSiteImage("cta_image", setCtaImageUrl)} disabled={uploading}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
