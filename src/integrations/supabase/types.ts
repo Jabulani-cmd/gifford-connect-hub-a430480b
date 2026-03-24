@@ -2657,6 +2657,57 @@ export type Database = {
           },
         ]
       }
+      term_registrations: {
+        Row: {
+          academic_year: string
+          boarding_status: string | null
+          id: string
+          invoice_id: string | null
+          registered_at: string
+          registered_by: string | null
+          student_id: string
+          subjects: string[] | null
+          term: string
+        }
+        Insert: {
+          academic_year: string
+          boarding_status?: string | null
+          id?: string
+          invoice_id?: string | null
+          registered_at?: string
+          registered_by?: string | null
+          student_id: string
+          subjects?: string[] | null
+          term: string
+        }
+        Update: {
+          academic_year?: string
+          boarding_status?: string | null
+          id?: string
+          invoice_id?: string | null
+          registered_at?: string
+          registered_by?: string | null
+          student_id?: string
+          subjects?: string[] | null
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_registrations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       term_reports: {
         Row: {
           academic_year: string

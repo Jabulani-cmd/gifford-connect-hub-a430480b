@@ -15,7 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy, Users, Camera, KeyRound } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy, Users, Camera, KeyRound, UserCheck } from "lucide-react";
+import TermRegistration from "@/components/admin/TermRegistration";
 import { studentFormSchema, type StudentFormData, zimPhoneRegex } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
@@ -533,6 +534,15 @@ export default function StudentManagement() {
 
   return (
     <div className="space-y-6">
+      <Tabs defaultValue="students">
+        <TabsList className="mb-4">
+          <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="term-registration"><UserCheck className="mr-1 h-4 w-4" /> Term Registration</TabsTrigger>
+        </TabsList>
+        <TabsContent value="term-registration">
+          <TermRegistration />
+        </TabsContent>
+        <TabsContent value="students">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-2xl font-bold text-foreground">Student Management</h2>
         <div className="flex flex-wrap gap-2">
@@ -985,6 +995,8 @@ export default function StudentManagement() {
           )}
         </DialogContent>
       </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
