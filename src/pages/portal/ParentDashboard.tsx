@@ -270,7 +270,8 @@ export default function ParentDashboard() {
   const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "overview", label: "Overview", icon: Users },
     { id: "grades", label: "Grades", icon: GraduationCap },
-    { id: "marks", label: "Marks", icon: ClipboardList }, // 👈 new marks tab
+    { id: "marks", label: "Marks", icon: ClipboardList },
+    { id: "timetable", label: "Timetable", icon: Calendar },
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
     { id: "attendance", label: "Attendance", icon: Calendar },
