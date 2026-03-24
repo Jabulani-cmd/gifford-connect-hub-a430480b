@@ -199,14 +199,14 @@ export default function Navbar() {
       )}
 
       <div className="container flex items-center justify-between py-2 md:py-4">
-        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0">
+        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
           <img
             src={schoolLogo}
             alt="Gifford High School crest"
-            className="h-12 w-12 flex-shrink-0 object-contain md:h-20 md:w-20 lg:h-28 lg:w-28"
+            className="h-16 w-16 flex-shrink-0 object-contain md:h-20 md:w-20 lg:h-28 lg:w-28"
           />
           <div className="flex flex-col justify-center leading-tight min-w-0">
-            <span className="block font-heading text-base font-bold tracking-tight text-white md:text-xl lg:text-3xl truncate">
+            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-xl lg:text-3xl truncate">
               Gifford High School
             </span>
             <span className="block text-[10px] italic text-white/60 md:text-xs lg:text-sm truncate">
