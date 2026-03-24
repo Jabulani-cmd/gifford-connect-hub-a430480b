@@ -726,6 +726,7 @@ export default function AdminDashboard() {
                   <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
                 </>
               )}
+              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
               {/* Communication & Reports */}
               <TabsTrigger value="meetings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-4 w-4" /> Meetings</TabsTrigger>
               <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
