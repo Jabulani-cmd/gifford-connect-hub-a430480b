@@ -94,6 +94,7 @@ export default function Home() {
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
   const [traditionImage, setTraditionImage] = useState<string | null>(null);
+  const [projects, setProjects] = useState<any[]>([]);
   const [ctaImage, setCtaImage] = useState<string | null>(null);
   const [facilityImages, setFacilityImages] = useState<any[]>([]);
 
