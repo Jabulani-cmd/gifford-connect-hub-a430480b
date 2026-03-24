@@ -46,14 +46,14 @@ const HeroCarousel = forwardRef<HTMLElement>(function HeroCarousel(_props, ref) 
   const slide = heroSlides[current % heroSlides.length];
 
   return (
-    <section ref={ref} className="relative h-screen w-full overflow-hidden">
+    <section ref={ref} className="relative w-full overflow-hidden bg-primary" style={{ minHeight: "60vh", height: "100vh", maxHeight: "100svh" }}>
       {/* Background images */}
       {images.map((img, i) => (
         <img
           key={img.id}
           src={img.image_url}
           alt="Gifford High School"
-          className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000"
+          className="absolute inset-0 h-full w-full object-contain md:object-cover object-center transition-opacity duration-1000"
           style={{ 
             opacity: i === current ? 1 : 0,
             filter: "grayscale(60%)",
