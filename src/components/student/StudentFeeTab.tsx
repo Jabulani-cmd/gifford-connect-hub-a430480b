@@ -56,7 +56,7 @@ export default function StudentFeeTab({ studentId }: Props) {
   };
 
   const totalInvoicedUsd = invoices.reduce((sum, i) => sum + parseFloat(i.total_usd || 0), 0);
-  const totalPaidUsd = payments.reduce((sum, p) => sum + parseFloat(p.amount_usd || 0), 0);
+  const totalPaidUsd = invoices.reduce((sum, i) => sum + parseFloat(i.paid_usd || 0), 0);
   const balanceUsd = totalInvoicedUsd - totalPaidUsd;
 
   const printStatement = () => {
