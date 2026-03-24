@@ -189,17 +189,17 @@ export default function Navbar() {
       {/* Top utility bar — only visible on non-home or scrolled */}
 
       <div className="container flex items-center justify-between py-2 pr-2 md:py-4">
-        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-shrink-0">
           <img
             src={schoolLogo}
             alt="Gifford High School crest"
             className="h-16 w-16 flex-shrink-0 object-contain md:h-20 md:w-20 lg:h-28 lg:w-28"
           />
-          <div className="flex flex-col justify-center leading-tight min-w-0">
-            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-xl lg:text-3xl truncate">
+          <div className="flex flex-col justify-center leading-tight">
+            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-xl lg:text-2xl whitespace-nowrap">
               Gifford High School
             </span>
-            <span className="block text-[10px] italic text-white/60 md:text-xs lg:text-sm truncate">
+            <span className="block text-[10px] italic text-white/60 md:text-xs lg:text-sm">
               Hinc Orior — From Here I Arise
             </span>
           </div>

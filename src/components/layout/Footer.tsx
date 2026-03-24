@@ -53,16 +53,31 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-primary-foreground/20 pt-6 text-center text-xs text-primary-foreground/60">
-          <div className="mb-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-10">
-            <img src={moeLogo} alt="Ministry of Education logo" className="h-20 w-20 object-contain sm:h-24 sm:w-24 lg:h-32 lg:w-32" />
-            <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-auto max-w-[40vw] object-contain sm:h-32 lg:h-56" />
-            <img src={zimsecLogo} alt="ZIMSEC" className="h-24 w-auto max-w-[40vw] object-contain sm:h-32 lg:h-56" />
+        {/* Affiliations strip */}
+        <div className="mt-10 border-t border-primary-foreground/20 pt-8">
+          <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground/50">
+            Affiliated With
+          </p>
+          <div className="flex items-center justify-center gap-8 sm:gap-12 lg:gap-16">
+            <div className="flex flex-col items-center gap-1">
+              <img src={moeLogo} alt="Ministry of Education logo" className="h-14 w-14 object-contain sm:h-16 sm:w-16 lg:h-20 lg:w-20" />
+              <span className="text-[10px] text-primary-foreground/50 sm:text-xs">MoPSE</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <img src={cambridgeLogo} alt="University of Cambridge" className="h-14 w-auto object-contain sm:h-16 lg:h-20" />
+              <span className="text-[10px] text-primary-foreground/50 sm:text-xs">Cambridge</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <img src={zimsecLogo} alt="ZIMSEC" className="h-14 w-auto object-contain sm:h-16 lg:h-20" />
+              <span className="text-[10px] text-primary-foreground/50 sm:text-xs">ZIMSEC</span>
+            </div>
           </div>
-          <span className="mb-3 block text-xs text-primary-foreground/70">Ministry of Primary and Secondary Education</span>
+        </div>
+
+        <div className="mt-6 border-t border-primary-foreground/10 pt-4 text-center text-xs text-primary-foreground/50">
           <p>© {new Date().getFullYear()} Gifford High School. All rights reserved.</p>
-          <p className="mt-2">
-            This website was designed and is maintained by{" "}
+          <p className="mt-1">
+            Designed &amp; maintained by{" "}
             <a href="https://mavingtech.com" target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline">
               MavingTech Business Solutions
             </a>
