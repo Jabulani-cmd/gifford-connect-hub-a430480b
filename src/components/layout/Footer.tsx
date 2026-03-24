@@ -58,17 +58,17 @@ export default function Footer() {
           <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground/50">
             Affiliated With
           </p>
-          <div className="flex items-center justify-center gap-8 sm:gap-12 lg:gap-16">
+          <div className="flex items-center justify-center gap-6 sm:gap-10 lg:gap-16">
             <div className="flex flex-col items-center gap-1">
-              <img src={moeLogo} alt="Ministry of Education logo" className="h-14 w-14 object-contain sm:h-16 sm:w-16 lg:h-20 lg:w-20" />
+              <img src={moeLogo} alt="Ministry of Education logo" className="h-16 w-16 object-contain sm:h-20 sm:w-20 lg:h-24 lg:w-24" />
               <span className="text-[10px] text-primary-foreground/50 sm:text-xs">MoPSE</span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <img src={cambridgeLogo} alt="University of Cambridge" className="h-14 w-auto object-contain sm:h-16 lg:h-20" />
+              <img src={cambridgeLogo} alt="University of Cambridge" className="h-16 w-16 object-contain sm:h-20 sm:w-20 lg:h-24 lg:w-24" />
               <span className="text-[10px] text-primary-foreground/50 sm:text-xs">Cambridge</span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <img src={zimsecLogo} alt="ZIMSEC" className="h-14 w-auto object-contain sm:h-16 lg:h-20" />
+              <img src={zimsecLogo} alt="ZIMSEC" className="h-16 w-16 object-contain sm:h-20 sm:w-20 lg:h-24 lg:w-24" />
               <span className="text-[10px] text-primary-foreground/50 sm:text-xs">ZIMSEC</span>
             </div>
           </div>
