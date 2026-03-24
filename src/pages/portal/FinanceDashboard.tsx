@@ -18,25 +18,25 @@ export default function FinanceDashboard() {
   return (
     <div className="min-h-screen bg-section-warm">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <img src={schoolLogo} alt="Logo" className="h-20 w-20 object-contain" />
+        <div className="container mx-auto flex items-center justify-between px-3 sm:px-4 py-2 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src={schoolLogo} alt="Logo" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
             <div>
-              <h1 className="font-heading text-lg font-bold text-primary">Finance Portal</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <h1 className="font-heading text-sm sm:text-lg font-bold text-primary">Finance Portal</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{user?.email}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" /> Sign Out
+          <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2 text-xs sm:text-sm">
+            <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Sign Out</span>
           </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="mb-6 flex items-center gap-3">
-            <DollarSign className="h-6 w-6 text-accent" />
-            <h2 className="font-heading text-2xl font-bold text-primary">Finance Management</h2>
+          <div className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+            <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
+            <h2 className="font-heading text-lg sm:text-2xl font-bold text-primary">Finance Management</h2>
           </div>
           <FinanceManagement />
         </motion.div>

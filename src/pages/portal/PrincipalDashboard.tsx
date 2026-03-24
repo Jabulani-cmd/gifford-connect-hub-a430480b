@@ -54,20 +54,21 @@ export default function PrincipalDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-36 items-center justify-between">
+        <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High School crest" className="h-32 w-32 object-contain" />
-            <span className="font-heading text-lg font-bold text-primary">Principal's Portal</span>
+            <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Principal's Portal</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Principal</span>
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden sm:inline text-sm text-muted-foreground">Principal</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
 
-      <div className="container py-8">
-        <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 font-heading text-2xl font-bold text-primary">
+      <div className="container px-3 sm:px-4 py-4 sm:py-8">
+        <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6 font-heading text-lg sm:text-2xl font-bold text-primary">
           Principal's Dashboard
         </motion.h1>
 
@@ -91,20 +92,21 @@ export default function PrincipalDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="students" className="space-y-6">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="students"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
-            <TabsTrigger value="staff"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
-            <TabsTrigger value="academics"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
-            <TabsTrigger value="user-mgmt"><Shield className="mr-1 h-4 w-4" /> User Management</TabsTrigger>
-            <TabsTrigger value="boarding"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
-            <TabsTrigger value="inventory"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
-            <TabsTrigger value="communication"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
-            <TabsTrigger value="reports"><ClipboardList className="mr-1 h-4 w-4" /> Reports</TabsTrigger>
-            
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> My Timetable</TabsTrigger>
-            <TabsTrigger value="staff-leave"><CalendarOff className="mr-1 h-4 w-4" /> Staff Availability</TabsTrigger>
+        <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="flex-wrap h-auto gap-1 w-max sm:w-auto">
+            <TabsTrigger value="students" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Students</TabsTrigger>
+            <TabsTrigger value="staff" className="text-xs sm:text-sm"><Briefcase className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Staff</TabsTrigger>
+            <TabsTrigger value="academics" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Academics</TabsTrigger>
+            <TabsTrigger value="user-mgmt" className="text-xs sm:text-sm"><Shield className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Users</TabsTrigger>
+            <TabsTrigger value="boarding" className="text-xs sm:text-sm"><BedDouble className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Boarding</TabsTrigger>
+            <TabsTrigger value="inventory" className="text-xs sm:text-sm"><Package className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Inventory</TabsTrigger>
+            <TabsTrigger value="communication" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Comms</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
+            <TabsTrigger value="timetable" className="text-xs sm:text-sm"><Calendar className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Timetable</TabsTrigger>
+            <TabsTrigger value="staff-leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Availability</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="students"><StudentManagement /></TabsContent>
           <TabsContent value="staff"><StaffManagementFull /></TabsContent>

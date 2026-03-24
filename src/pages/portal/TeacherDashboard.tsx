@@ -287,22 +287,23 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-20 items-center justify-between">
+        <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High" className="h-16 w-16 object-contain" />
-            <span className="font-heading text-lg font-bold text-primary">Teacher Portal</span>
+            <img src={schoolLogo} alt="Gifford High" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Teacher Portal</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
             <NotificationBell />
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
 
-      <div className="container py-6 space-y-6">
+      <div className="container px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-2xl font-bold text-primary mb-1">Welcome, {displayName}</h1>
+          <h1 className="font-heading text-lg sm:text-2xl font-bold text-primary mb-1">Welcome, {displayName}</h1>
           {staffInfo?.staff_number && (
             <p className="text-sm text-muted-foreground mb-4">Staff No: <span className="font-medium text-foreground">{staffInfo.staff_number}</span>{staffInfo.department ? ` · ${staffInfo.department}` : ""}</p>
           )}
@@ -339,23 +340,25 @@ export default function TeacherDashboard() {
         </motion.div>
 
         <Tabs defaultValue="materials" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="materials"><FileText className="mr-1 h-4 w-4" /> Materials</TabsTrigger>
-            <TabsTrigger value="assessments"><ClipboardList className="mr-1 h-4 w-4" /> Assessments</TabsTrigger>
-            <TabsTrigger value="exam-results"><GraduationCap className="mr-1 h-4 w-4" /> Exam Results</TabsTrigger>
-            <TabsTrigger value="marks"><BarChart3 className="mr-1 h-4 w-4" /> Marks</TabsTrigger>
-            <TabsTrigger value="homework"><BookOpen className="mr-1 h-4 w-4" /> Homework</TabsTrigger>
-            <TabsTrigger value="attendance"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
-            <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
-            <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
-            <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
-            <TabsTrigger value="lesson-plans"><BookOpen className="mr-1 h-4 w-4" /> Lesson Plans</TabsTrigger>
-            <TabsTrigger value="progress"><TrendingUp className="mr-1 h-4 w-4" /> Progress</TabsTrigger>
-            <TabsTrigger value="resources"><FolderOpen className="mr-1 h-4 w-4" /> Resources</TabsTrigger>
-            <TabsTrigger value="parent-log"><MessageSquare className="mr-1 h-4 w-4" /> Parent Log</TabsTrigger>
-            <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
-            <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="flex-wrap sm:flex-wrap h-auto gap-1 w-max sm:w-auto">
+            <TabsTrigger value="materials" className="text-xs sm:text-sm"><FileText className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Materials</TabsTrigger>
+            <TabsTrigger value="assessments" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Assessments</TabsTrigger>
+            <TabsTrigger value="exam-results" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Results</TabsTrigger>
+            <TabsTrigger value="marks" className="text-xs sm:text-sm"><BarChart3 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Marks</TabsTrigger>
+            <TabsTrigger value="homework" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Homework</TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
+            <TabsTrigger value="announcements" className="text-xs sm:text-sm"><Bell className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Notices</TabsTrigger>
+            <TabsTrigger value="timetable" className="text-xs sm:text-sm"><Calendar className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Timetable</TabsTrigger>
+            <TabsTrigger value="exam-timetable" className="text-xs sm:text-sm"><CalendarDays className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Exam TT</TabsTrigger>
+            <TabsTrigger value="lesson-plans" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Lessons</TabsTrigger>
+            <TabsTrigger value="progress" className="text-xs sm:text-sm"><TrendingUp className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Progress</TabsTrigger>
+            <TabsTrigger value="resources" className="text-xs sm:text-sm"><FolderOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resources</TabsTrigger>
+            <TabsTrigger value="parent-log" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Parents</TabsTrigger>
+            <TabsTrigger value="schedule" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Schedule</TabsTrigger>
+            <TabsTrigger value="leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Leave</TabsTrigger>
           </TabsList>
+          </div>
 
           {/* MATERIALS - Enhanced */}
           <TabsContent value="materials">
