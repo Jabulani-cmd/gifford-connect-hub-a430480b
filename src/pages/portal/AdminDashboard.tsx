@@ -60,10 +60,17 @@ const timetableSlots = [
   { start: "16:10", end: "17:00" },
 ];
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  portalTitle?: string;
+  portalRole?: string;
+}
+
+export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboardProps = {}) {
   const { toast } = useToast();
   const { signOut, user, role } = useAuth();
-  const isFinanceUser = role === 'finance' || role === 'admin_supervisor';
+  const isFinanceUser = role === 'finance' || role === 'admin_supervisor' || role === 'principal';
+  const displayTitle = portalTitle || "Admin Portal";
+  const displayRole = portalRole || "Admin";
   const navigate = useNavigate();
 
   // Announcements
