@@ -1195,21 +1195,38 @@ export default function FinanceManagement() {
       let invoiceId = payForm.invoice_id || null;
       let invoiceNumber: string | null = null;
 
-      // If no invoice selected, try to find existing unpaid/partial invoice first
+      // If no invoice selected, always attach to an existing fee invoice first
       if (!invoiceId) {
+        const now = new Date();
+        const currentYear = now.getFullYear().toString();
+        const month = now.getMonth() + 1;
+        const currentTerm = month <= 4 ? "Term 1" : month <= 8 ? "Term 2" : "Term 3";
+
         const { data: existingInvs } = await supabase
           .from("invoices")
           .select("*")
           .eq("student_id", selectedStudent.id)
-          .in("status", ["unpaid", "partial"])
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .order("created_at", { ascending: false });
 
         if (existingInvs && existingInvs.length > 0) {
-          invoiceId = existingInvs[0].id;
-          invoiceNumber = existingInvs[0].invoice_number;
+          const preferredInvoice =
+            existingInvs.find((inv) => {
+              const status = String(inv.status || "").toLowerCase();
+              return status === "unpaid" || status === "partial";
+            }) ||
+            existingInvs.find(
+              (inv) =>
+                String(inv.academic_year) === currentYear &&
+                inv.term === currentTerm &&
+                inv.notes !== "Auto-generated for advance payment",
+            ) ||
+            existingInvs.find((inv) => inv.notes !== "Auto-generated for advance payment") ||
+            existingInvs[0];
+
+          invoiceId = preferredInvoice.id;
+          invoiceNumber = preferredInvoice.invoice_number;
         } else {
-          // Only create advance invoice if truly no invoice exists
+          // Only create an advance invoice if the student has no invoice history at all
           const invNum = genInvoiceNum();
           const { data: newInv, error: invErr } = await supabase
             .from("invoices")
@@ -3128,9 +3145,9 @@ export default function FinanceManagement() {
             {selectedStudent && studentInvoices.length === 0 && (
               <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
                 <p className="text-sm text-accent font-medium">
-                  No outstanding invoices — this will be recorded as an advance payment.
+                  No invoice found for this student yet — this payment will create an advance invoice.
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">An invoice and receipt will be auto-generated.</p>
+                <p className="text-xs text-muted-foreground mt-1">A new invoice and receipt will be auto-generated.</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
