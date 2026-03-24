@@ -1254,16 +1254,21 @@ export default function FinanceManagement() {
       });
       if (error) throw error;
 
-      // Update invoice paid amounts (if paying against existing invoice)
-      if (payForm.invoice_id) {
-        const invoice = studentInvoices.find((i) => i.id === payForm.invoice_id);
-        if (invoice) {
-          const newPaidUsd = parseFloat(invoice.paid_usd) + usd;
-          const newPaidZig = parseFloat(invoice.paid_zig) + zig;
-          const totalUsd = parseFloat(invoice.total_usd);
-          const totalZig = parseFloat(invoice.total_zig);
+      // Update invoice paid amounts — always update since we always have an invoiceId now
+      if (invoiceId) {
+        // Re-fetch the invoice to get current paid amounts (in case of concurrent updates)
+        const { data: currentInv } = await supabase
+          .from("invoices")
+          .select("*")
+          .eq("id", invoiceId)
+          .single();
+        if (currentInv) {
+          const newPaidUsd = parseFloat(currentInv.paid_usd) + usd;
+          const newPaidZig = parseFloat(currentInv.paid_zig) + zig;
+          const totalUsd = parseFloat(currentInv.total_usd);
+          const totalZig = parseFloat(currentInv.total_zig);
           let newStatus = "partial";
-          if (newPaidUsd >= totalUsd && newPaidZig >= totalZig) newStatus = "paid";
+          if (newPaidUsd >= totalUsd) newStatus = "paid";
           else if (newPaidUsd === 0 && newPaidZig === 0) newStatus = "unpaid";
           await supabase
             .from("invoices")
@@ -1272,8 +1277,8 @@ export default function FinanceManagement() {
               paid_zig: newPaidZig,
               status: newStatus,
             })
-            .eq("id", payForm.invoice_id);
-          invoiceNumber = invoice.invoice_number;
+            .eq("id", invoiceId);
+          if (!invoiceNumber) invoiceNumber = currentInv.invoice_number;
         }
       }
 
