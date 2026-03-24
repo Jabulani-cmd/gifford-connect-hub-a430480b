@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   BookOpen, Plus, Pencil, Trash2, Users, Clock, Calendar,
   CheckCircle, XCircle, AlertCircle, Search, Loader2,
-  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList, UserCheck
+  GraduationCap, FileText, BarChart3, Printer, CalendarDays, ClipboardList, UserCheck, Trophy
 } from "lucide-react";
 import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
 import TermReportsTab from "@/components/admin/TermReportsTab";
@@ -44,9 +44,22 @@ const timeSlots = [
   { start: "10:30", end: "11:10" },
   { start: "11:10", end: "11:50" },
   { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:30", isBreak: true, label: "Lunch" },
-  { start: "13:30", end: "14:10" },
-  { start: "14:10", end: "14:50" },
+  { start: "12:30", end: "13:10" },
+  { start: "13:10", end: "13:50", isBreak: true, label: "Lunch" },
+  { start: "13:50", end: "14:30" },
+  { start: "14:30", end: "15:10" },
+  { start: "15:10", end: "15:30", isBreak: true, label: "Break" },
+];
+
+const sportsSlots = [
+  { start: "15:30", end: "16:10" },
+  { start: "16:10", end: "17:00" },
+];
+
+const sportsActivityOptions = [
+  "Rugby", "Soccer", "Cricket", "Hockey", "Tennis", "Netball", "Basketball",
+  "Athletics", "Swimming", "Volleyball", "Chess Club", "Drama Club", "Debate Club",
+  "Music Club", "Science Club", "Art Club", "Computer Club", "Scouts", "Cadets",
 ];
 
 // ZIMSEC grading
@@ -106,6 +119,15 @@ export default function AcademicManagement() {
   const [ttTeacher, setTtTeacher] = useState("");
   const [ttRoom, setTtRoom] = useState("");
 
+  // Sports schedule state
+  const [sportsEntries, setSportsEntries] = useState<any[]>([]);
+  const [sportsViewClass, setSportsViewClass] = useState("");
+  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start: string; end: string } } | null>(null);
+  const [sportsActivity, setSportsActivity] = useState("");
+  const [sportsVenue, setSportsVenue] = useState("");
+  const [sportsCoach, setSportsCoach] = useState("");
+  const [sportsType, setSportsType] = useState("sport");
+
   const [attClass, setAttClass] = useState("");
   const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
   const [attRecords, setAttRecords] = useState<Record<string, string>>({});
@@ -122,7 +144,7 @@ export default function AcademicManagement() {
   const [resultsSearch, setResultsSearch] = useState("");
 
   useEffect(() => {
-    Promise.all([fetchClasses(), fetchSubjects(), fetchStaff(), fetchStudents(), fetchTimetable(), fetchClassSubjects(), fetchExams(), fetchExamResults()])
+    Promise.all([fetchClasses(), fetchSubjects(), fetchStaff(), fetchStudents(), fetchTimetable(), fetchClassSubjects(), fetchExams(), fetchExamResults(), fetchSportsSchedule()])
       .finally(() => setLoading(false));
   }, []);
 
@@ -146,6 +168,10 @@ export default function AcademicManagement() {
   async function fetchTimetable() {
     const { data } = await supabase.from("timetable_entries").select("*, subjects(name), staff:teacher_id(full_name), classes(name)").order("day_of_week");
     if (data) setTimetableEntries(data);
+  }
+  async function fetchSportsSchedule() {
+    const { data } = await supabase.from("sports_schedule").select("*, staff:coach_id(full_name), classes(name)").order("day_of_week");
+    if (data) setSportsEntries(data);
   }
   async function fetchClassSubjects() {
     const { data } = await supabase.from("class_subjects").select("*, classes(name), subjects(name), staff:teacher_id(full_name)").order("created_at");
@@ -304,7 +330,41 @@ export default function AcademicManagement() {
     fetchTimetable();
   }
 
-  // ═══ ATTENDANCE ═══
+  // ═══ SPORTS SCHEDULE ═══
+  const filteredSports = sportsEntries.filter(e => e.class_id === sportsViewClass);
+
+  function getSportsEntry(day: number, start: string, end: string) {
+    return filteredSports.find(e => e.day_of_week === day && e.start_time === start && e.end_time === end);
+  }
+
+  async function saveSportsEntry() {
+    if (!sportsEditCell || !sportsViewClass) return;
+    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start, sportsEditCell.slot.end);
+
+    const payload = {
+      class_id: sportsViewClass, activity_name: sportsActivity, activity_type: sportsType,
+      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start, end_time: sportsEditCell.slot.end,
+      venue: sportsVenue || null, coach_id: sportsCoach || null,
+    };
+
+    if (existing) {
+      if (!sportsActivity) {
+        const { error } = await supabase.from("sports_schedule").delete().eq("id", existing.id);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      } else {
+        const { error } = await supabase.from("sports_schedule").update(payload).eq("id", existing.id);
+        if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      }
+    } else if (sportsActivity) {
+      const { error } = await supabase.from("sports_schedule").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+
+    toast({ title: "Sports schedule updated" });
+    setSportsEditCell(null);
+    fetchSportsSchedule();
+  }
+
   const attStudents = students.filter(s => {
     const cls = classes.find(c => c.id === attClass);
     return cls && s.form === cls.form_level && (!cls.stream || s.stream === cls.stream);
@@ -468,6 +528,7 @@ export default function AcademicManagement() {
           <TabsTrigger value="subjects"><BookOpen className="mr-1 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="teacher-assign"><UserCheck className="mr-1 h-4 w-4" /> Teacher Assignments</TabsTrigger>
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
+          <TabsTrigger value="sports-schedule"><Trophy className="mr-1 h-4 w-4" /> Sports & Clubs</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="exams"><GraduationCap className="mr-1 h-4 w-4" /> Exams</TabsTrigger>
           <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
@@ -644,7 +705,55 @@ export default function AcademicManagement() {
           </Card>
         </TabsContent>
 
-        {/* ═══ ATTENDANCE ═══ */}
+        {/* ═══ SPORTS & CLUBS SCHEDULE ═══ */}
+        <TabsContent value="sports-schedule">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+              <div><CardTitle className="font-heading">Sports & Clubs Schedule</CardTitle><CardDescription>Manage after-school sports and clubs timetable (15:30–17:00)</CardDescription></div>
+              <Select value={sportsViewClass} onValueChange={setSportsViewClass}>
+                <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              {!sportsViewClass ? <p className="text-center py-8 text-muted-foreground">Select a class to view/edit sports & clubs schedule.</p> : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th className="px-2 py-2 border text-left min-w-[80px]">Time</th>
+                        {dayNames.map((d, i) => <th key={i} className="px-2 py-2 border text-center min-w-[120px]">{d}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sportsSlots.map((slot, si) => (
+                        <tr key={si}>
+                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start}–{slot.end}</td>
+                          {dayNames.map((_, di) => {
+                            const entry = getSportsEntry(di, slot.start, slot.end);
+                            return (
+                              <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
+                                onClick={() => { setSportsEditCell({ day: di, slot }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
+                                {entry ? (
+                                  <div className="text-xs">
+                                    <p className="font-semibold text-accent">{entry.activity_name}</p>
+                                    <p className="text-muted-foreground">{entry.staff?.full_name?.split(" ").pop() || ""}</p>
+                                    {entry.venue && <p className="text-muted-foreground">{entry.venue}</p>}
+                                  </div>
+                                ) : <span className="text-xs text-muted-foreground">—</span>}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="attendance">
           <Card>
             <CardHeader>
@@ -1028,6 +1137,49 @@ export default function AcademicManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setTtEditCell(null)}>Cancel</Button>
             <Button onClick={() => { if (ttSubject === "__clear") setTtSubject(""); saveTTEntry(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sports Schedule Edit Dialog */}
+      <Dialog open={!!sportsEditCell} onOpenChange={() => setSportsEditCell(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Sports/Club Slot</DialogTitle>
+            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start}–${sportsEditCell.slot.end}`}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="space-y-2"><Label>Activity</Label>
+              <Select value={sportsActivity} onValueChange={setSportsActivity}>
+                <SelectTrigger><SelectValue placeholder="Select activity (leave empty to clear)" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="__clear">— Clear —</SelectItem>
+                  {sportsActivityOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Type</Label>
+              <Select value={sportsType} onValueChange={setSportsType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sport">Sport</SelectItem>
+                  <SelectItem value="club">Club</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Coach / Supervisor</Label>
+              <Select value={sportsCoach} onValueChange={setSportsCoach}>
+                <SelectTrigger><SelectValue placeholder="Select coach" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Venue</Label>
+              <Input value={sportsVenue} onChange={e => setSportsVenue(e.target.value)} placeholder="e.g. Main Field" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSportsEditCell(null)}>Cancel</Button>
+            <Button onClick={() => { if (sportsActivity === "__clear") setSportsActivity(""); saveSportsEntry(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
