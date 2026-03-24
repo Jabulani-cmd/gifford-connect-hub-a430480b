@@ -348,6 +348,10 @@ export default function TeacherDashboard() {
             <TabsTrigger value="announcements"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
             <TabsTrigger value="timetable"><Calendar className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
             <TabsTrigger value="exam-timetable"><CalendarDays className="mr-1 h-4 w-4" /> Exam Timetable</TabsTrigger>
+            <TabsTrigger value="lesson-plans"><BookOpen className="mr-1 h-4 w-4" /> Lesson Plans</TabsTrigger>
+            <TabsTrigger value="progress"><TrendingUp className="mr-1 h-4 w-4" /> Progress</TabsTrigger>
+            <TabsTrigger value="resources"><FolderOpen className="mr-1 h-4 w-4" /> Resources</TabsTrigger>
+            <TabsTrigger value="parent-log"><MessageSquare className="mr-1 h-4 w-4" /> Parent Log</TabsTrigger>
             <TabsTrigger value="schedule"><ClipboardList className="mr-1 h-4 w-4" /> My Schedule</TabsTrigger>
             <TabsTrigger value="leave"><CalendarOff className="mr-1 h-4 w-4" /> Leave</TabsTrigger>
           </TabsList>
