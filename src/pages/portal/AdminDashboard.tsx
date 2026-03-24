@@ -302,6 +302,19 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     setUploading(false);
   };
 
+  const handleDeleteSiteImage = async (settingKey: string, setter: (v: string | null) => void) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+    setUploading(true);
+    try {
+      await supabase.from("site_settings").delete().eq("setting_key", settingKey);
+      setter(null);
+      toast({ title: "Image deleted successfully" });
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
     if (data) setAnnouncements(data);
