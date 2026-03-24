@@ -600,7 +600,7 @@ export default function FinanceManagement() {
       boarding_status: fee.boarding_status,
       description: fee.description || "",
       amount_usd: String(fee.amount_usd),
-      amount_zig: String(fee.amount_zig),
+      amount_zig: String((fee.amount_usd * rate).toFixed(2)),
     });
     setFeeDialogOpen(true);
   }
