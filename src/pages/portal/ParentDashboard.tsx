@@ -42,6 +42,7 @@ import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/fin
 import { openPrintWindow } from "@/lib/finance/print";
 import StudentMarksTab from "@/components/student/StudentMarksTab";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
@@ -608,6 +609,7 @@ function TabContent(props: TabContentProps) {
     rate,
     usdToZig,
   } = props;
+  const isMobile = useIsMobile();
 
   if (!child) return null;
 
@@ -1043,9 +1045,59 @@ function TabContent(props: TabContentProps) {
           <CardHeader>
             <CardTitle className="text-sm">Invoices</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className={isMobile ? "px-3 pb-3" : "p-0"}>
             {invoices.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-muted-foreground">No invoices found.</p>
+            ) : isMobile ? (
+              <div className="space-y-2">
+                {invoices.map((inv: any) => {
+                  const paid = childPayments
+                    .filter((p: any) => p.invoice_id === inv.id)
+                    .reduce((sum: number, p: any) => sum + Number(p.amount_usd || 0), 0);
+                  const bal = Number(inv.total_usd || 0) - paid;
+
+                  return (
+                    <Card key={inv.id} className="border">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs font-medium">{inv.invoice_number}</span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              inv.status === "paid"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : inv.status === "partial"
+                                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                                  : "bg-red-100 text-red-800 border-red-300"
+                            }
+                          >
+                            {inv.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{inv.term} {inv.academic_year}</p>
+
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mt-1">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="text-right font-mono">${Number(inv.total_usd || 0).toFixed(2)}</span>
+
+                          <span className="text-muted-foreground">ZiG:</span>
+                          <span className="text-right font-mono text-muted-foreground">
+                            ZiG {usdToZig(Number(inv.total_usd || 0)).toFixed(2)}
+                          </span>
+
+                          <span className="text-muted-foreground">Paid:</span>
+                          <span className="text-right font-mono text-emerald-600">${paid.toFixed(2)}</span>
+
+                          <span className="text-muted-foreground">Balance:</span>
+                          <span className={`text-right font-mono ${bal < 0 ? "text-emerald-600" : bal > 0 ? "text-destructive" : ""}`}>
+                            {bal < 0 ? `+$${Math.abs(bal).toFixed(2)} credit` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -1164,6 +1216,7 @@ function ParentPaymentHistory({
 }) {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchPayments();
@@ -1212,28 +1265,14 @@ function ParentPaymentHistory({
       <CardHeader>
         <CardTitle className="text-sm">Payment History</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Receipt</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date</th>
-                <th className="px-3 py-2 text-center font-medium text-muted-foreground">USD</th>
-                <th className="px-3 py-2 text-center font-medium text-muted-foreground">ZiG</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Method</th>
-                <th className="px-3 py-2 text-center font-medium text-muted-foreground">Receipt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p: any) => (
-                <tr key={p.id} className="border-b last:border-0">
-                  <td className="px-3 py-2 font-mono text-xs">{p.receipt_number}</td>
-                  <td className="px-3 py-2">{format(new Date(p.payment_date), "dd MMM yyyy")}</td>
-                  <td className="px-3 py-2 text-center text-emerald-600">${Number(p.amount_usd).toFixed(2)}</td>
-                  <td className="px-3 py-2 text-center">{Number(p.amount_zig).toFixed(2)}</td>
-                  <td className="px-3 py-2">{p.payment_method}</td>
-                  <td className="px-3 py-2 text-center">
+      <CardContent className={isMobile ? "px-3 pb-3" : "p-0"}>
+        {isMobile ? (
+          <div className="space-y-2">
+            {payments.map((p: any) => (
+              <Card key={p.id} className="border">
+                <CardContent className="p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-medium">{p.receipt_number}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1243,12 +1282,60 @@ function ParentPaymentHistory({
                     >
                       <Printer className="h-3.5 w-3.5" />
                     </Button>
-                  </td>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(p.payment_date), "dd MMM yyyy")} · {p.payment_method}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mt-1">
+                    <span className="text-muted-foreground">USD:</span>
+                    <span className="text-right font-mono text-emerald-600">${Number(p.amount_usd).toFixed(2)}</span>
+                    <span className="text-muted-foreground">ZiG:</span>
+                    <span className="text-right font-mono">{Number(p.amount_zig).toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Receipt</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date</th>
+                  <th className="px-3 py-2 text-center font-medium text-muted-foreground">USD</th>
+                  <th className="px-3 py-2 text-center font-medium text-muted-foreground">ZiG</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Method</th>
+                  <th className="px-3 py-2 text-center font-medium text-muted-foreground">Receipt</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {payments.map((p: any) => (
+                  <tr key={p.id} className="border-b last:border-0">
+                    <td className="px-3 py-2 font-mono text-xs">{p.receipt_number}</td>
+                    <td className="px-3 py-2">{format(new Date(p.payment_date), "dd MMM yyyy")}</td>
+                    <td className="px-3 py-2 text-center text-emerald-600">${Number(p.amount_usd).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-center">{Number(p.amount_zig).toFixed(2)}</td>
+                    <td className="px-3 py-2">{p.payment_method}</td>
+                    <td className="px-3 py-2 text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handlePrintReceipt(p)}
+                        title="Print Receipt"
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
