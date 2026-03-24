@@ -69,6 +69,7 @@ import {
 import BankReconciliation from "@/components/admin/BankReconciliation";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
