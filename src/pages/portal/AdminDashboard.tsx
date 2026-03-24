@@ -696,48 +696,37 @@ export default function AdminDashboard() {
         <Tabs defaultValue="announcements" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide rounded-xl border bg-card p-1.5">
             <TabsList className="flex-wrap gap-1 bg-transparent h-auto p-0 w-max sm:w-auto">
-              {/* Content Management */}
-              <TabsTrigger value="announcements" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="mr-1 h-4 w-4" /> Announcements</TabsTrigger>
-              <TabsTrigger value="carousel" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Layers className="mr-1 h-4 w-4" /> Carousel</TabsTrigger>
-              <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Image className="mr-1 h-4 w-4" /> Gallery</TabsTrigger>
-              <TabsTrigger value="downloads" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Download className="mr-1 h-4 w-4" /> Downloads</TabsTrigger>
-              <TabsTrigger value="site-images" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Settings className="mr-1 h-4 w-4" /> Site Images</TabsTrigger>
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-              {/* People */}
-              <TabsTrigger value="student-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-4 w-4" /> Students</TabsTrigger>
-              <TabsTrigger value="staff-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><UserCheck className="mr-1 h-4 w-4" /> Staff</TabsTrigger>
-              <TabsTrigger value="staff-full" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Briefcase className="mr-1 h-4 w-4" /> Staff Directory</TabsTrigger>
-              <TabsTrigger value="user-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="mr-1 h-4 w-4" /> Users</TabsTrigger>
-              <TabsTrigger value="verification-codes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><KeyRound className="mr-1 h-4 w-4" /> Codes</TabsTrigger>
-              <TabsTrigger value="password-mgmt" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldAlert className="mr-1 h-4 w-4" /> Passwords</TabsTrigger>
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-              {/* Operations */}
-              <TabsTrigger value="academics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><GraduationCap className="mr-1 h-4 w-4" /> Academics</TabsTrigger>
-              <TabsTrigger value="timetable" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Calendar className="mr-1 h-4 w-4" /> Timetables</TabsTrigger>
-              <TabsTrigger value="boarding" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BedDouble className="mr-1 h-4 w-4" /> Boarding</TabsTrigger>
-              <TabsTrigger value="inventory" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="mr-1 h-4 w-4" /> Inventory</TabsTrigger>
-              <TabsTrigger value="facilities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building className="mr-1 h-4 w-4" /> Facilities</TabsTrigger>
-              <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-4 w-4" /> Projects</TabsTrigger>
-              <TabsTrigger value="awards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-4 w-4" /> Awards</TabsTrigger>
-              <TabsTrigger value="attendance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
+              <TabsTrigger value="announcements" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Bell className="mr-1 h-3.5 w-3.5" /> Notices</TabsTrigger>
+              <TabsTrigger value="carousel" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Layers className="mr-1 h-3.5 w-3.5" /> Carousel</TabsTrigger>
+              <TabsTrigger value="gallery" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Image className="mr-1 h-3.5 w-3.5" /> Gallery</TabsTrigger>
+              <TabsTrigger value="downloads" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Download className="mr-1 h-3.5 w-3.5" /> Downloads</TabsTrigger>
+              <TabsTrigger value="site-images" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Settings className="mr-1 h-3.5 w-3.5" /> Images</TabsTrigger>
+              <TabsTrigger value="student-mgmt" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-3.5 w-3.5" /> Students</TabsTrigger>
+              <TabsTrigger value="staff-mgmt" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><UserCheck className="mr-1 h-3.5 w-3.5" /> Staff</TabsTrigger>
+              <TabsTrigger value="staff-full" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Briefcase className="mr-1 h-3.5 w-3.5" /> Directory</TabsTrigger>
+              <TabsTrigger value="user-mgmt" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Shield className="mr-1 h-3.5 w-3.5" /> Users</TabsTrigger>
+              <TabsTrigger value="verification-codes" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><KeyRound className="mr-1 h-3.5 w-3.5" /> Codes</TabsTrigger>
+              <TabsTrigger value="password-mgmt" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldAlert className="mr-1 h-3.5 w-3.5" /> Passwords</TabsTrigger>
+              <TabsTrigger value="academics" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><GraduationCap className="mr-1 h-3.5 w-3.5" /> Academics</TabsTrigger>
+              <TabsTrigger value="timetable" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Calendar className="mr-1 h-3.5 w-3.5" /> Timetables</TabsTrigger>
+              <TabsTrigger value="boarding" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BedDouble className="mr-1 h-3.5 w-3.5" /> Boarding</TabsTrigger>
+              <TabsTrigger value="inventory" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="mr-1 h-3.5 w-3.5" /> Inventory</TabsTrigger>
+              <TabsTrigger value="facilities" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building className="mr-1 h-3.5 w-3.5" /> Facilities</TabsTrigger>
+              <TabsTrigger value="projects" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-3.5 w-3.5" /> Projects</TabsTrigger>
+              <TabsTrigger value="awards" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-3.5 w-3.5" /> Awards</TabsTrigger>
+              <TabsTrigger value="attendance" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Attendance</TabsTrigger>
               {isFinanceUser && (
                 <>
-                  <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-                  {/* Finance */}
-                  <TabsTrigger value="finance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-4 w-4" /> Finance</TabsTrigger>
+                  <TabsTrigger value="finance" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-3.5 w-3.5" /> Finance</TabsTrigger>
                 </>
               )}
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-              {/* Communication & Reports */}
-              <TabsTrigger value="meetings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-4 w-4" /> Meetings</TabsTrigger>
-              <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-4 w-4" /> Communication</TabsTrigger>
-              <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ClipboardList className="mr-1 h-4 w-4" /> EMIS Reports</TabsTrigger>
-              <TabsTrigger value="audit" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldCheck className="mr-1 h-4 w-4" /> Audit</TabsTrigger>
-              <span className="mx-1 hidden sm:inline-block w-px h-6 bg-border self-center" />
-              {/* System */}
-              <TabsTrigger value="migration" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Database className="mr-1 h-4 w-4" /> Migration</TabsTrigger>
-              <TabsTrigger value="golive" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Rocket className="mr-1 h-4 w-4" /> Go-Live</TabsTrigger>
-              <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-4 w-4" /> Manual</TabsTrigger>
+              <TabsTrigger value="meetings" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><HandshakeIcon className="mr-1 h-3.5 w-3.5" /> Meetings</TabsTrigger>
+              <TabsTrigger value="communication" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><MessageSquare className="mr-1 h-3.5 w-3.5" /> Comms</TabsTrigger>
+              <TabsTrigger value="reports" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ClipboardList className="mr-1 h-3.5 w-3.5" /> Reports</TabsTrigger>
+              <TabsTrigger value="audit" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldCheck className="mr-1 h-3.5 w-3.5" /> Audit</TabsTrigger>
+              <TabsTrigger value="migration" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Database className="mr-1 h-3.5 w-3.5" /> Migration</TabsTrigger>
+              <TabsTrigger value="golive" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Rocket className="mr-1 h-3.5 w-3.5" /> Go-Live</TabsTrigger>
+              <TabsTrigger value="manual" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-3.5 w-3.5" /> Manual</TabsTrigger>
             </TabsList>
           </div>
 

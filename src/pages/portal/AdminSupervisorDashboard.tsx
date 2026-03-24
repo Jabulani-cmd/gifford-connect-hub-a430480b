@@ -189,23 +189,25 @@ export default function AdminSupervisorDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Tabs defaultValue="approvals">
-          <TabsList className="mb-6 flex flex-wrap gap-1">
-            <TabsTrigger value="approvals" className="gap-1">
-              <ShieldCheck className="h-4 w-4" /> Approvals {pendingCount > 0 && <Badge variant="destructive" className="ml-1 text-xs">{pendingCount}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="finance"><DollarSign className="h-4 w-4" /> Finance</TabsTrigger>
-            <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
-            <TabsTrigger value="academics">Academics</TabsTrigger>
-            <TabsTrigger value="boarding">Boarding</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="communication">Communication</TabsTrigger>
-            <TabsTrigger value="users">User Mgmt</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide mb-4 sm:mb-6">
+            <TabsList className="flex flex-nowrap gap-1 w-max sm:w-auto">
+              <TabsTrigger value="approvals" className="gap-1 text-xs sm:text-sm">
+                <ShieldCheck className="h-3.5 w-3.5" /> Approvals {pendingCount > 0 && <Badge variant="destructive" className="ml-1 text-[10px]">{pendingCount}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="finance" className="text-xs sm:text-sm"><DollarSign className="h-3.5 w-3.5" /> Finance</TabsTrigger>
+              <TabsTrigger value="students" className="text-xs sm:text-sm">Students</TabsTrigger>
+              <TabsTrigger value="staff" className="text-xs sm:text-sm">Staff</TabsTrigger>
+              <TabsTrigger value="academics" className="text-xs sm:text-sm">Academics</TabsTrigger>
+              <TabsTrigger value="boarding" className="text-xs sm:text-sm">Boarding</TabsTrigger>
+              <TabsTrigger value="inventory" className="text-xs sm:text-sm">Inventory</TabsTrigger>
+              <TabsTrigger value="communication" className="text-xs sm:text-sm">Comms</TabsTrigger>
+              <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
+              <TabsTrigger value="reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
+              <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Approvals Tab */}
           <TabsContent value="approvals">
