@@ -313,7 +313,6 @@ export default function StudentManagement() {
     const { data, error } = await supabase
       .from("students")
       .select("*")
-      .is("deleted_at", null)
       .order("full_name");
     if (data) setStudents(data as Student[]);
     if (error) toast({ title: "Error loading students", description: error.message, variant: "destructive" });

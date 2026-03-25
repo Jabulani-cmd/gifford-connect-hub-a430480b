@@ -203,7 +203,7 @@ export default function StaffManagementFull() {
 
   const fetchStaff = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("staff").select("*").is("deleted_at", null).order("full_name");
+    const { data, error } = await supabase.from("staff").select("*").order("full_name");
     if (data) setStaff(data as unknown as StaffMember[]);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     setLoading(false);

@@ -52,7 +52,7 @@ export default function StaffManagement() {
   }, []);
 
   const fetchStaff = async () => {
-    const { data } = await supabase.from("staff").select("*").is("deleted_at", null).order("full_name");
+    const { data } = await supabase.from("staff").select("*").order("full_name");
     if (data) setStaff(data as StaffMember[]);
   };
 
