@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit2, Trash2, Eye, Copy, BookOpen } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Copy, BookOpen, Download, Printer } from "lucide-react";
+import { printLessonPlan, downloadLessonPlan, type LessonPlanPrintData } from "@/lib/lesson-plan-print";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -134,6 +135,15 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
     toast({ title: "Lesson plan deleted" });
     fetchPlans();
   };
+
+  const toPrintData = (p: any): LessonPlanPrintData => ({
+    title: p.title, date: p.date, duration_minutes: p.duration_minutes,
+    subjectName: p.subjects?.name, className: p.classes?.name,
+    objectives: p.objectives, materials_needed: p.materials_needed,
+    introduction: p.introduction, main_activity: p.main_activity,
+    conclusion: p.conclusion, assessment_strategy: p.assessment_strategy,
+    homework_notes: p.homework_notes, reflection: p.reflection, status: p.status,
+  });
 
   const filtered = plans.filter(p => {
     if (filter.subject !== "all" && p.subject_id !== filter.subject) return false;
@@ -289,6 +299,8 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                   <Button variant="ghost" size="sm" onClick={() => setViewPlan(p)}><Eye className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDuplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadLessonPlan(toPrintData(p))}><Download className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => printLessonPlan(toPrintData(p))}><Printer className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </CardContent>
@@ -324,6 +336,17 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words overflow-wrap-anywhere">{value}</p>
                   </div>
                 ))}
+              </div>
+              <div className="flex gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => downloadLessonPlan(toPrintData(viewPlan))}>
+                  <Download className="h-3.5 w-3.5 mr-1" /> Download
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => printLessonPlan(toPrintData(viewPlan))}>
+                  <Printer className="h-3.5 w-3.5 mr-1" /> Print
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { handleEdit(viewPlan); setViewPlan(null); }}>
+                  <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
+                </Button>
               </div>
             </>
           )}
