@@ -3384,6 +3384,11 @@ export type Database = {
     Functions: {
       column_exists: { Args: { col: string; tbl: string }; Returns: boolean }
       delete_class_cascade: { Args: { _class_id: string }; Returns: undefined }
+      delete_staff_cascade: { Args: { _staff_id: string }; Returns: undefined }
+      delete_student_cascade: {
+        Args: { _student_id: string }
+        Returns: undefined
+      }
       get_exam_rankings: {
         Args: { p_exam_id: string; p_student_id: string }
         Returns: Json
