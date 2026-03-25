@@ -56,6 +56,7 @@ const portalRoles = [
   { value: "hod", label: "Head of Department" },
   { value: "finance", label: "Finance Admin Clerk" },
   { value: "finance_clerk", label: "Finance Clerk" },
+  { value: "bursar", label: "Bursar" },
   { value: "teacher", label: "Teacher" },
   { value: "student", label: "Student" },
   { value: "parent", label: "Parent" },
@@ -87,6 +88,7 @@ const portalToStaffDefault: Record<string, string> = {
   hod: "hod",
   finance: "bursar",
   finance_clerk: "finance_clerk",
+  bursar: "bursar",
   admin: "secretary",
   admin_supervisor: "secretary",
   teacher: "teacher",
@@ -698,7 +700,7 @@ export default function UserManagement() {
     }
   };
 
-  const staffPortalRoles = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "admin_supervisor", "registration"];
+  const staffPortalRoles = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"];
   const isStaffRole = staffPortalRoles.includes(form.portal_role);
 
   return (
