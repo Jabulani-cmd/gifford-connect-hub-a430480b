@@ -136,6 +136,15 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
     fetchPlans();
   };
 
+  const toPrintData = (p: any): LessonPlanPrintData => ({
+    title: p.title, date: p.date, duration_minutes: p.duration_minutes,
+    subjectName: p.subjects?.name, className: p.classes?.name,
+    objectives: p.objectives, materials_needed: p.materials_needed,
+    introduction: p.introduction, main_activity: p.main_activity,
+    conclusion: p.conclusion, assessment_strategy: p.assessment_strategy,
+    homework_notes: p.homework_notes, reflection: p.reflection, status: p.status,
+  });
+
   const filtered = plans.filter(p => {
     if (filter.subject !== "all" && p.subject_id !== filter.subject) return false;
     if (filter.status !== "all" && p.status !== filter.status) return false;
@@ -290,6 +299,8 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                   <Button variant="ghost" size="sm" onClick={() => setViewPlan(p)}><Eye className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDuplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadLessonPlan(toPrintData(p))}><Download className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => printLessonPlan(toPrintData(p))}><Printer className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </CardContent>
