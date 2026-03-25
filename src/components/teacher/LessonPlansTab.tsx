@@ -321,7 +321,7 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                 ].filter(([, v]) => v).map(([label, value]) => (
                   <div key={label as string}>
                     <h4 className="text-sm font-semibold text-primary">{label}</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{value}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words overflow-wrap-anywhere">{value}</p>
                   </div>
                 ))}
               </div>
