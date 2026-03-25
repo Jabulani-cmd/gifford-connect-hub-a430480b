@@ -337,6 +337,17 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                   </div>
                 ))}
               </div>
+              <div className="flex gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => downloadLessonPlan(toPrintData(viewPlan))}>
+                  <Download className="h-3.5 w-3.5 mr-1" /> Download
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => printLessonPlan(toPrintData(viewPlan))}>
+                  <Printer className="h-3.5 w-3.5 mr-1" /> Print
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { handleEdit(viewPlan); setViewPlan(null); }}>
+                  <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
+                </Button>
+              </div>
             </>
           )}
         </DialogContent>
