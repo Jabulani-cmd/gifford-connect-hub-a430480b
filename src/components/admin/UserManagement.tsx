@@ -70,10 +70,23 @@ const staffRoles = [
   { value: "lab_technician", label: "Lab Technician" },
   { value: "sports_director", label: "Sports Director" },
   { value: "bursar", label: "Bursar" },
+  { value: "finance_clerk", label: "Finance Clerk" },
   { value: "secretary", label: "Secretary" },
   { value: "groundsman", label: "Groundsman" },
   { value: "matron", label: "Matron" },
 ];
+
+// Map portal roles to default staff positions
+const portalToStaffDefault: Record<string, string> = {
+  principal: "principal",
+  deputy_principal: "deputy_principal",
+  hod: "hod",
+  finance: "bursar",
+  admin: "secretary",
+  admin_supervisor: "secretary",
+  teacher: "teacher",
+  registration: "secretary",
+};
 
 const staffRoleLabels: Record<string, string> = Object.fromEntries(staffRoles.map((r) => [r.value, r.label]));
 
@@ -259,11 +272,17 @@ export default function UserManagement() {
         ;
       console.log("Staff data from table:", staffData);
       if (staffError) console.error("Staff error:", staffError);
+
+      // Fetch actual portal roles from user_roles table to get correct mapping
+      const { data: userRolesData } = await supabase.from("user_roles").select("user_id, role");
+      const portalRoleMap: Record<string, string> = {};
+      (userRolesData || []).forEach((r: any) => { portalRoleMap[r.user_id] = r.role; });
+
       const staffUsersFromTable: ManagedUser[] = (staffData || []).map((s: any) => ({
         id: s.user_id,
         email: s.email || `${s.staff_number}@giffordhigh.ac.zw`,
         full_name: s.full_name,
-        portal_role: s.role === "admin" ? "admin" : "teacher",
+        portal_role: portalRoleMap[s.user_id] || "teacher",
         staff_role: s.role,
         department: s.department,
         created_at: new Date().toISOString(),
