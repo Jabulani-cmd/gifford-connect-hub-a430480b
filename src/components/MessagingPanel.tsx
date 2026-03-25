@@ -53,6 +53,7 @@ interface UserProfile {
   id: string;
   full_name: string;
   email: string | null;
+  avatar_url: string | null;
   role?: string;
 }
 
@@ -307,10 +308,21 @@ export default function MessagingPanel() {
     if (!user) return;
     setContactsLoading(true);
 
+    // First get all user_ids that have a role (i.e. not deleted)
+    const { data: activeRoles } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+
+    if (!activeRoles) { setContacts([]); setContactsLoading(false); return; }
+
+    const roleMap: Record<string, string> = {};
+    activeRoles.forEach(r => { roleMap[r.user_id] = r.role; });
+    const activeUserIds = activeRoles.map(r => r.user_id).filter(id => id !== user.id);
+
     let query = supabase
       .from("profiles")
-      .select("id, full_name, email")
-      .neq("id", user.id)
+      .select("id, full_name, email, avatar_url")
+      .in("id", activeUserIds)
       .order("full_name", { ascending: true })
       .limit(100);
 
@@ -320,15 +332,6 @@ export default function MessagingPanel() {
 
     const { data: profiles } = await query;
     if (!profiles) { setContacts([]); setContactsLoading(false); return; }
-
-    const userIds = profiles.map(p => p.id);
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role")
-      .in("user_id", userIds);
-
-    const roleMap: Record<string, string> = {};
-    roles?.forEach(r => { roleMap[r.user_id] = r.role; });
 
     let results: UserProfile[] = profiles
       .filter(p => !blockedIds.includes(p.id))
@@ -856,9 +859,13 @@ export default function MessagingPanel() {
                             onClick={() => startDirectFromContact(c)}
                             className="w-full flex items-center gap-3 border-b px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
                           >
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            {c.avatar_url ? (
+                              <img src={c.avatar_url} alt={c.full_name} className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                                <span className="text-xs font-bold text-muted-foreground">{c.full_name?.[0]?.toUpperCase() || "?"}</span>
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{c.full_name}</p>
                             </div>
