@@ -371,12 +371,35 @@ export default function FinanceManagement() {
   }, [rate]);
 
   useEffect(() => {
-    // Realtime subscription for payments
+    // Realtime subscription for ALL finance tables — keeps every finance user in sync
     const channel = supabase
-      .channel("finance-payments-realtime")
+      .channel("finance-all-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
         fetchPayments();
         fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => {
+        fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => {
+        fetchExpenses();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fee_structures" }, () => {
+        fetchFeeStructures();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items" }, () => {
+        fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "online_payments" }, () => {
+        fetchPayments();
+        fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "student_restrictions" }, () => {
+        fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bank_transactions" }, () => {
+        // Refresh relevant data when bank transactions change
+        fetchPayments();
       })
       .subscribe();
     return () => {
