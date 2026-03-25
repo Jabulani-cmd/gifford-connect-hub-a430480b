@@ -99,12 +99,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/portal/admin" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["admin", "principal", "deputy_principal"]}>
                 <AuthenticatedLayout><AdminDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
             <Route path="/portal/finance" element={
-              <ProtectedRoute allowedRoles={["finance", "admin"]}>
+              <ProtectedRoute allowedRoles={["finance", "finance_clerk", "admin", "principal", "deputy_principal"]}>
                 <AuthenticatedLayout><FinanceDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />
