@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
         else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
         else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
 
-        const { data: staffRecord } = await supabaseAdmin.from("staff").insert({
+        const staffInsert: Record<string, any> = {
           full_name,
           email,
           phone: phone || null,
@@ -223,12 +223,28 @@ Deno.serve(async (req) => {
           user_id: userId,
           category: staffCategory,
           role: staff_role || "teacher",
-        }).select("id").single();
+        };
+        // Pass through optional fields from the frontend
+        if (payload.photo_url) staffInsert.photo_url = payload.photo_url;
+        if (payload.title) staffInsert.title = payload.title;
+        if (payload.bio) staffInsert.bio = payload.bio;
+        if (payload.address) staffInsert.address = payload.address;
+        if (payload.emergency_contact) staffInsert.emergency_contact = payload.emergency_contact;
+        if (payload.qualifications) staffInsert.qualifications = payload.qualifications;
+        if (payload.national_id) staffInsert.national_id = payload.national_id;
+        if (payload.employment_date) staffInsert.employment_date = payload.employment_date;
+        if (payload.subjects_taught) staffInsert.subjects_taught = payload.subjects_taught;
+
+        const { data: staffRecord } = await supabaseAdmin.from("staff").insert(staffInsert).select("id, staff_number").single();
 
         // Assign as class teacher if a class was selected
         if (assigned_class_id && staffRecord) {
           await supabaseAdmin.from("classes").update({ class_teacher_id: staffRecord.id }).eq("id", assigned_class_id);
         }
+
+        return new Response(JSON.stringify({ message: "User created successfully", user_id: userId, staff_number: staffRecord?.staff_number }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       return new Response(JSON.stringify({ message: "User created successfully", user_id: userId }), {

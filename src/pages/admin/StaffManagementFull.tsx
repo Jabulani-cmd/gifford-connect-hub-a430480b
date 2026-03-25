@@ -320,23 +320,11 @@ export default function StaffManagementFull() {
       }
       toast({ title: "Staff member updated!" });
     } else {
-      // Remove staff_number so the DB trigger auto-generates it
-      const { staff_number, ...insertPayload } = payload;
-      const { data: newStaff, error } = await supabase
-        .from("staff")
-        .insert(insertPayload as any)
-        .select("id, staff_number, full_name, email, role, department, phone")
-        .single();
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-        setSaving(false);
-        return;
-      }
-
-      // Auto-provision auth account for the new staff member
+      // Let the edge function handle both auth user creation AND staff record insertion
+      // to avoid duplicate staff records
       try {
         const tempPassword = generateTempPassword();
-        const portalRole = getPortalRole(newStaff.role);
+        const portalRole = getPortalRole(payload.role || "teacher");
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -349,39 +337,51 @@ export default function StaffManagementFull() {
           },
           body: JSON.stringify({
             action: "create-user",
-            full_name: newStaff.full_name,
-            email: newStaff.email,
+            full_name: payload.full_name,
+            email: payload.email,
             password: tempPassword,
             portal_role: portalRole,
-            staff_role: newStaff.role,
-            department: newStaff.department,
-            phone: newStaff.phone,
+            staff_role: payload.role,
+            department: payload.department,
+            phone: payload.phone,
+            photo_url: photoUrl,
+            title: payload.title,
+            bio: payload.bio,
+            address: payload.address,
+            emergency_contact: payload.emergency_contact,
+            qualifications: payload.qualifications,
+            national_id: payload.national_id,
+            employment_date: payload.employment_date,
+            subjects_taught: payload.subjects_taught,
           }),
         });
         const provData = await res.json();
         if (res.ok) {
           setProvisionResult({
-            email: newStaff.email,
+            email: payload.email,
             temp_password: tempPassword,
             portal_role: portalRole,
           });
           setProvisionDialogOpen(true);
+          toast({ title: "Staff member added!", description: `Staff number: ${provData.staff_number || "auto-assigned"}` });
         } else {
           toast({
-            title: "Staff added but account creation failed",
+            title: "Error creating staff member",
             description: provData.error,
             variant: "destructive",
           });
+          setSaving(false);
+          return;
         }
       } catch (provErr: any) {
         toast({
-          title: "Staff added but account creation failed",
+          title: "Error creating staff member",
           description: provErr?.message,
           variant: "destructive",
         });
+        setSaving(false);
+        return;
       }
-
-      toast({ title: "Staff member added!", description: `Staff number: ${newStaff?.staff_number}` });
     }
     setSaving(false);
     setDialogOpen(false);
