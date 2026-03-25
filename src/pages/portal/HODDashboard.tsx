@@ -5,18 +5,17 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, MessageSquare, ClipboardList, Bell, Calendar, CalendarOff } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, ClipboardList, Bell, CheckCircle2, UserCheck } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
+import AdminAttendanceViewer from "@/components/admin/AdminAttendanceViewer";
 import StudentManagement from "@/pages/admin/StudentManagement";
+import StaffManagement from "@/components/admin/StaffManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
-import CommunicationModule from "@/pages/admin/CommunicationModule";
 import EMISReports from "@/pages/admin/EMISReports";
-import PersonalTimetableEditor from "@/components/PersonalTimetableEditor";
-import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 
 export default function HODDashboard() {
   const { signOut } = useAuth();
@@ -78,26 +77,24 @@ export default function HODDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="academics" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
           <TabsList className="flex-wrap h-auto gap-1 w-max sm:w-auto">
-            <TabsTrigger value="students" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Students</TabsTrigger>
-            <TabsTrigger value="staff" className="text-xs sm:text-sm"><Briefcase className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Staff</TabsTrigger>
             <TabsTrigger value="academics" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Academics</TabsTrigger>
-            <TabsTrigger value="communication" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Comms</TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
-            <TabsTrigger value="timetable" className="text-xs sm:text-sm"><Calendar className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Timetable</TabsTrigger>
-            <TabsTrigger value="staff-leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Availability</TabsTrigger>
+            <TabsTrigger value="students" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Students</TabsTrigger>
+            <TabsTrigger value="staff" className="text-xs sm:text-sm"><UserCheck className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Staff</TabsTrigger>
+            <TabsTrigger value="directory" className="text-xs sm:text-sm"><Briefcase className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Directory</TabsTrigger>
           </TabsList>
           </div>
 
-          <TabsContent value="students"><StudentManagement /></TabsContent>
-          <TabsContent value="staff"><StaffManagementFull /></TabsContent>
           <TabsContent value="academics"><AcademicManagement /></TabsContent>
-          <TabsContent value="communication"><CommunicationModule /></TabsContent>
+          <TabsContent value="attendance"><AdminAttendanceViewer /></TabsContent>
           <TabsContent value="reports"><EMISReports /></TabsContent>
-          <TabsContent value="timetable"><PersonalTimetableEditor /></TabsContent>
-          <TabsContent value="staff-leave"><StaffAvailabilityOverview /></TabsContent>
+          <TabsContent value="students"><StudentManagement /></TabsContent>
+          <TabsContent value="staff"><StaffManagement /></TabsContent>
+          <TabsContent value="directory"><StaffManagementFull /></TabsContent>
         </Tabs>
       </div>
     </div>
