@@ -530,7 +530,7 @@ export default function StaffManagementFull() {
               <SelectItem value="all">All Roles</SelectItem>
               {roleOptions.map((r) => (
                 <SelectItem key={r} value={r}>
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                  {r.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -778,7 +778,7 @@ export default function StaffManagementFull() {
                     <SelectContent>
                       {roleOptions.map((r) => (
                         <SelectItem key={r} value={r}>
-                          {r.charAt(0).toUpperCase() + r.slice(1)}
+                          {r.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
                         </SelectItem>
                       ))}
                     </SelectContent>
