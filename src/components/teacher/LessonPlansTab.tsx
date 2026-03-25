@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit2, Trash2, Eye, Copy, BookOpen } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Copy, BookOpen, Download, Printer } from "lucide-react";
+import { printLessonPlan, downloadLessonPlan, type LessonPlanPrintData } from "@/lib/lesson-plan-print";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
