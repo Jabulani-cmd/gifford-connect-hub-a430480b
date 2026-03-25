@@ -41,7 +41,7 @@ import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
 
-const roleOptions = ["admin", "bursar", "teacher", "housemaster", "counsellor", "librarian", "it", "groundskeeper"];
+const roleOptions = ["principal", "deputy_principal", "hod", "admin", "bursar", "teacher", "senior_teacher", "housemaster", "counsellor", "librarian", "it", "groundskeeper", "matron", "secretary", "sports_director", "lab_technician"];
 const departmentOptions = [
   "Mathematics",
   "Sciences",
