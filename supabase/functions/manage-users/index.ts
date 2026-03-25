@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
         // Determine proper category
         let staffCategory = "teaching";
         if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
-        else if (["bursar", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
+        else if (["bursar", "finance_clerk", "secretary"].includes(staff_role || "")) staffCategory = "administrative";
         else if (["groundsman", "matron"].includes(staff_role || "")) staffCategory = "general";
 
         const staffInsert: Record<string, any> = {
