@@ -77,6 +77,7 @@ const staffRoles = [
   { value: "secretary", label: "Secretary" },
   { value: "groundsman", label: "Groundsman" },
   { value: "matron", label: "Matron" },
+  { value: "it_administrator", label: "IT Administrator" },
 ];
 
 // Map portal roles to default staff positions
