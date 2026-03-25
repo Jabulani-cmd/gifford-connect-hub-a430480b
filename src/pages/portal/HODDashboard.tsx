@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, ClipboardList, Bell, CheckCircle2, UserCheck } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, ClipboardList, Bell, CheckCircle2, UserCheck, Layers } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,7 @@ import StudentManagement from "@/pages/admin/StudentManagement";
 import StaffManagement from "@/components/admin/StaffManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import EMISReports from "@/pages/admin/EMISReports";
+import TeacherDashboard from "@/pages/portal/TeacherDashboard";
 
 export default function HODDashboard() {
   const { signOut } = useAuth();
@@ -77,9 +78,10 @@ export default function HODDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="academics" className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="teaching" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
           <TabsList className="flex-wrap h-auto gap-1 w-max sm:w-auto">
+            <TabsTrigger value="teaching" className="text-xs sm:text-sm"><Layers className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> My Teaching</TabsTrigger>
             <TabsTrigger value="academics" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Academics</TabsTrigger>
             <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
@@ -89,6 +91,7 @@ export default function HODDashboard() {
           </TabsList>
           </div>
 
+          <TabsContent value="teaching"><TeacherDashboard embedded /></TabsContent>
           <TabsContent value="academics"><AcademicManagement /></TabsContent>
           <TabsContent value="attendance"><AdminAttendanceViewer /></TabsContent>
           <TabsContent value="reports"><EMISReports /></TabsContent>
