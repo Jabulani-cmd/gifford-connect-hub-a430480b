@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit2, Trash2, Eye, Copy, BookOpen, Download, Printer } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Copy, BookOpen, Download, Printer, Sparkles, Loader2 } from "lucide-react";
 import { printLessonPlan, downloadLessonPlan, type LessonPlanPrintData } from "@/lib/lesson-plan-print";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,12 +35,20 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState({ subject: "all", status: "all" });
 
+  // AI generation state
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiSubjectId, setAiSubjectId] = useState("");
+  const [aiClassId, setAiClassId] = useState("");
+  const [aiDuration, setAiDuration] = useState("40");
+  const [aiGenerating, setAiGenerating] = useState(false);
+
   useEffect(() => { fetchPlans(); }, []);
 
   const fetchPlans = async () => {
     const { data } = await supabase
       .from("lesson_plans")
-      .select("*, subjects(name), classes(name)")
+      .select("*, subjects(name), classes(name, form_level)")
       .eq("teacher_id", userId)
       .order("date", { ascending: false });
     if (data) setPlans(data);
@@ -136,6 +144,67 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
     fetchPlans();
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiTopic.trim()) {
+      toast({ title: "Please enter a topic for the lesson", variant: "destructive" });
+      return;
+    }
+
+    setAiGenerating(true);
+    try {
+      const selectedSubject = subjects.find(s => s.id === aiSubjectId);
+      const selectedClass = classes.find(c => c.id === aiClassId);
+
+      const { data, error } = await supabase.functions.invoke("generate-lesson-plan", {
+        body: {
+          topic: aiTopic.trim(),
+          subject: selectedSubject?.name || "",
+          className: selectedClass?.name || "",
+          formLevel: selectedClass?.form_level || "",
+          duration_minutes: parseInt(aiDuration) || 40,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const lp = data.lessonPlan;
+
+      // Pre-fill the form with AI-generated content
+      setForm({
+        subject_id: aiSubjectId,
+        class_id: aiClassId,
+        title: lp.title || aiTopic,
+        date: new Date().toISOString().split("T")[0],
+        duration_minutes: aiDuration,
+        objectives: lp.objectives || "",
+        materials_needed: lp.materials_needed || "",
+        introduction: lp.introduction || "",
+        main_activity: lp.main_activity || "",
+        conclusion: lp.conclusion || "",
+        assessment_strategy: lp.assessment_strategy || "",
+        homework_notes: lp.homework_notes || "",
+        reflection: "",
+        status: "draft",
+      });
+
+      setAiDialogOpen(false);
+      setEditing(null);
+      setDialogOpen(true);
+
+      toast({ title: "AI lesson plan generated!", description: "Review and edit before saving." });
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      toast({
+        title: "Failed to generate lesson plan",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const toPrintData = (p: any): LessonPlanPrintData => ({
     title: p.title, date: p.date, duration_minutes: p.duration_minutes,
     subjectName: p.subjects?.name, className: p.classes?.name,
@@ -160,96 +229,160 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
           <h2 className="font-heading text-lg font-bold">Lesson Plans</h2>
           <p className="text-sm text-muted-foreground">Create and manage your lesson plans with structured templates.</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditing(null); setForm({ ...emptyForm }); } }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-1 h-4 w-4" /> New Lesson Plan</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-heading">{editing ? "Edit Lesson Plan" : "Create Lesson Plan"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+        <div className="flex gap-2">
+          {/* AI Generate Button */}
+          <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-primary/30 bg-primary/5 hover:bg-primary/10">
+                <Sparkles className="mr-1 h-4 w-4 text-primary" /> AI Generate
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-heading flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" /> AI Lesson Plan Generator
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Describe the topic you want to teach and AI will generate a complete lesson plan for you to review and customise.
+                </p>
                 <div className="space-y-2">
-                  <Label>Title *</Label>
-                  <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Introduction to Quadratic Equations" />
+                  <Label>Topic / Lesson Description *</Label>
+                  <Textarea
+                    rows={3}
+                    value={aiTopic}
+                    onChange={e => setAiTopic(e.target.value)}
+                    placeholder="e.g. Introduction to quadratic equations, solving by factoring and using the quadratic formula"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label>Date *</Label>
-                  <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Select value={form.subject_id} onValueChange={v => setForm(p => ({ ...p, subject_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Class</Label>
-                  <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Subject</Label>
+                    <Select value={aiSubjectId} onValueChange={setAiSubjectId}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Class</Label>
+                    <Select value={aiClassId} onValueChange={setAiClassId}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Duration (min)</Label>
-                  <Input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} />
+                  <Input type="number" value={aiDuration} onChange={e => setAiDuration(e.target.value)} />
                 </div>
+                <Button onClick={handleAiGenerate} disabled={aiGenerating} className="w-full">
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating Lesson Plan...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" /> Generate Lesson Plan
+                    </>
+                  )}
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Learning Objectives</Label>
-                <Textarea rows={2} value={form.objectives} onChange={e => setForm(p => ({ ...p, objectives: e.target.value }))} placeholder="What should students learn by the end of this lesson?" />
-              </div>
-              <div className="space-y-2">
-                <Label>Materials Needed</Label>
-                <Input value={form.materials_needed} onChange={e => setForm(p => ({ ...p, materials_needed: e.target.value }))} placeholder="e.g. Textbook Ch. 5, whiteboard markers, graph paper" />
-              </div>
-              <div className="space-y-2">
-                <Label>Introduction / Warm-Up</Label>
-                <Textarea rows={2} value={form.introduction} onChange={e => setForm(p => ({ ...p, introduction: e.target.value }))} placeholder="How will you introduce the topic and engage students?" />
-              </div>
-              <div className="space-y-2">
-                <Label>Main Activity / Body</Label>
-                <Textarea rows={3} value={form.main_activity} onChange={e => setForm(p => ({ ...p, main_activity: e.target.value }))} placeholder="Describe the core teaching activities and student tasks." />
-              </div>
-              <div className="space-y-2">
-                <Label>Conclusion / Wrap-Up</Label>
-                <Textarea rows={2} value={form.conclusion} onChange={e => setForm(p => ({ ...p, conclusion: e.target.value }))} placeholder="How will you summarize and close the lesson?" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            </DialogContent>
+          </Dialog>
+
+          {/* Manual Create Button */}
+          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditing(null); setForm({ ...emptyForm }); } }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-1 h-4 w-4" /> New Lesson Plan</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-heading">{editing ? "Edit Lesson Plan" : "Create Lesson Plan"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Title *</Label>
+                    <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Introduction to Quadratic Equations" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label>Subject</Label>
+                    <Select value={form.subject_id} onValueChange={v => setForm(p => ({ ...p, subject_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Class</Label>
+                    <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Duration (min)</Label>
+                    <Input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>Assessment Strategy</Label>
-                  <Textarea rows={2} value={form.assessment_strategy} onChange={e => setForm(p => ({ ...p, assessment_strategy: e.target.value }))} placeholder="How will you check understanding?" />
+                  <Label>Learning Objectives</Label>
+                  <Textarea rows={2} value={form.objectives} onChange={e => setForm(p => ({ ...p, objectives: e.target.value }))} placeholder="What should students learn by the end of this lesson?" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Homework / Follow-Up</Label>
-                  <Textarea rows={2} value={form.homework_notes} onChange={e => setForm(p => ({ ...p, homework_notes: e.target.value }))} placeholder="Any assignments or preparation for next class?" />
+                  <Label>Materials Needed</Label>
+                  <Input value={form.materials_needed} onChange={e => setForm(p => ({ ...p, materials_needed: e.target.value }))} placeholder="e.g. Textbook Ch. 5, whiteboard markers, graph paper" />
                 </div>
+                <div className="space-y-2">
+                  <Label>Introduction / Warm-Up</Label>
+                  <Textarea rows={2} value={form.introduction} onChange={e => setForm(p => ({ ...p, introduction: e.target.value }))} placeholder="How will you introduce the topic and engage students?" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Main Activity / Body</Label>
+                  <Textarea rows={3} value={form.main_activity} onChange={e => setForm(p => ({ ...p, main_activity: e.target.value }))} placeholder="Describe the core teaching activities and student tasks." />
+                </div>
+                <div className="space-y-2">
+                  <Label>Conclusion / Wrap-Up</Label>
+                  <Textarea rows={2} value={form.conclusion} onChange={e => setForm(p => ({ ...p, conclusion: e.target.value }))} placeholder="How will you summarize and close the lesson?" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Assessment Strategy</Label>
+                    <Textarea rows={2} value={form.assessment_strategy} onChange={e => setForm(p => ({ ...p, assessment_strategy: e.target.value }))} placeholder="How will you check understanding?" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Homework / Follow-Up</Label>
+                    <Textarea rows={2} value={form.homework_notes} onChange={e => setForm(p => ({ ...p, homework_notes: e.target.value }))} placeholder="Any assignments or preparation for next class?" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Post-Lesson Reflection</Label>
+                  <Textarea rows={2} value={form.reflection} onChange={e => setForm(p => ({ ...p, reflection: e.target.value }))} placeholder="How did the lesson go? What would you change?" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleSubmit} disabled={loading} className="w-full">
+                  {loading ? "Saving..." : editing ? "Update Lesson Plan" : "Create Lesson Plan"}
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Post-Lesson Reflection</Label>
-                <Textarea rows={2} value={form.reflection} onChange={e => setForm(p => ({ ...p, reflection: e.target.value }))} placeholder="How did the lesson go? What would you change?" />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleSubmit} disabled={loading} className="w-full">
-                {loading ? "Saving..." : editing ? "Update Lesson Plan" : "Create Lesson Plan"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
