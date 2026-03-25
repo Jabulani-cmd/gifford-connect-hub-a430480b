@@ -389,12 +389,38 @@ export default function StaffManagementFull() {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("staff").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Staff member removed" });
-      fetchStaff();
+    // Find the staff member to check if they have a user_id (auth account)
+    const member = staff.find(s => s.id === id);
+    if (member?.user_id) {
+      // Use edge function for full cascade (auth user + staff + FKs)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "delete-user", user_id: member.user_id }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error);
+        toast({ title: "Staff member permanently deleted" });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+        return;
+      }
+    } else {
+      // No auth account - use cascade delete RPC
+      const { error } = await supabase.rpc("delete_staff_cascade", { _staff_id: id });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Staff member permanently deleted" });
     }
+    fetchStaff();
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

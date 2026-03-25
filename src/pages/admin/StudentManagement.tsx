@@ -535,10 +535,37 @@ export default function StudentManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    // Soft delete
-    const { error } = await supabase.from("students").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Student removed" }); fetchStudents(); }
+    const student = students.find(s => s.id === id);
+    if (student?.user_id) {
+      // Use edge function for full cascade (auth user + student + FKs)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "delete-user", user_id: student.user_id }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error);
+        toast({ title: "Student permanently deleted" });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+        return;
+      }
+    } else {
+      // No auth account - use cascade delete RPC
+      const { error } = await supabase.rpc("delete_student_cascade", { _student_id: id });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Student permanently deleted" });
+    }
+    fetchStudents();
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
