@@ -12,6 +12,13 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const resolvePortalRole = (portalRole?: string, staffRole?: string) => {
+      const normalizedStaffRole = (staffRole || "").toLowerCase();
+      if (normalizedStaffRole === "bursar") return "bursar";
+      if (normalizedStaffRole === "finance_clerk") return "finance_clerk";
+      return portalRole;
+    };
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -165,8 +172,9 @@ Deno.serve(async (req) => {
     // ==================== CREATE USER (unified) ====================
     if (action === "create-user") {
       const { email, password, full_name, portal_role, staff_role, department, phone, grade, class_name, assigned_class_id } = payload;
+      const effectivePortalRole = resolvePortalRole(portal_role, staff_role);
 
-      if (!email || !password || !full_name || !portal_role) {
+      if (!email || !password || !full_name || !effectivePortalRole) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -194,11 +202,11 @@ Deno.serve(async (req) => {
       const userId = newUser.user.id;
 
       // Assign portal role (admin, teacher, student, parent)
-      await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: portal_role });
+      await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: effectivePortalRole });
 
       // Update profile (profiles.id = auth user id)
       await supabaseAdmin.from("profiles").update({ phone: phone || null }).eq("id", userId);
-      if (portal_role === "student") {
+      if (effectivePortalRole === "student") {
         // Create student record linked to auth user
         await supabaseAdmin.from("students").insert({
           full_name,
@@ -208,7 +216,7 @@ Deno.serve(async (req) => {
           guardian_phone: phone || null,
           status: "active",
         });
-      } else if (portal_role !== "parent") {
+      } else if (effectivePortalRole !== "parent") {
         // Determine proper category
         let staffCategory = "teaching";
         if (["principal", "deputy_principal"].includes(staff_role || "")) staffCategory = "leadership";
@@ -373,6 +381,7 @@ Deno.serve(async (req) => {
       const { user_id, portal_role, staff_role, department, full_name, assigned_class_id,
         phone, email: staffEmail, address, emergency_contact, qualifications, bio, title,
         subjects_taught, national_id, nssa_number, paye_number, bank_details, employment_date } = payload;
+      const effectivePortalRole = resolvePortalRole(portal_role, staff_role);
       if (!user_id) {
         return new Response(JSON.stringify({ error: "user_id required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -380,8 +389,9 @@ Deno.serve(async (req) => {
       }
 
       // Update portal role if provided
-      if (portal_role) {
-        await supabaseAdmin.from("user_roles").update({ role: portal_role }).eq("user_id", user_id);
+      if (effectivePortalRole) {
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+        await supabaseAdmin.from("user_roles").insert({ user_id, role: effectivePortalRole });
       }
 
       // Update Auth email if provided
