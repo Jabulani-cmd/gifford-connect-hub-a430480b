@@ -286,8 +286,9 @@ export default function StudentManagement() {
 
   // Boarding fields
   const [hostels, setHostels] = useState<{ id: string; name: string; total_capacity: number; current_occupancy: number }[]>([]);
-  const [rooms, setRooms] = useState<{ id: string; hostel_id: string; room_number: string; capacity: number; current_occupancy: number }[]>([]);
+  const [rooms, setRooms] = useState<{ id: string; hostel_id: string; room_number: string; room_type: string | null; capacity: number; current_occupancy: number }[]>([]);
   const [selectedHostel, setSelectedHostel] = useState("");
+  const [selectedDormitoryType, setSelectedDormitoryType] = useState("all");
   const [selectedRoom, setSelectedRoom] = useState("");
   const [bedNumber, setBedNumber] = useState("");
 
@@ -301,7 +302,7 @@ export default function StudentManagement() {
   const fetchBoardingData = async () => {
     const [h, r] = await Promise.all([
       supabase.from("hostels").select("id, name, total_capacity, current_occupancy").eq("is_active", true).order("name"),
-      supabase.from("rooms").select("id, hostel_id, room_number, capacity, current_occupancy").order("room_number"),
+      supabase.from("rooms").select("id, hostel_id, room_number, room_type, capacity, current_occupancy").order("room_number"),
     ]);
     if (h.data) setHostels(h.data);
     if (r.data) setRooms(r.data);
@@ -327,12 +328,25 @@ export default function StudentManagement() {
     return matchSearch && matchForm && matchStatus;
   });
 
+  const dormitoryOptions = Array.from(
+    new Set(
+      rooms
+        .filter(r => r.hostel_id === selectedHostel)
+        .map(r => r.room_type || "dormitory")
+    )
+  );
+
+  const filteredRooms = rooms.filter(
+    r => r.hostel_id === selectedHostel && (selectedDormitoryType === "all" || (r.room_type || "dormitory") === selectedDormitoryType)
+  );
+
   const openAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
     setPhotoUrl(null);
     setErrors({});
     setSelectedHostel("");
+    setSelectedDormitoryType("all");
     setSelectedRoom("");
     setBedNumber("");
     setDialogOpen(true);
@@ -368,16 +382,19 @@ export default function StudentManagement() {
         if (alloc) {
           const room = rooms.find(r => r.id === alloc.room_id);
           setSelectedHostel(room ? room.hostel_id : "");
+          setSelectedDormitoryType(room?.room_type || "all");
           setSelectedRoom(alloc.room_id);
           setBedNumber(alloc.bed_number || "");
         } else {
           setSelectedHostel("");
+          setSelectedDormitoryType("all");
           setSelectedRoom("");
           setBedNumber("");
         }
       });
     } else {
       setSelectedHostel("");
+      setSelectedDormitoryType("all");
       setSelectedRoom("");
       setBedNumber("");
     }
