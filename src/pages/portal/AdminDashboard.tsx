@@ -68,7 +68,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboardProps = {}) {
   const { toast } = useToast();
   const { signOut, user, role } = useAuth();
-  const isFinanceUser = role === 'finance' || role === 'admin_supervisor' || role === 'principal';
+  const isFinanceUser = role === 'finance' || role === 'admin_supervisor' || role === 'principal' || role === 'deputy_principal';
   const displayTitle = portalTitle || "Admin Portal";
   const displayRole = portalRole || "Admin";
   const navigate = useNavigate();
