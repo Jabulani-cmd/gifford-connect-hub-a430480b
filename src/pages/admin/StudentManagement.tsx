@@ -916,7 +916,7 @@ export default function StudentManagement() {
 
             <div className="space-y-1">
               <Label>Boarding Status *</Label>
-              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => { updateField("boarding_status", v); if (v === "day") { setSelectedHostel(""); setSelectedRoom(""); setBedNumber(""); } }}>
+              <Select value={(formData as any).boarding_status || "day"} onValueChange={v => { updateField("boarding_status", v); if (v === "day") { setSelectedHostel(""); setSelectedDormitoryType("all"); setSelectedRoom(""); setBedNumber(""); } }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">Day Scholar</SelectItem>
@@ -930,10 +930,10 @@ export default function StudentManagement() {
                 <p className="text-sm font-semibold text-primary flex items-center gap-2">
                   <Users className="h-4 w-4" /> Hostel Allocation
                 </p>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-4">
                   <div className="space-y-1">
                     <Label className="text-xs">Hostel</Label>
-                    <Select value={selectedHostel} onValueChange={v => { setSelectedHostel(v); setSelectedRoom(""); }}>
+                    <Select value={selectedHostel} onValueChange={v => { setSelectedHostel(v); setSelectedDormitoryType("all"); setSelectedRoom(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select hostel..." /></SelectTrigger>
                       <SelectContent>
                         {hostels.map(h => (
@@ -945,11 +945,25 @@ export default function StudentManagement() {
                     </Select>
                   </div>
                   <div className="space-y-1">
+                    <Label className="text-xs">Dormitory</Label>
+                    <Select value={selectedDormitoryType} onValueChange={v => { setSelectedDormitoryType(v); setSelectedRoom(""); }} disabled={!selectedHostel}>
+                      <SelectTrigger><SelectValue placeholder="Select dormitory..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Dormitories</SelectItem>
+                        {dormitoryOptions.map(type => (
+                          <SelectItem key={type} value={type}>
+                            {type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
                     <Label className="text-xs">Room</Label>
                     <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={!selectedHostel}>
                       <SelectTrigger><SelectValue placeholder="Select room..." /></SelectTrigger>
                       <SelectContent>
-                        {rooms.filter(r => r.hostel_id === selectedHostel).map(r => (
+                        {filteredRooms.map(r => (
                           <SelectItem key={r.id} value={r.id}>
                             Room {r.room_number} ({r.current_occupancy}/{r.capacity})
                           </SelectItem>
