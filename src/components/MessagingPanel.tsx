@@ -308,10 +308,21 @@ export default function MessagingPanel() {
     if (!user) return;
     setContactsLoading(true);
 
+    // First get all user_ids that have a role (i.e. not deleted)
+    const { data: activeRoles } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+
+    if (!activeRoles) { setContacts([]); setContactsLoading(false); return; }
+
+    const roleMap: Record<string, string> = {};
+    activeRoles.forEach(r => { roleMap[r.user_id] = r.role; });
+    const activeUserIds = activeRoles.map(r => r.user_id).filter(id => id !== user.id);
+
     let query = supabase
       .from("profiles")
-      .select("id, full_name, email")
-      .neq("id", user.id)
+      .select("id, full_name, email, avatar_url")
+      .in("id", activeUserIds)
       .order("full_name", { ascending: true })
       .limit(100);
 
@@ -321,15 +332,6 @@ export default function MessagingPanel() {
 
     const { data: profiles } = await query;
     if (!profiles) { setContacts([]); setContactsLoading(false); return; }
-
-    const userIds = profiles.map(p => p.id);
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role")
-      .in("user_id", userIds);
-
-    const roleMap: Record<string, string> = {};
-    roles?.forEach(r => { roleMap[r.user_id] = r.role; });
 
     let results: UserProfile[] = profiles
       .filter(p => !blockedIds.includes(p.id))
