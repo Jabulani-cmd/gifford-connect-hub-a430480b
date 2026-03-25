@@ -158,8 +158,8 @@ export default function FinanceManagement() {
     [convertUsdToZig],
   );
   const isFinanceOrAdmin =
-    role === "finance" || role === "admin_supervisor";
-  const isAdminSupervisor = role === "admin_supervisor";
+    role === "finance" || role === "admin_supervisor" || role === "principal" || role === "deputy_principal";
+  const isAdminSupervisor = role === "admin_supervisor" || role === "principal" || role === "deputy_principal";
   const isFinanceClerk = role === "finance"; // needs approval for destructive actions — only admin_supervisor can void/delete directly
 
   // Helper: request supervisor approval instead of direct delete
