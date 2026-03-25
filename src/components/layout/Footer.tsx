@@ -64,7 +64,7 @@ export default function Footer() {
               <span className="text-[10px] text-primary-foreground/50 sm:text-xs">MoPSE</span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-24 object-contain sm:h-[30px] sm:w-[30px] lg:h-36 lg:w-36" />
+              <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-24 object-contain sm:h-[7.5rem] sm:w-[7.5rem] lg:h-36 lg:w-36" />
               <span className="text-[10px] text-primary-foreground/50 sm:text-xs">Cambridge</span>
             </div>
             <div className="flex flex-col items-center gap-1">
