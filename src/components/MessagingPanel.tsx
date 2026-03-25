@@ -859,9 +859,13 @@ export default function MessagingPanel() {
                             onClick={() => startDirectFromContact(c)}
                             className="w-full flex items-center gap-3 border-b px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
                           >
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            {c.avatar_url ? (
+                              <img src={c.avatar_url} alt={c.full_name} className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                                <span className="text-xs font-bold text-muted-foreground">{c.full_name?.[0]?.toUpperCase() || "?"}</span>
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{c.full_name}</p>
                             </div>
