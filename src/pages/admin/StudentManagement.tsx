@@ -769,8 +769,8 @@ export default function StudentManagement() {
                         <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Student?</AlertDialogTitle>
-                            <AlertDialogDescription>This will soft-delete {s.full_name}. The record can be restored later.</AlertDialogDescription>
+                             <AlertDialogTitle>Permanently Delete Student?</AlertDialogTitle>
+                             <AlertDialogDescription>This will permanently delete {s.full_name} and all associated records (grades, attendance, invoices, etc.). This action cannot be undone.</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>

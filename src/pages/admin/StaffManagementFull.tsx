@@ -664,8 +664,8 @@ export default function StaffManagementFull() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                              <AlertDialogDescription>This will soft-delete {s.full_name}.</AlertDialogDescription>
+                              <AlertDialogTitle>Permanently Delete Staff Member?</AlertDialogTitle>
+                              <AlertDialogDescription>This will permanently delete {s.full_name} and all associated records. This action cannot be undone.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
