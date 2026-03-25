@@ -79,7 +79,7 @@ export default function TermReportsTab() {
       .from("students")
       .select("id, full_name, admission_number, form")
       .eq("status", "active")
-      .is("deleted_at", null)
+      
       .order("full_name");
     if (data) setStudents(data);
     setLoading(false);

@@ -65,7 +65,7 @@ export default function EMISReports() {
       .from("students")
       .select("form, gender")
       .eq("status", "active")
-      .is("deleted_at", null);
+      ;
 
     if (!students) return;
 
@@ -102,7 +102,7 @@ export default function EMISReports() {
     const { data: staff } = await supabase
       .from("staff")
       .select("category, department, qualifications, status")
-      .is("deleted_at", null);
+      ;
 
     if (!staff) return;
 

@@ -27,7 +27,7 @@ export default function HODDashboard() {
     const fetchStats = async () => {
       const [studentsRes, staffRes, annRes] = await Promise.all([
         supabase.from("students").select("id", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("staff").select("id", { count: "exact", head: true }).is("deleted_at", null),
+        supabase.from("staff").select("id", { count: "exact", head: true }),
         supabase.from("announcements").select("id", { count: "exact", head: true }),
       ]);
       setStats({ students: studentsRes.count || 0, staff: staffRes.count || 0, announcements: annRes.count || 0 });

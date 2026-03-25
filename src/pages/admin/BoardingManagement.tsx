@@ -82,8 +82,8 @@ export default function BoardingManagement() {
       supabase.from("rooms").select("*").order("room_number"),
       supabase.from("bed_allocations").select("*").eq("status", "active"),
       supabase.from("health_visits").select("*").order("visit_date", { ascending: false }).limit(200),
-      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact").eq("status", "active").is("deleted_at", null).order("full_name"),
-      supabase.from("staff").select("id, full_name, role").is("deleted_at", null).order("full_name"),
+      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact").eq("status", "active").order("full_name"),
+      supabase.from("staff").select("id, full_name, role").order("full_name"),
     ]);
     if (h.data) setHostels(h.data as Hostel[]);
     if (r.data) setRooms(r.data as Room[]);
