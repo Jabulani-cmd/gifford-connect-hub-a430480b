@@ -198,13 +198,29 @@ export default function ExamResultsUpload({ userId, classes, subjects }: Props) 
       return;
     }
 
-    const { error } = await supabase
-      .from("exam_results")
-      .upsert(upserts, { onConflict: "id" });
+    // Split into inserts (new) and updates (existing)
+    const toInsert = upserts.filter((r) => !r.id);
+    const toUpdate = upserts.filter((r) => r.id);
 
-    if (error) {
-      toast({ title: "Error saving results", description: error.message, variant: "destructive" });
-    } else {
+    let hasError = false;
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from("exam_results").insert(toInsert);
+      if (error) {
+        toast({ title: "Error saving new results", description: error.message, variant: "destructive" });
+        hasError = true;
+      }
+    }
+
+    if (toUpdate.length > 0 && !hasError) {
+      const { error } = await supabase.from("exam_results").upsert(toUpdate, { onConflict: "id" });
+      if (error) {
+        toast({ title: "Error updating results", description: error.message, variant: "destructive" });
+        hasError = true;
+      }
+    }
+
+    if (!hasError) {
       toast({ title: `${upserts.length} results saved successfully!` });
       await fetchExistingResults();
     }
