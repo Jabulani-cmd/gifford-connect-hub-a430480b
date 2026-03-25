@@ -104,7 +104,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/portal/finance" element={
-              <ProtectedRoute allowedRoles={["finance", "finance_clerk", "admin", "principal", "deputy_principal"]}>
+              <ProtectedRoute allowedRoles={["finance", "finance_clerk", "bursar", "admin", "principal", "deputy_principal"]}>
                 <AuthenticatedLayout><FinanceDashboard /></AuthenticatedLayout>
               </ProtectedRoute>
             } />

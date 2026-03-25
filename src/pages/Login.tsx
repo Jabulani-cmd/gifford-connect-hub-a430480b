@@ -60,6 +60,7 @@ export default function Login() {
     else if (r === "admin") navigate("/portal/admin");
     else if (r === "finance") navigate("/portal/finance");
     else if (r === "finance_clerk") navigate("/portal/finance");
+    else if (r === "bursar") navigate("/portal/finance");
     else if (r === "principal") navigate("/portal/principal");
     else if (r === "deputy_principal") navigate("/portal/deputy-principal");
     else if (r === "hod") navigate("/portal/hod");
