@@ -32,6 +32,7 @@ import LessonPlansTab from "@/components/teacher/LessonPlansTab";
 import StudentProgressTracker from "@/components/teacher/StudentProgressTracker";
 import ResourceLibraryTab from "@/components/teacher/ResourceLibraryTab";
 import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog";
+import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -535,44 +536,18 @@ export default function TeacherDashboard() {
 
           {/* TIMETABLE */}
           <TabsContent value="timetable">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Class Timetable</CardTitle>
-                <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
-                  <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
-                  <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="border px-3 py-2 text-left">Time</th>
-                      {days.map(d => <th key={d} className="border px-3 py-2">{d}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ttTimeSlots.map((slot, si) => (
-                      <tr key={si} className={slot.isBreak ? "bg-muted/50" : ""}>
-                        <td className="border px-3 py-2 font-medium text-xs whitespace-nowrap">
-                          {slot.start}–{slot.end}
-                          {slot.isBreak && <span className="block text-muted-foreground">{slot.label}</span>}
-                        </td>
-                        {slot.isBreak ? (
-                          <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label}</td>
-                        ) : (
-                          days.map((_, di) => (
-                            <td key={di} className="border px-3 py-2 text-center text-xs">
-                              {getTimetableCell(slot.start, di)}
-                            </td>
-                          ))
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
+                <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+              <FullWeekTimetable
+                entries={timetableData}
+                hasClass={!!selectedTTClass}
+                loading={false}
+                noClassMessage="Select a class to view the timetable."
+              />
+            </div>
           </TabsContent>
 
           {/* EXAM TIMETABLE */}
