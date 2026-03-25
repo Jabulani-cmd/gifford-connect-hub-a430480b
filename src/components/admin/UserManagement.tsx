@@ -366,13 +366,13 @@ export default function UserManagement() {
           email: form.email,
           password: form.password,
           portal_role: form.portal_role,
-          staff_role: ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "admin_supervisor", "registration"].includes(form.portal_role) ? form.staff_role : undefined,
+          staff_role: ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(form.portal_role) ? form.staff_role : undefined,
           department: form.department || undefined,
           phone: form.phone || undefined,
           grade: form.grade || undefined,
           class_name: form.class_name || undefined,
           assigned_class_id:
-            ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "admin_supervisor", "registration"].includes(form.portal_role) && form.assigned_class_id
+            ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(form.portal_role) && form.assigned_class_id
               ? form.assigned_class_id
               : undefined,
         }),
@@ -539,7 +539,7 @@ export default function UserManagement() {
     let currentClassId = "";
     let staffDetails: any = {};
     let photoUrl = "";
-    if (["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "admin_supervisor", "registration"].includes(user.portal_role)) {
+    if (["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(user.portal_role)) {
       const { data: staffRecord } = await supabase.from("staff").select("*").eq("user_id", user.id).maybeSingle();
       if (staffRecord) {
         staffDetails = staffRecord;
@@ -603,7 +603,7 @@ export default function UserManagement() {
         return;
       }
       const token = session.access_token;
-      const isStaff = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "admin_supervisor", "registration"].includes(editForm.portal_role);
+      const isStaff = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(editForm.portal_role);
 
       // Detect if email changed
       const emailChanged = editForm.email && editForm.email !== editUser.email;
