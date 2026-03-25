@@ -151,7 +151,10 @@ function getPortalRole(staffRole: string): string {
       return "principal";
     case "hod":
       return "hod";
+    case "finance_clerk":
+      return "finance_clerk";
     case "bursar":
+      return "bursar";
     case "teacher":
     default:
       return "teacher";

@@ -720,7 +720,8 @@ Deno.serve(async (req) => {
       if (["principal"].includes(staffRole || "")) portalRole = "principal";
       else if (["deputy_principal"].includes(staffRole || "")) portalRole = "deputy_principal";
       else if (["hod"].includes(staffRole || "")) portalRole = "hod";
-      else if (["bursar"].includes(staffRole || "")) portalRole = "finance";
+      else if (["bursar"].includes(staffRole || "")) portalRole = "bursar";
+      else if (["finance_clerk"].includes(staffRole || "")) portalRole = "finance_clerk";
 
       // Assign portal role
       await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: portalRole });
