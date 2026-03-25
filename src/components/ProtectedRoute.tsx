@@ -13,6 +13,7 @@ const roleRedirects: Record<string, string> = {
   parent: "/portal/parent-teacher",
   admin: "/portal/admin",
   finance: "/portal/finance",
+  finance_clerk: "/portal/finance",
   principal: "/portal/principal",
   deputy_principal: "/portal/deputy-principal",
   hod: "/portal/hod",
