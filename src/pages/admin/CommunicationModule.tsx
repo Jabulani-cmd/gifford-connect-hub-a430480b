@@ -125,12 +125,12 @@ export default function CommunicationModule() {
   };
 
   const fetchStudents = async () => {
-    const { data } = await supabase.from("students").select("id, full_name, admission_number, form, user_id, guardian_phone, guardian_email").eq("status", "active").is("deleted_at", null).order("full_name");
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form, user_id, guardian_phone, guardian_email").eq("status", "active").order("full_name");
     if (data) setStudents(data);
   };
 
   const fetchStaff = async () => {
-    const { data } = await supabase.from("staff").select("id, full_name, email, phone, user_id").is("deleted_at", null).order("full_name");
+    const { data } = await supabase.from("staff").select("id, full_name, email, phone, user_id").order("full_name");
     if (data) setStaff(data);
   };
 

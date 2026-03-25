@@ -777,7 +777,7 @@ export default function FinanceManagement() {
       .select("id, full_name, admission_number, form")
       .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
       .eq("status", "active")
-      .is("deleted_at", null)
+      
       .limit(10);
     if (data) setStmtStudentResults(data);
   }
@@ -876,7 +876,7 @@ export default function FinanceManagement() {
         .from("students")
         .select("id, full_name, form, boarding_status, stream")
         .eq("status", "active")
-        .is("deleted_at", null);
+        ;
       if (!students || students.length === 0) {
         toast({ title: "No active students found", variant: "destructive" });
         setBulkLoading(false);
@@ -979,7 +979,7 @@ export default function FinanceManagement() {
       .select("id, full_name, admission_number, form, boarding_status")
       .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
       .eq("status", "active")
-      .is("deleted_at", null)
+      
       .limit(10);
     if (data) setSingleInvStudentResults(data);
   }
@@ -1211,7 +1211,7 @@ export default function FinanceManagement() {
       .select("id, full_name, admission_number, form")
       .or(`full_name.ilike.%${query}%,admission_number.ilike.%${query}%`)
       .eq("status", "active")
-      .is("deleted_at", null)
+      
       .limit(10);
     if (data) setStudentResults(data);
   }

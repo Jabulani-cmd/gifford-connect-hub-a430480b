@@ -158,11 +158,11 @@ export default function AcademicManagement() {
     if (data) setSubjects(data);
   }
   async function fetchStaff() {
-    const { data } = await supabase.from("staff").select("id, full_name, role, subjects_taught").is("deleted_at", null).order("full_name");
+    const { data } = await supabase.from("staff").select("id, full_name, role, subjects_taught").order("full_name");
     if (data) setStaff(data);
   }
   async function fetchStudents() {
-    const { data } = await supabase.from("students").select("id, full_name, admission_number, form, stream").eq("status", "active").is("deleted_at", null).order("full_name");
+    const { data } = await supabase.from("students").select("id, full_name, admission_number, form, stream").eq("status", "active").order("full_name");
     if (data) setStudents(data);
   }
   async function fetchTimetable() {

@@ -256,7 +256,7 @@ export default function UserManagement() {
         .from("staff")
         .select("id, user_id, staff_number, full_name, role, department, email, phone")
         .not("user_id", "is", null)
-        .is("deleted_at", null);
+        ;
       console.log("Staff data from table:", staffData);
       if (staffError) console.error("Staff error:", staffError);
       const staffUsersFromTable: ManagedUser[] = (staffData || []).map((s: any) => ({
@@ -275,7 +275,7 @@ export default function UserManagement() {
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("id, user_id, admission_number, full_name, enrollment_date")
-        .is("deleted_at", null)
+        
         .not("user_id", "is", null);
       if (studentsError) throw studentsError;
 

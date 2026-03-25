@@ -55,7 +55,7 @@ export default function TermRegistration() {
   async function fetchAll() {
     setLoading(true);
     const [studRes, regRes, subRes, feeRes, classRes] = await Promise.all([
-      supabase.from("students").select("*").eq("status", "active").is("deleted_at", null).order("full_name"),
+      supabase.from("students").select("*").eq("status", "active").order("full_name"),
       supabase.from("term_registrations").select("*").eq("academic_year", academicYear).eq("term", term),
       supabase.from("subjects").select("id, name, department").order("name"),
       supabase.from("fee_structures").select("*").eq("academic_year", academicYear).eq("term", term).eq("is_active", true),

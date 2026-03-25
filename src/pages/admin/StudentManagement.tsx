@@ -313,7 +313,6 @@ export default function StudentManagement() {
     const { data, error } = await supabase
       .from("students")
       .select("*")
-      .is("deleted_at", null)
       .order("full_name");
     if (data) setStudents(data as Student[]);
     if (error) toast({ title: "Error loading students", description: error.message, variant: "destructive" });
@@ -535,10 +534,37 @@ export default function StudentManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    // Soft delete
-    const { error } = await supabase.from("students").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Student removed" }); fetchStudents(); }
+    const student = students.find(s => s.id === id);
+    if (student?.user_id) {
+      // Use edge function for full cascade (auth user + student + FKs)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "delete-user", user_id: student.user_id }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error);
+        toast({ title: "Student permanently deleted" });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+        return;
+      }
+    } else {
+      // No auth account - use cascade delete RPC
+      const { error } = await supabase.rpc("delete_student_cascade", { _student_id: id });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Student permanently deleted" });
+    }
+    fetchStudents();
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -742,8 +768,8 @@ export default function StudentManagement() {
                         <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Student?</AlertDialogTitle>
-                            <AlertDialogDescription>This will soft-delete {s.full_name}. The record can be restored later.</AlertDialogDescription>
+                             <AlertDialogTitle>Permanently Delete Student?</AlertDialogTitle>
+                             <AlertDialogDescription>This will permanently delete {s.full_name} and all associated records (grades, attendance, invoices, etc.). This action cannot be undone.</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>

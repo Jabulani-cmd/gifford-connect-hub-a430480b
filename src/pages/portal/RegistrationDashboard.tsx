@@ -99,7 +99,6 @@ export default function RegistrationDashboard() {
     const { data, error } = await supabase
       .from("students")
       .select("*")
-      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (!error && data) setStudents(data as any);
     setLoading(false);
