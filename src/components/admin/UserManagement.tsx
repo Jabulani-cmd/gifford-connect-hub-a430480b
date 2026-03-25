@@ -753,7 +753,7 @@ export default function UserManagement() {
               </div>
               <div className="space-y-2">
                 <Label>Portal Access Role *</Label>
-                <Select value={form.portal_role} onValueChange={(v) => setForm((p) => ({ ...p, portal_role: v }))}>
+                <Select value={form.portal_role} onValueChange={(v) => setForm((p) => ({ ...p, portal_role: v, staff_role: portalToStaffDefault[v] || p.staff_role }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
