@@ -46,7 +46,11 @@ function zimGrade(mark: number): string {
   return "U";
 }
 
-export default function TeacherDashboard() {
+interface TeacherDashboardProps {
+  embedded?: boolean;
+}
+
+export default function TeacherDashboard({ embedded = false }: TeacherDashboardProps) {
   const { toast } = useToast();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -286,23 +290,25 @@ export default function TeacherDashboard() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
-          <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
-            <span className="font-heading text-sm sm:text-lg font-bold text-primary">Teacher Portal</span>
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      {!embedded && (
+        <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
+          <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
+            <div className="flex items-center gap-2">
+              <img src={schoolLogo} alt="Gifford High" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+              <span className="font-heading text-sm sm:text-lg font-bold text-primary">Teacher Portal</span>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
+              <NotificationBell />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
-            <NotificationBell />
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex"><LogOut className="mr-1 h-4 w-4" /> Logout</Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden h-8 w-8"><LogOut className="h-4 w-4" /></Button>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <div className="container px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className={embedded ? "space-y-4 sm:space-y-6" : "container px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6"}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-heading text-lg sm:text-2xl font-bold text-primary mb-1">Welcome, {displayName}</h1>
           {staffInfo?.staff_number && (
