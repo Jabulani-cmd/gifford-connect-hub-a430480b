@@ -39,7 +39,6 @@ export default function StudentProgressTracker({ userId, classes, subjects }: Pr
 
   const loadData = async () => {
     setLoading(true);
-    // Get students in class
     const { data: sc } = await supabase.from("student_classes").select("student_id").eq("class_id", selectedClass);
     const studentIds = sc?.map(s => s.student_id) || [];
 
@@ -47,10 +46,27 @@ export default function StudentProgressTracker({ userId, classes, subjects }: Pr
       const { data: studs } = await supabase.from("students").select("id, full_name, admission_number").in("id", studentIds).eq("status", "active").order("full_name");
       if (studs) setStudents(studs);
 
-      let query = supabase.from("marks").select("*, subjects(name)").eq("teacher_id", userId).in("student_id", studentIds);
-      if (selectedSubject !== "all") query = query.eq("subject_id", selectedSubject);
-      const { data: m } = await query.order("created_at", { ascending: true });
-      if (m) setMarks(m);
+      // Fetch marks from all teachers
+      let marksQuery = supabase.from("marks").select("*, subjects(name)").in("student_id", studentIds);
+      if (selectedSubject !== "all") marksQuery = marksQuery.eq("subject_id", selectedSubject);
+      const { data: m } = await marksQuery.order("created_at", { ascending: true });
+
+      // Fetch exam results too
+      let examQuery = supabase.from("exam_results").select("*, subjects(name), exams(name, term, academic_year)").in("student_id", studentIds);
+      if (selectedSubject !== "all") examQuery = examQuery.eq("subject_id", selectedSubject);
+      const { data: er } = await examQuery.order("created_at", { ascending: true });
+
+      // Normalize exam results into the same shape as marks
+      const normalizedExamResults = (er || []).map(r => ({
+        ...r,
+        mark: r.mark,
+        term: r.exams?.term || "Exam",
+        assessment_type: "exam",
+        _source: "exam",
+      }));
+
+      const allMarks = [...(m || []).map(mk => ({ ...mk, _source: "marks" })), ...normalizedExamResults];
+      setMarks(allMarks);
     } else {
       setStudents([]);
       setMarks([]);
