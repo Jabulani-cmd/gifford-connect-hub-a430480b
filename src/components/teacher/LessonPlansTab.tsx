@@ -279,7 +279,7 @@ export default function LessonPlansTab({ userId, classes, subjects }: Props) {
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {p.subjects?.name || "No subject"} · {p.classes?.name || "No class"} · {new Date(p.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
-                    {p.objectives && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.objectives}</p>}
+                    {p.objectives && <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{p.objectives}</p>}
                   </div>
                   <Badge variant={statusColor(p.status)} className="ml-2 text-[10px] shrink-0">
                     {p.status.replace("_", " ")}
