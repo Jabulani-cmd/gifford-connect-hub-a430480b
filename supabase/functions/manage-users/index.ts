@@ -334,6 +334,18 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("staff").delete().eq("id", staffRecord.id);
       }
 
+      // Get student record for this user (needed to clean up FK references)
+      const { data: studentRecord } = await supabaseAdmin
+        .from("students")
+        .select("id")
+        .eq("user_id", user_id)
+        .maybeSingle();
+
+      if (studentRecord) {
+        // Use the cascade delete RPC
+        await supabaseAdmin.rpc("delete_student_cascade", { _student_id: studentRecord.id });
+      }
+
       // Delete related data referencing user_id directly
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
       await supabaseAdmin.from("personal_timetables").delete().eq("user_id", user_id);
