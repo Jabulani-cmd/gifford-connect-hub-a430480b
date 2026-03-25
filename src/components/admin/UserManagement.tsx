@@ -342,13 +342,13 @@ export default function UserManagement() {
           email: form.email,
           password: form.password,
           portal_role: form.portal_role,
-          staff_role: form.portal_role === "teacher" || form.portal_role === "admin" ? form.staff_role : undefined,
+          staff_role: ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(form.portal_role) ? form.staff_role : undefined,
           department: form.department || undefined,
           phone: form.phone || undefined,
           grade: form.grade || undefined,
           class_name: form.class_name || undefined,
           assigned_class_id:
-            (form.portal_role === "teacher" || form.portal_role === "admin") && form.assigned_class_id
+            ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(form.portal_role) && form.assigned_class_id
               ? form.assigned_class_id
               : undefined,
         }),
@@ -515,7 +515,7 @@ export default function UserManagement() {
     let currentClassId = "";
     let staffDetails: any = {};
     let photoUrl = "";
-    if (user.portal_role === "teacher" || user.portal_role === "admin") {
+    if (["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(user.portal_role)) {
       const { data: staffRecord } = await supabase.from("staff").select("*").eq("user_id", user.id).maybeSingle();
       if (staffRecord) {
         staffDetails = staffRecord;
@@ -579,7 +579,7 @@ export default function UserManagement() {
         return;
       }
       const token = session.access_token;
-      const isStaff = editForm.portal_role === "teacher" || editForm.portal_role === "admin";
+      const isStaff = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(editForm.portal_role);
 
       // Detect if email changed
       const emailChanged = editForm.email && editForm.email !== editUser.email;
@@ -674,7 +674,8 @@ export default function UserManagement() {
     }
   };
 
-  const isStaffRole = form.portal_role === "teacher" || form.portal_role === "admin";
+  const staffPortalRoles = ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"];
+  const isStaffRole = staffPortalRoles.includes(form.portal_role);
 
   return (
     <Tabs defaultValue="create" className="space-y-4">
@@ -1012,7 +1013,7 @@ export default function UserManagement() {
           <Tabs defaultValue="basic" className="space-y-4">
             <TabsList className="w-full">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+              {["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(editForm.portal_role) && (
                 <>
                   <TabsTrigger value="contact">Contact</TabsTrigger>
                   <TabsTrigger value="employment">Employment</TabsTrigger>
@@ -1117,7 +1118,7 @@ export default function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+              {["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(editForm.portal_role) && (
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -1190,7 +1191,7 @@ export default function UserManagement() {
               )}
             </TabsContent>
 
-            {(editForm.portal_role === "teacher" || editForm.portal_role === "admin") && (
+            {["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "admin_supervisor", "registration"].includes(editForm.portal_role) && (
               <>
                 <TabsContent value="contact" className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
