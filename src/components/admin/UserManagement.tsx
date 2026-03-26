@@ -182,6 +182,8 @@ export default function UserManagement() {
     grade: "",
     class_name: "",
     assigned_class_id: "",
+    subjects_taught: [] as string[],
+    teaching_class_ids: [] as string[],
   });
   const [creating, setCreating] = useState(false);
 
