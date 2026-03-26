@@ -190,17 +190,20 @@ export default function StaffLeaveRequest() {
             return (
               <Card key={r.id}>
                 <CardContent className="flex items-start gap-3 p-4">
-                  <StatusIcon className={`mt-0.5 h-5 w-5 flex-shrink-0 ${r.status === "approved" ? "text-green-600" : r.status === "rejected" ? "text-red-600" : "text-amber-600"}`} />
+                  <StatusIcon className={`mt-0.5 h-5 w-5 flex-shrink-0 ${r.status === "approved" ? "text-green-600" : r.status === "rejected" ? "text-red-600" : r.status === "discuss" ? "text-blue-600" : "text-amber-600"}`} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium capitalize">{r.leave_type.replace("_", " ")} Leave</span>
-                      <Badge className={cfg.color}>{r.status}</Badge>
+                      <Badge className={cfg.color}>{cfg.label || r.status}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(r.start_date).toLocaleDateString()} — {new Date(r.end_date).toLocaleDateString()}
                       <span className="ml-2 font-medium">({getDaysCount(r.start_date, r.end_date)} days)</span>
                     </p>
                     {r.reason && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.reason}</p>}
+                    {r.status === "discuss" && (
+                      <p className="text-xs font-medium text-blue-700 mt-1">⚠ Please arrange a meeting with your supervisor to discuss this leave request.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
