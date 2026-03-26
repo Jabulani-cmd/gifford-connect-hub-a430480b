@@ -379,6 +379,8 @@ export default function UserManagement() {
             ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(form.portal_role) && form.assigned_class_id
               ? form.assigned_class_id
               : undefined,
+          subjects_taught: form.subjects_taught.length > 0 ? form.subjects_taught : undefined,
+          teaching_class_ids: form.teaching_class_ids.length > 0 ? form.teaching_class_ids : undefined,
         }),
       });
       const data = await res.json();
