@@ -22,10 +22,11 @@ const leaveTypes = [
   { value: "other", label: "Other" },
 ];
 
-const statusConfig: Record<string, { color: string; icon: typeof Clock }> = {
+const statusConfig: Record<string, { color: string; icon: typeof Clock; label?: string }> = {
   pending: { color: "bg-amber-100 text-amber-800", icon: Clock },
   approved: { color: "bg-green-100 text-green-800", icon: CheckCircle2 },
   rejected: { color: "bg-red-100 text-red-800", icon: XCircle },
+  discuss: { color: "bg-blue-100 text-blue-800", icon: Clock, label: "Discussion Required — Please see your supervisor" },
 };
 
 export default function StaffLeaveRequest() {
