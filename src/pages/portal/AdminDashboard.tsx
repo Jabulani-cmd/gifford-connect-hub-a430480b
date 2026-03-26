@@ -23,6 +23,7 @@ import GoLiveChecklist from "@/pages/admin/GoLiveChecklist";
 import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
 import PasswordManagement from "@/components/admin/PasswordManagement";
+import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket, KeyRound, Megaphone, Trophy, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Bell, Image, Users, Calendar, LogOut, Plus, Trash2, Upload, Layers, GraduationCap, UserPlus, Download, FileText, HandshakeIcon, Settings, UserCheck, Building, FolderKanban, BookOpen, Briefcase, DollarSign, Shield, BedDouble, Package, MessageSquare, ClipboardList, ShieldCheck, Database, Rocket, KeyRound, Megaphone, Trophy, ShieldAlert, CheckCircle2, CalendarOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -795,6 +796,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
               <TabsTrigger value="audit" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldCheck className="mr-1 h-3.5 w-3.5" /> Audit</TabsTrigger>
               <TabsTrigger value="migration" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Database className="mr-1 h-3.5 w-3.5" /> Migration</TabsTrigger>
               <TabsTrigger value="golive" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Rocket className="mr-1 h-3.5 w-3.5" /> Go-Live</TabsTrigger>
+              <TabsTrigger value="staff-leave" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CalendarOff className="mr-1 h-3.5 w-3.5" /> Staff Leave</TabsTrigger>
               <TabsTrigger value="manual" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-3.5 w-3.5" /> Manual</TabsTrigger>
             </TabsList>
           </div>
@@ -1232,6 +1234,11 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           {/* User Manual Tab */}
           <TabsContent value="manual">
             <UserManualPage />
+          </TabsContent>
+
+          {/* Staff Leave Tab */}
+          <TabsContent value="staff-leave">
+            <StaffAvailabilityOverview />
           </TabsContent>
 
           {/* Verification Codes Tab */}
