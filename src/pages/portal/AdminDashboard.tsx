@@ -1236,6 +1236,11 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
             <UserManualPage />
           </TabsContent>
 
+          {/* Staff Leave Tab */}
+          <TabsContent value="staff-leave">
+            <StaffAvailabilityOverview />
+          </TabsContent>
+
           {/* Verification Codes Tab */}
           <TabsContent value="verification-codes">
             <VerificationCodesManager />
