@@ -182,6 +182,8 @@ export default function UserManagement() {
     grade: "",
     class_name: "",
     assigned_class_id: "",
+    subjects_taught: [] as string[],
+    teaching_class_ids: [] as string[],
   });
   const [creating, setCreating] = useState(false);
 
@@ -377,6 +379,8 @@ export default function UserManagement() {
             ["teacher", "admin", "principal", "deputy_principal", "hod", "finance", "finance_clerk", "bursar", "admin_supervisor", "registration"].includes(form.portal_role) && form.assigned_class_id
               ? form.assigned_class_id
               : undefined,
+          subjects_taught: form.subjects_taught.length > 0 ? form.subjects_taught : undefined,
+          teaching_class_ids: form.teaching_class_ids.length > 0 ? form.teaching_class_ids : undefined,
         }),
       });
       const data = await res.json();
@@ -408,6 +412,8 @@ export default function UserManagement() {
         grade: "",
         class_name: "",
         assigned_class_id: "",
+        subjects_taught: [],
+        teaching_class_ids: [],
       });
       setCreatePhotoBlob(null);
       setCreatePhotoPreview(null);
@@ -829,6 +835,64 @@ export default function UserManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Teaching subjects assignment */}
+                {["teacher", "hod", "senior_teacher"].includes(form.staff_role) && (
+                  <div className="space-y-2">
+                    <Label>Subjects Taught</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {subjectsList.map((subject) => (
+                        <Badge
+                          key={subject}
+                          variant={form.subjects_taught.includes(subject) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            const current = form.subjects_taught;
+                            const updated = current.includes(subject)
+                              ? current.filter((s) => s !== subject)
+                              : [...current, subject];
+                            setForm((p) => ({ ...p, subjects_taught: updated }));
+                          }}
+                        >
+                          {subject}
+                        </Badge>
+                      ))}
+                    </div>
+                    {form.subjects_taught.length > 0 && (
+                      <p className="text-sm text-muted-foreground">Selected: {form.subjects_taught.join(", ")}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Teaching classes assignment */}
+                {["teacher", "hod", "senior_teacher"].includes(form.staff_role) && (
+                  <div className="space-y-2">
+                    <Label>Teaching Classes (classes this teacher will teach)</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {classes.map((c) => (
+                        <Badge
+                          key={c.id}
+                          variant={form.teaching_class_ids.includes(c.id) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            const current = form.teaching_class_ids;
+                            const updated = current.includes(c.id)
+                              ? current.filter((id) => id !== c.id)
+                              : [...current, c.id];
+                            setForm((p) => ({ ...p, teaching_class_ids: updated }));
+                          }}
+                        >
+                          {c.name}{c.form_level ? ` (${c.form_level})` : ""}
+                        </Badge>
+                      ))}
+                    </div>
+                    {form.teaching_class_ids.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Selected: {form.teaching_class_ids.map(id => classes.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
