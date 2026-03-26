@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, XCircle, Clock, UserCheck, UserX, AlertCircle, CalendarOff } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, UserCheck, UserX, AlertCircle, CalendarOff, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,13 +26,14 @@ const statusConfig: Record<string, { color: string; label: string }> = {
   pending: { color: "bg-amber-100 text-amber-800", label: "Pending" },
   approved: { color: "bg-green-100 text-green-800", label: "Approved" },
   rejected: { color: "bg-red-100 text-red-800", label: "Rejected" },
+  discuss: { color: "bg-blue-100 text-blue-800", label: "Discuss" },
 };
 
 export default function StaffAvailabilityOverview() {
   const { toast } = useToast();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected" | "active">("active");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected" | "active" | "discuss">("active");
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function StaffAvailabilityOverview() {
     setLoading(false);
   };
 
-  const handleAction = async (id: string, action: "approved" | "rejected") => {
+  const handleAction = async (id: string, action: "approved" | "rejected" | "discuss") => {
     setUpdating(id);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
@@ -62,7 +63,8 @@ export default function StaffAvailabilityOverview() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: `Leave request ${action}` });
+      const labels = { approved: "approved", rejected: "rejected", discuss: "flagged for discussion" };
+      toast({ title: `Leave request ${labels[action]}` });
       fetchRequests();
     }
     setUpdating(null);
@@ -73,7 +75,6 @@ export default function StaffAvailabilityOverview() {
   const filtered = requests.filter(r => {
     if (filter === "all") return true;
     if (filter === "active") {
-      // Currently on approved leave
       return r.status === "approved" && r.start_date <= today && r.end_date >= today;
     }
     return r.status === filter;
@@ -84,6 +85,7 @@ export default function StaffAvailabilityOverview() {
   ).length;
 
   const pendingCount = requests.filter(r => r.status === "pending").length;
+  const discussCount = requests.filter(r => r.status === "discuss").length;
 
   const getDaysCount = (start: string, end: string) => {
     const diff = new Date(end).getTime() - new Date(start).getTime();
@@ -97,7 +99,7 @@ export default function StaffAvailabilityOverview() {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Card className="border-none shadow-maroon">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
@@ -122,6 +124,17 @@ export default function StaffAvailabilityOverview() {
         </Card>
         <Card className="border-none shadow-maroon">
           <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <MessageSquare className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-600">{discussCount}</p>
+              <p className="text-xs text-muted-foreground">Needs Discussion</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-maroon">
+          <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
               <UserCheck className="h-5 w-5 text-green-600" />
             </div>
@@ -140,6 +153,7 @@ export default function StaffAvailabilityOverview() {
           <SelectContent>
             <SelectItem value="active">Currently on Leave</SelectItem>
             <SelectItem value="pending">Pending Approval</SelectItem>
+            <SelectItem value="discuss">Needs Discussion</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="all">All Requests</SelectItem>
@@ -178,8 +192,9 @@ export default function StaffAvailabilityOverview() {
                 {filtered.map(r => {
                   const cfg = statusConfig[r.status] || statusConfig.pending;
                   const isActive = r.status === "approved" && r.start_date <= today && r.end_date >= today;
+                  const canAct = r.status === "pending" || r.status === "discuss";
                   return (
-                    <TableRow key={r.id} className={isActive ? "bg-red-50/50" : ""}>
+                    <TableRow key={r.id} className={isActive ? "bg-red-50/50" : r.status === "discuss" ? "bg-blue-50/50" : ""}>
                       <TableCell className="font-medium">
                         {r.staff?.full_name || "Unknown"}
                         {isActive && <Badge variant="destructive" className="ml-2 text-[10px]">Away</Badge>}
@@ -193,8 +208,8 @@ export default function StaffAvailabilityOverview() {
                       <TableCell><Badge className={cfg.color}>{cfg.label}</Badge></TableCell>
                       <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">{r.reason || "—"}</TableCell>
                       <TableCell className="text-right">
-                        {r.status === "pending" && (
-                          <div className="flex justify-end gap-1">
+                        {canAct && (
+                          <div className="flex justify-end gap-1 flex-wrap">
                             <Button
                               size="sm"
                               variant="outline"
@@ -213,6 +228,17 @@ export default function StaffAvailabilityOverview() {
                             >
                               <XCircle className="mr-1 h-3 w-3" /> Reject
                             </Button>
+                            {r.status === "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                disabled={updating === r.id}
+                                onClick={() => handleAction(r.id, "discuss")}
+                              >
+                                <MessageSquare className="mr-1 h-3 w-3" /> Discuss
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
