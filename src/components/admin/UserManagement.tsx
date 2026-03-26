@@ -412,6 +412,8 @@ export default function UserManagement() {
         grade: "",
         class_name: "",
         assigned_class_id: "",
+        subjects_taught: [],
+        teaching_class_ids: [],
       });
       setCreatePhotoBlob(null);
       setCreatePhotoPreview(null);
