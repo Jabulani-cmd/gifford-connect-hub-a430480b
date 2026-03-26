@@ -796,6 +796,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
               <TabsTrigger value="audit" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShieldCheck className="mr-1 h-3.5 w-3.5" /> Audit</TabsTrigger>
               <TabsTrigger value="migration" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Database className="mr-1 h-3.5 w-3.5" /> Migration</TabsTrigger>
               <TabsTrigger value="golive" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Rocket className="mr-1 h-3.5 w-3.5" /> Go-Live</TabsTrigger>
+              <TabsTrigger value="staff-leave" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CalendarOff className="mr-1 h-3.5 w-3.5" /> Staff Leave</TabsTrigger>
               <TabsTrigger value="manual" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BookOpen className="mr-1 h-3.5 w-3.5" /> Manual</TabsTrigger>
             </TabsList>
           </div>
