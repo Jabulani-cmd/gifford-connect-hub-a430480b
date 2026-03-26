@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, GraduationCap, BookOpen, Briefcase, ClipboardList, Bell, CheckCircle2, UserCheck, Layers } from "lucide-react";
+import { LogOut, Users, GraduationCap, BookOpen, Briefcase, ClipboardList, Bell, CheckCircle2, UserCheck, Layers, CalendarOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,7 @@ import StaffManagement from "@/components/admin/StaffManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import EMISReports from "@/pages/admin/EMISReports";
 import TeacherDashboard from "@/pages/portal/TeacherDashboard";
+import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 
 export default function HODDashboard() {
   const { signOut } = useAuth();
