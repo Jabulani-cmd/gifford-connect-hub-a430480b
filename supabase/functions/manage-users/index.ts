@@ -250,6 +250,61 @@ Deno.serve(async (req) => {
           await supabaseAdmin.from("classes").update({ class_teacher_id: staffRecord.id }).eq("id", assigned_class_id);
         }
 
+        // Auto-create class_subjects entries for teaching assignments
+        if (staffRecord && payload.teaching_class_ids && payload.subjects_taught) {
+          const teachingClassIds = payload.teaching_class_ids as string[];
+          const subjectNames = payload.subjects_taught as string[];
+          
+          // Look up subject IDs by name
+          const { data: subjectRecords } = await supabaseAdmin
+            .from("subjects")
+            .select("id, name")
+            .in("name", subjectNames);
+          
+          if (subjectRecords && subjectRecords.length > 0) {
+            const classSubjectInserts: { class_id: string; subject_id: string; teacher_id: string }[] = [];
+            for (const classId of teachingClassIds) {
+              for (const subject of subjectRecords) {
+                classSubjectInserts.push({
+                  class_id: classId,
+                  subject_id: subject.id,
+                  teacher_id: staffRecord.id,
+                });
+              }
+            }
+            if (classSubjectInserts.length > 0) {
+              await supabaseAdmin.from("class_subjects").upsert(classSubjectInserts, { onConflict: "class_id,subject_id" });
+            }
+          }
+
+          // Also create timetable-relevant personal_timetable entries for the teacher
+          // based on existing timetable_entries for their assigned classes
+          const academicYear = new Date().getFullYear().toString();
+          const { data: timetableEntries } = await supabaseAdmin
+            .from("timetable_entries")
+            .select("day_of_week, start_time, end_time, room, subject_id, subjects(name)")
+            .in("class_id", teachingClassIds)
+            .eq("academic_year", academicYear);
+          
+          if (timetableEntries && timetableEntries.length > 0) {
+            const subjectIds = subjectRecords?.map(s => s.id) || [];
+            const relevantEntries = timetableEntries.filter((te: any) => subjectIds.includes(te.subject_id));
+            
+            if (relevantEntries.length > 0) {
+              const personalEntries = relevantEntries.map((te: any) => ({
+                user_id: userId,
+                day_of_week: te.day_of_week,
+                time_slot: te.start_time,
+                end_time: te.end_time,
+                activity: te.subjects?.name || "Class",
+                activity_type: "class",
+                location: te.room,
+              }));
+              await supabaseAdmin.from("personal_timetables").insert(personalEntries);
+            }
+          }
+        }
+
         return new Response(JSON.stringify({ message: "User created successfully", user_id: userId, staff_number: staffRecord?.staff_number }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
