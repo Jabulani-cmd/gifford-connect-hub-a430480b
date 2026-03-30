@@ -771,6 +771,7 @@ export default function StaffManagementFull() {
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="employment">Employment</TabsTrigger>
               <TabsTrigger value="subjects">Subjects</TabsTrigger>
+              <TabsTrigger value="classes">Classes</TabsTrigger>
             </TabsList>
             <TabsContent value="personal" className="space-y-4">
               <div className="flex items-center gap-4">
@@ -984,6 +985,38 @@ export default function StaffManagementFull() {
                     <span>{subject}</span>
                   </label>
                 ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="classes" className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-semibold">Class Teacher Of</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Select classes this staff member is the form/class teacher of:</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {allClasses.map(c => (
+                      <label key={c.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm transition-colors ${editClassTeacherOf.includes(c.id) ? "border-secondary bg-maroon-light" : "border-border hover:bg-muted"}`}>
+                        <input type="checkbox" className="sr-only" checked={editClassTeacherOf.includes(c.id)} onChange={() => {
+                          setEditClassTeacherOf(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                        }} />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold">Teaching Classes</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Select which classes this teacher will teach their subjects in:</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {allClasses.map(c => (
+                      <label key={c.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm transition-colors ${editTeachingClasses.includes(c.id) ? "border-secondary bg-maroon-light" : "border-border hover:bg-muted"}`}>
+                        <input type="checkbox" className="sr-only" checked={editTeachingClasses.includes(c.id)} onChange={() => {
+                          setEditTeachingClasses(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                        }} />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
