@@ -453,13 +453,19 @@ export default function TermRegistration() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {!isReg && (
+                          {!isReg ? (
                             <Button size="sm" onClick={() => openRegister(s)}>
                               <UserCheck className="mr-1 h-3.5 w-3.5" /> Register
                             </Button>
-                          )}
-                          {isReg && reg?.subjects?.length > 0 && (
-                            <span className="text-xs text-muted-foreground">{reg.subjects.length} subjects</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              {reg?.subjects?.length > 0 && (
+                                <span className="text-xs text-muted-foreground">{reg.subjects.length} subjects</span>
+                              )}
+                              <Button size="sm" variant="destructive" onClick={() => setDeregTarget(s)}>
+                                <UserX className="mr-1 h-3.5 w-3.5" /> De-register
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
