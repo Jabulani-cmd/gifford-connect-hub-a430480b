@@ -498,6 +498,7 @@ export default function BoardingManagement() {
                     <TableHead>Adm #</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Form</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Hostel</TableHead>
                     <TableHead>Room</TableHead>
                     <TableHead>Bed</TableHead>
@@ -507,12 +508,17 @@ export default function BoardingManagement() {
                 </TableHeader>
                 <TableBody>
                   {boarders.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No boarders found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No boarders found.</TableCell></TableRow>
                   ) : boarders.map(b => (
                     <TableRow key={b.id}>
                       <TableCell className="font-mono text-xs">{b.student?.admission_number}</TableCell>
                       <TableCell className="font-medium">{b.student?.full_name}</TableCell>
                       <TableCell>{b.student?.form}</TableCell>
+                      <TableCell>
+                        <Badge variant={b.allocation ? "default" : "outline"} className={`text-[10px] ${b.allocation ? "" : "border-orange-400 text-orange-600"}`}>
+                          {b.allocation ? "Allocated" : "Unallocated"}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{b.hostel?.name || "—"}</TableCell>
                       <TableCell>{b.room?.room_number || "—"}</TableCell>
                       <TableCell>{b.bed_number || "—"}</TableCell>
@@ -523,14 +529,20 @@ export default function BoardingManagement() {
                           </a>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-xs"><ArrowRightLeft className="mr-1 h-3 w-3" /> Vacate</Button></AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Vacate {b.student?.full_name}?</AlertDialogTitle></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => vacateStudent(b)}>Vacate</AlertDialogAction></AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        {b.allocation ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-xs"><ArrowRightLeft className="mr-1 h-3 w-3" /> Vacate</Button></AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader><AlertDialogTitle>Vacate {b.student?.full_name}?</AlertDialogTitle></AlertDialogHeader>
+                              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => vacateStudent(b.allocation!)}>Vacate</AlertDialogAction></AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <Button variant="outline" size="sm" className="text-xs" onClick={() => { setAllocForm({ room_id: "", student_id: b.student?.id || "", bed_number: "" }); setAllocDialog(true); }}>
+                            <BedDouble className="mr-1 h-3 w-3" /> Allocate
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
