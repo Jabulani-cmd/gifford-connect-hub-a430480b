@@ -584,6 +584,26 @@ export default function TermRegistration() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* De-registration Confirmation */}
+      <AlertDialog open={!!deregTarget} onOpenChange={(open) => !open && setDeregTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>De-register Student?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to de-register <strong>{deregTarget?.full_name}</strong> from {term} {academicYear}?
+              This will remove their term registration. If an unpaid invoice was created during registration, it will also be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deregistering}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deregisterStudent} disabled={deregistering} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deregistering && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              De-register
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
