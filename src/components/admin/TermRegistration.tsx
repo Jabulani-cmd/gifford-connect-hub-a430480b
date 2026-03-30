@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserCheck, Loader2, CheckCircle, AlertTriangle, Users } from "lucide-react";
+import { Search, UserCheck, Loader2, CheckCircle, AlertTriangle, Users, UserX } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
@@ -47,6 +48,38 @@ export default function TermRegistration() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [bulkStudents, setBulkStudents] = useState<any[]>([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // De-registration
+  const [deregTarget, setDeregTarget] = useState<any>(null);
+  const [deregistering, setDeregistering] = useState(false);
+
+  async function deregisterStudent() {
+    if (!deregTarget) return;
+    setDeregistering(true);
+    try {
+      const reg = registrations.find((r) => r.student_id === deregTarget.id);
+      if (!reg) throw new Error("Registration not found");
+
+      // Delete the term registration
+      await supabase.from("term_registrations").delete().eq("id", reg.id);
+
+      // Optionally void the associated invoice if it was auto-created and unpaid
+      if (reg.invoice_id) {
+        const { data: inv } = await supabase.from("invoices").select("status, paid_usd").eq("id", reg.invoice_id).maybeSingle();
+        if (inv && inv.status === "unpaid" && parseFloat(inv.paid_usd) === 0) {
+          await supabase.from("invoice_items").delete().eq("invoice_id", reg.invoice_id);
+          await supabase.from("invoices").delete().eq("id", reg.invoice_id);
+        }
+      }
+
+      toast({ title: "Student de-registered", description: `${deregTarget.full_name} has been de-registered from ${term} ${academicYear}. Unpaid invoice was removed.` });
+      setDeregTarget(null);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "De-registration failed", description: err.message, variant: "destructive" });
+    }
+    setDeregistering(false);
+  }
 
   useEffect(() => {
     fetchAll();
@@ -420,13 +453,19 @@ export default function TermRegistration() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {!isReg && (
+                          {!isReg ? (
                             <Button size="sm" onClick={() => openRegister(s)}>
                               <UserCheck className="mr-1 h-3.5 w-3.5" /> Register
                             </Button>
-                          )}
-                          {isReg && reg?.subjects?.length > 0 && (
-                            <span className="text-xs text-muted-foreground">{reg.subjects.length} subjects</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              {reg?.subjects?.length > 0 && (
+                                <span className="text-xs text-muted-foreground">{reg.subjects.length} subjects</span>
+                              )}
+                              <Button size="sm" variant="destructive" onClick={() => setDeregTarget(s)}>
+                                <UserX className="mr-1 h-3.5 w-3.5" /> De-register
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -545,6 +584,26 @@ export default function TermRegistration() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* De-registration Confirmation */}
+      <AlertDialog open={!!deregTarget} onOpenChange={(open) => !open && setDeregTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>De-register Student?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to de-register <strong>{deregTarget?.full_name}</strong> from {term} {academicYear}?
+              This will remove their term registration. If an unpaid invoice was created during registration, it will also be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deregistering}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deregisterStudent} disabled={deregistering} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deregistering && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              De-register
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
