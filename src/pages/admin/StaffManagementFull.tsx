@@ -309,6 +309,18 @@ export default function StaffManagementFull() {
     });
     setPhotoUrl(s.photo_url);
     setErrors({});
+    // Load class teacher assignments
+    const ctClasses = allClasses.filter(c => c.class_teacher_id === s.id).map(c => c.id);
+    setEditClassTeacherOf(ctClasses);
+    // Load teaching class assignments  
+    supabase.from("class_subjects").select("class_id").eq("teacher_id", s.id).then(({ data }) => {
+      if (data) {
+        const uniqueClassIds = [...new Set(data.map((r: any) => r.class_id))];
+        setEditTeachingClasses(uniqueClassIds);
+      } else {
+        setEditTeachingClasses([]);
+      }
+    });
     setDialogOpen(true);
   };
 
@@ -326,7 +338,7 @@ export default function StaffManagementFull() {
     setSaving(true);
 
     const parsed = { ...result.data, photo_url: photoUrl };
-    // Convert empty strings to null for date and optional fields to avoid "invalid input syntax for type date"
+    // Convert empty strings to null for date and optional fields
     const payload = Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, v === "" ? null : v]));
 
     if (editingId) {
