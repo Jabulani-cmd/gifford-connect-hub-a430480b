@@ -82,7 +82,7 @@ export default function BoardingManagement() {
       supabase.from("rooms").select("*").order("room_number"),
       supabase.from("bed_allocations").select("*").eq("status", "active"),
       supabase.from("health_visits").select("*").order("visit_date", { ascending: false }).limit(200),
-      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact").eq("status", "active").order("full_name"),
+      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact, boarding_status").eq("status", "active").order("full_name"),
       supabase.from("staff").select("id, full_name, role").order("full_name"),
     ]);
     if (h.data) setHostels(h.data as Hostel[]);
@@ -258,16 +258,18 @@ export default function BoardingManagement() {
   const studentName = (id: string) => students.find(s => s.id === id)?.full_name || "Unknown";
   const staffName = (id: string | null) => (id ? staff.find(s => s.id === id)?.full_name : null) || "—";
   const allocatedStudentIds = new Set(allocations.map(a => a.student_id));
-  const unallocatedStudents = students.filter(s => !allocatedStudentIds.has(s.id));
+  // Show all boarder students (boarding_status = 'boarding' or 'boarder') in the allocation dropdown, not just unallocated ones
+  const unallocatedBoarders = students.filter(s => (s.boarding_status === "boarding" || s.boarding_status === "boarder") && !allocatedStudentIds.has(s.id));
+  const unallocatedStudents = unallocatedBoarders;
 
-  // Boarder list with filters
-  const boarders = allocations.map(a => {
-    const student = students.find(s => s.id === a.student_id);
-    const room = rooms.find(r => r.id === a.room_id);
+  // Boarder list: show ALL students with boarding status, plus any allocated students
+  const allBoarderStudents = students.filter(s => s.boarding_status === "boarding" || s.boarding_status === "boarder");
+  const boarders = allBoarderStudents.map(s => {
+    const alloc = allocations.find(a => a.student_id === s.id);
+    const room = alloc ? rooms.find(r => r.id === alloc.room_id) : null;
     const hostel = room ? hostels.find(h => h.id === room.hostel_id) : null;
-    return { ...a, student, room, hostel };
+    return { id: alloc?.id || s.id, student: s, room, hostel, bed_number: alloc?.bed_number || null, allocation: alloc };
   }).filter(b => {
-    if (!b.student) return false;
     const matchSearch = boarderSearch ? (b.student.full_name.toLowerCase().includes(boarderSearch.toLowerCase()) || b.student.admission_number.toLowerCase().includes(boarderSearch.toLowerCase())) : true;
     const matchHostel = boarderHostelFilter === "all" || b.hostel?.id === boarderHostelFilter;
     const matchForm = boarderFormFilter === "all" || b.student.form === boarderFormFilter;
