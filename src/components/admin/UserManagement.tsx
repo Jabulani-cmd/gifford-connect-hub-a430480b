@@ -837,7 +837,7 @@ export default function UserManagement() {
                 </div>
 
                 {/* Teaching subjects assignment */}
-                {["teacher", "hod", "senior_teacher"].includes(form.staff_role) && (
+                {["teacher", "hod", "senior_teacher", "principal", "deputy_principal"].includes(form.staff_role) && (
                   <div className="space-y-2">
                     <Label>Subjects Taught</Label>
                     <div className="flex flex-wrap gap-1.5">
@@ -865,7 +865,7 @@ export default function UserManagement() {
                 )}
 
                 {/* Teaching classes assignment */}
-                {["teacher", "hod", "senior_teacher"].includes(form.staff_role) && (
+                {["teacher", "hod", "senior_teacher", "principal", "deputy_principal"].includes(form.staff_role) && (
                   <div className="space-y-2">
                     <Label>Teaching Classes (classes this teacher will teach)</Label>
                     <div className="flex flex-wrap gap-1.5">
