@@ -540,6 +540,9 @@ export default function StaffManagementFull() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-2xl font-bold text-foreground">Staff Management</h2>
         <div className="flex gap-2">
+          <Button onClick={printStaff} variant="outline" size="sm">
+            <Printer className="mr-1 h-4 w-4" /> Print
+          </Button>
           <Button onClick={exportCSV} variant="outline" size="sm">
             <Download className="mr-1 h-4 w-4" /> Export CSV
           </Button>
