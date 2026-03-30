@@ -485,6 +485,7 @@ export default function BoardingManagement() {
                   {["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <Button variant="outline" size="sm" onClick={printBoarders}><Printer className="mr-1 h-4 w-4" /> Print</Button>
               <Button variant="outline" size="sm" onClick={exportBoarders}><Download className="mr-1 h-4 w-4" /> Export</Button>
             </CardContent>
           </Card>
