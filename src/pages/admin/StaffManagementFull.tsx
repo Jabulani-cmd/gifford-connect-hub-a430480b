@@ -36,6 +36,7 @@ import {
   Camera,
   Copy,
   KeyRound,
+  Printer,
 } from "lucide-react";
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
@@ -481,6 +482,15 @@ export default function StaffManagementFull() {
       toast({ title: `Leave ${action}` });
       if (selectedStaff) fetchLeave(selectedStaff.id);
     }
+  };
+
+  const printStaff = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = filtered.map(s => `<tr><td>${s.staff_number || "—"}</td><td>${s.full_name}</td><td>${(s.role || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td><td>${s.department || "—"}</td><td>${s.phone || "—"}</td><td>${s.status || "—"}</td></tr>`).join("");
+    const title = filterRole !== "all" ? `${filterRole.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} Staff` : "All Staff";
+    printWindow.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>${title} — ${new Date().toLocaleDateString()}</h2><p>Total: ${filtered.length} staff members</p><table><thead><tr><th>Staff #</th><th>Name</th><th>Role</th><th>Department</th><th>Phone</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
+    printWindow.document.close();
   };
 
   const exportCSV = () => {
