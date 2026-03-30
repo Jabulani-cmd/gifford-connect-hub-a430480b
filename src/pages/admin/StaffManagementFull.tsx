@@ -199,11 +199,25 @@ export default function StaffManagementFull() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
+  const [allClasses, setAllClasses] = useState<{ id: string; name: string; class_teacher_id: string | null }[]>([]);
+  const [allSubjects, setAllSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [editClassTeacherOf, setEditClassTeacherOf] = useState<string[]>([]);
+  const [editTeachingClasses, setEditTeachingClasses] = useState<string[]>([]);
 
   useEffect(() => {
     fetchStaff();
     fetchClassAssignments();
+    fetchClassesAndSubjects();
   }, []);
+
+  const fetchClassesAndSubjects = async () => {
+    const [c, s] = await Promise.all([
+      supabase.from("classes").select("id, name, class_teacher_id").order("name"),
+      supabase.from("subjects").select("id, name").order("name"),
+    ]);
+    if (c.data) setAllClasses(c.data);
+    if (s.data) setAllSubjects(s.data);
+  };
 
   const fetchStaff = async () => {
     setLoading(true);
