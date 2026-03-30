@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical } from "lucide-react";
+import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical, Printer } from "lucide-react";
 
 type Hostel = {
   id: string; name: string; total_capacity: number; current_occupancy: number;
@@ -82,7 +82,7 @@ export default function BoardingManagement() {
       supabase.from("rooms").select("*").order("room_number"),
       supabase.from("bed_allocations").select("*").eq("status", "active"),
       supabase.from("health_visits").select("*").order("visit_date", { ascending: false }).limit(200),
-      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact").eq("status", "active").order("full_name"),
+      supabase.from("students").select("id, full_name, admission_number, form, stream, guardian_phone, emergency_contact, boarding_status").eq("status", "active").order("full_name"),
       supabase.from("staff").select("id, full_name, role").order("full_name"),
     ]);
     if (h.data) setHostels(h.data as Hostel[]);
@@ -258,25 +258,35 @@ export default function BoardingManagement() {
   const studentName = (id: string) => students.find(s => s.id === id)?.full_name || "Unknown";
   const staffName = (id: string | null) => (id ? staff.find(s => s.id === id)?.full_name : null) || "—";
   const allocatedStudentIds = new Set(allocations.map(a => a.student_id));
-  const unallocatedStudents = students.filter(s => !allocatedStudentIds.has(s.id));
+  // Show all boarder students (boarding_status = 'boarding' or 'boarder') in the allocation dropdown, not just unallocated ones
+  const unallocatedBoarders = students.filter(s => (s.boarding_status === "boarding" || s.boarding_status === "boarder") && !allocatedStudentIds.has(s.id));
+  const unallocatedStudents = unallocatedBoarders;
 
-  // Boarder list with filters
-  const boarders = allocations.map(a => {
-    const student = students.find(s => s.id === a.student_id);
-    const room = rooms.find(r => r.id === a.room_id);
+  // Boarder list: show ALL students with boarding status, plus any allocated students
+  const allBoarderStudents = students.filter(s => s.boarding_status === "boarding" || s.boarding_status === "boarder");
+  const boarders = allBoarderStudents.map(s => {
+    const alloc = allocations.find(a => a.student_id === s.id);
+    const room = alloc ? rooms.find(r => r.id === alloc.room_id) : null;
     const hostel = room ? hostels.find(h => h.id === room.hostel_id) : null;
-    return { ...a, student, room, hostel };
+    return { id: alloc?.id || s.id, student: s, room, hostel, bed_number: alloc?.bed_number || null, allocation: alloc };
   }).filter(b => {
-    if (!b.student) return false;
     const matchSearch = boarderSearch ? (b.student.full_name.toLowerCase().includes(boarderSearch.toLowerCase()) || b.student.admission_number.toLowerCase().includes(boarderSearch.toLowerCase())) : true;
     const matchHostel = boarderHostelFilter === "all" || b.hostel?.id === boarderHostelFilter;
     const matchForm = boarderFormFilter === "all" || b.student.form === boarderFormFilter;
     return matchSearch && matchHostel && matchForm;
   });
 
+  const printBoarders = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = boarders.map(b => `<tr><td>${b.student?.admission_number}</td><td>${b.student?.full_name}</td><td>${b.student?.form}</td><td>${b.hostel?.name || "Not Allocated"}</td><td>${b.room?.room_number || "—"}</td><td>${b.bed_number || "—"}</td><td>${b.student?.emergency_contact || "—"}</td></tr>`).join("");
+    printWindow.document.write(`<html><head><title>Boarders List</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>Boarders List — ${new Date().toLocaleDateString()}</h2><p>Total: ${boarders.length} boarders</p><table><thead><tr><th>Adm #</th><th>Name</th><th>Form</th><th>Hostel</th><th>Room</th><th>Bed</th><th>Emergency</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
+    printWindow.document.close();
+  };
+
   const exportBoarders = () => {
-    const header = "Admission #,Name,Form,Hostel,Room,Bed,Guardian Phone,Emergency Contact";
-    const rows = boarders.map(b => `${b.student?.admission_number},"${b.student?.full_name}",${b.student?.form},${b.hostel?.name || ""},${b.room?.room_number || ""},${b.bed_number || ""},${b.student?.guardian_phone || ""},${b.student?.emergency_contact || ""}`);
+    const header = "Admission #,Name,Form,Hostel,Room,Bed,Status,Guardian Phone,Emergency Contact";
+    const rows = boarders.map(b => `${b.student?.admission_number},"${b.student?.full_name}",${b.student?.form},${b.hostel?.name || "Not Allocated"},${b.room?.room_number || ""},${b.bed_number || ""},${b.allocation ? "Allocated" : "Unallocated"},${b.student?.guardian_phone || ""},${b.student?.emergency_contact || ""}`);
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -475,6 +485,7 @@ export default function BoardingManagement() {
                   {["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <Button variant="outline" size="sm" onClick={printBoarders}><Printer className="mr-1 h-4 w-4" /> Print</Button>
               <Button variant="outline" size="sm" onClick={exportBoarders}><Download className="mr-1 h-4 w-4" /> Export</Button>
             </CardContent>
           </Card>
@@ -487,6 +498,7 @@ export default function BoardingManagement() {
                     <TableHead>Adm #</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Form</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Hostel</TableHead>
                     <TableHead>Room</TableHead>
                     <TableHead>Bed</TableHead>
@@ -496,12 +508,17 @@ export default function BoardingManagement() {
                 </TableHeader>
                 <TableBody>
                   {boarders.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No boarders found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No boarders found.</TableCell></TableRow>
                   ) : boarders.map(b => (
                     <TableRow key={b.id}>
                       <TableCell className="font-mono text-xs">{b.student?.admission_number}</TableCell>
                       <TableCell className="font-medium">{b.student?.full_name}</TableCell>
                       <TableCell>{b.student?.form}</TableCell>
+                      <TableCell>
+                        <Badge variant={b.allocation ? "default" : "outline"} className={`text-[10px] ${b.allocation ? "" : "border-orange-400 text-orange-600"}`}>
+                          {b.allocation ? "Allocated" : "Unallocated"}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{b.hostel?.name || "—"}</TableCell>
                       <TableCell>{b.room?.room_number || "—"}</TableCell>
                       <TableCell>{b.bed_number || "—"}</TableCell>
@@ -512,14 +529,20 @@ export default function BoardingManagement() {
                           </a>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-xs"><ArrowRightLeft className="mr-1 h-3 w-3" /> Vacate</Button></AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Vacate {b.student?.full_name}?</AlertDialogTitle></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => vacateStudent(b)}>Vacate</AlertDialogAction></AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        {b.allocation ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-xs"><ArrowRightLeft className="mr-1 h-3 w-3" /> Vacate</Button></AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader><AlertDialogTitle>Vacate {b.student?.full_name}?</AlertDialogTitle></AlertDialogHeader>
+                              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => vacateStudent(b.allocation!)}>Vacate</AlertDialogAction></AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <Button variant="outline" size="sm" className="text-xs" onClick={() => { setAllocForm({ room_id: "", student_id: b.student?.id || "", bed_number: "" }); setAllocDialog(true); }}>
+                            <BedDouble className="mr-1 h-3 w-3" /> Allocate
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -36,6 +36,7 @@ import {
   Camera,
   Copy,
   KeyRound,
+  Printer,
 } from "lucide-react";
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
@@ -198,11 +199,25 @@ export default function StaffManagementFull() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
+  const [allClasses, setAllClasses] = useState<{ id: string; name: string; class_teacher_id: string | null }[]>([]);
+  const [allSubjects, setAllSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [editClassTeacherOf, setEditClassTeacherOf] = useState<string[]>([]);
+  const [editTeachingClasses, setEditTeachingClasses] = useState<string[]>([]);
 
   useEffect(() => {
     fetchStaff();
     fetchClassAssignments();
+    fetchClassesAndSubjects();
   }, []);
+
+  const fetchClassesAndSubjects = async () => {
+    const [c, s] = await Promise.all([
+      supabase.from("classes").select("id, name, class_teacher_id").order("name"),
+      supabase.from("subjects").select("id, name").order("name"),
+    ]);
+    if (c.data) setAllClasses(c.data);
+    if (s.data) setAllSubjects(s.data);
+  };
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -294,6 +309,18 @@ export default function StaffManagementFull() {
     });
     setPhotoUrl(s.photo_url);
     setErrors({});
+    // Load class teacher assignments
+    const ctClasses = allClasses.filter(c => c.class_teacher_id === s.id).map(c => c.id);
+    setEditClassTeacherOf(ctClasses);
+    // Load teaching class assignments  
+    supabase.from("class_subjects").select("class_id").eq("teacher_id", s.id).then(({ data }) => {
+      if (data) {
+        const uniqueClassIds = [...new Set(data.map((r: any) => r.class_id))];
+        setEditTeachingClasses(uniqueClassIds);
+      } else {
+        setEditTeachingClasses([]);
+      }
+    });
     setDialogOpen(true);
   };
 
@@ -311,7 +338,7 @@ export default function StaffManagementFull() {
     setSaving(true);
 
     const parsed = { ...result.data, photo_url: photoUrl };
-    // Convert empty strings to null for date and optional fields to avoid "invalid input syntax for type date"
+    // Convert empty strings to null for date and optional fields
     const payload = Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, v === "" ? null : v]));
 
     if (editingId) {
@@ -321,6 +348,34 @@ export default function StaffManagementFull() {
         setSaving(false);
         return;
       }
+      // Update class teacher assignments
+      // Remove this teacher as class teacher from classes they're no longer assigned to
+      const prevCtClasses = allClasses.filter(c => c.class_teacher_id === editingId).map(c => c.id);
+      const toRemoveCt = prevCtClasses.filter(id => !editClassTeacherOf.includes(id));
+      const toAddCt = editClassTeacherOf.filter(id => !prevCtClasses.includes(id));
+      for (const classId of toRemoveCt) {
+        await supabase.from("classes").update({ class_teacher_id: null }).eq("id", classId);
+      }
+      for (const classId of toAddCt) {
+        await supabase.from("classes").update({ class_teacher_id: editingId }).eq("id", classId);
+      }
+      // Update teaching class assignments (class_subjects)
+      if (editTeachingClasses.length > 0 || true) {
+        // Remove teacher from all class_subjects first
+        await supabase.from("class_subjects").update({ teacher_id: null }).eq("teacher_id", editingId);
+        // Re-assign for selected classes with their subjects
+        const subjectNames = formData.subjects_taught || [];
+        if (subjectNames.length > 0 && editTeachingClasses.length > 0) {
+          const matchingSubjects = allSubjects.filter(s => subjectNames.includes(s.name));
+          for (const classId of editTeachingClasses) {
+            for (const subj of matchingSubjects) {
+              // Update existing class_subject or skip
+              await supabase.from("class_subjects").update({ teacher_id: editingId }).eq("class_id", classId).eq("subject_id", subj.id);
+            }
+          }
+        }
+      }
+      await fetchClassesAndSubjects();
       toast({ title: "Staff member updated!" });
     } else {
       // Let the edge function handle both auth user creation AND staff record insertion
@@ -483,6 +538,15 @@ export default function StaffManagementFull() {
     }
   };
 
+  const printStaff = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = filtered.map(s => `<tr><td>${s.staff_number || "—"}</td><td>${s.full_name}</td><td>${(s.role || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td><td>${s.department || "—"}</td><td>${s.phone || "—"}</td><td>${s.status || "—"}</td></tr>`).join("");
+    const title = filterRole !== "all" ? `${filterRole.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} Staff` : "All Staff";
+    printWindow.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>${title} — ${new Date().toLocaleDateString()}</h2><p>Total: ${filtered.length} staff members</p><table><thead><tr><th>Staff #</th><th>Name</th><th>Role</th><th>Department</th><th>Phone</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
+    printWindow.document.close();
+  };
+
   const exportCSV = () => {
     const headers = ["Staff #", "Full Name", "Role", "Department", "Phone", "Status"];
     const rows = filtered.map((s) => [
@@ -530,6 +594,9 @@ export default function StaffManagementFull() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-2xl font-bold text-foreground">Staff Management</h2>
         <div className="flex gap-2">
+          <Button onClick={printStaff} variant="outline" size="sm">
+            <Printer className="mr-1 h-4 w-4" /> Print
+          </Button>
           <Button onClick={exportCSV} variant="outline" size="sm">
             <Download className="mr-1 h-4 w-4" /> Export CSV
           </Button>
@@ -704,6 +771,7 @@ export default function StaffManagementFull() {
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="employment">Employment</TabsTrigger>
               <TabsTrigger value="subjects">Subjects</TabsTrigger>
+              <TabsTrigger value="classes">Classes</TabsTrigger>
             </TabsList>
             <TabsContent value="personal" className="space-y-4">
               <div className="flex items-center gap-4">
@@ -917,6 +985,38 @@ export default function StaffManagementFull() {
                     <span>{subject}</span>
                   </label>
                 ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="classes" className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-semibold">Class Teacher Of</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Select classes this staff member is the form/class teacher of:</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {allClasses.map(c => (
+                      <label key={c.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm transition-colors ${editClassTeacherOf.includes(c.id) ? "border-secondary bg-maroon-light" : "border-border hover:bg-muted"}`}>
+                        <input type="checkbox" className="sr-only" checked={editClassTeacherOf.includes(c.id)} onChange={() => {
+                          setEditClassTeacherOf(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                        }} />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold">Teaching Classes</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Select which classes this teacher will teach their subjects in:</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {allClasses.map(c => (
+                      <label key={c.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm transition-colors ${editTeachingClasses.includes(c.id) ? "border-secondary bg-maroon-light" : "border-border hover:bg-muted"}`}>
+                        <input type="checkbox" className="sr-only" checked={editTeachingClasses.includes(c.id)} onChange={() => {
+                          setEditTeachingClasses(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                        }} />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
