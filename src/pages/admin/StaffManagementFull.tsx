@@ -348,6 +348,34 @@ export default function StaffManagementFull() {
         setSaving(false);
         return;
       }
+      // Update class teacher assignments
+      // Remove this teacher as class teacher from classes they're no longer assigned to
+      const prevCtClasses = allClasses.filter(c => c.class_teacher_id === editingId).map(c => c.id);
+      const toRemoveCt = prevCtClasses.filter(id => !editClassTeacherOf.includes(id));
+      const toAddCt = editClassTeacherOf.filter(id => !prevCtClasses.includes(id));
+      for (const classId of toRemoveCt) {
+        await supabase.from("classes").update({ class_teacher_id: null }).eq("id", classId);
+      }
+      for (const classId of toAddCt) {
+        await supabase.from("classes").update({ class_teacher_id: editingId }).eq("id", classId);
+      }
+      // Update teaching class assignments (class_subjects)
+      if (editTeachingClasses.length > 0 || true) {
+        // Remove teacher from all class_subjects first
+        await supabase.from("class_subjects").update({ teacher_id: null }).eq("teacher_id", editingId);
+        // Re-assign for selected classes with their subjects
+        const subjectNames = formData.subjects_taught || [];
+        if (subjectNames.length > 0 && editTeachingClasses.length > 0) {
+          const matchingSubjects = allSubjects.filter(s => subjectNames.includes(s.name));
+          for (const classId of editTeachingClasses) {
+            for (const subj of matchingSubjects) {
+              // Update existing class_subject or skip
+              await supabase.from("class_subjects").update({ teacher_id: editingId }).eq("class_id", classId).eq("subject_id", subj.id);
+            }
+          }
+        }
+      }
+      await fetchClassesAndSubjects();
       toast({ title: "Staff member updated!" });
     } else {
       // Let the edge function handle both auth user creation AND staff record insertion
