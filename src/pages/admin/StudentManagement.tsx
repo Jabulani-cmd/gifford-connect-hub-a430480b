@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy, Users, Camera, KeyRound, UserCheck } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Upload, Download, AlertTriangle, User, LinkIcon, Copy, Users, Camera, KeyRound, UserCheck, Printer } from "lucide-react";
 import TermRegistration from "@/components/admin/TermRegistration";
 import { studentFormSchema, type StudentFormData, zimPhoneRegex } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
@@ -591,6 +591,15 @@ export default function StudentManagement() {
     setUploading(false);
   };
 
+  const printStudents = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = filtered.map(s => `<tr><td>${s.admission_number}</td><td>${s.full_name}</td><td>${s.form}${s.stream ? ` / ${s.stream}` : ""}</td><td>${s.gender || "—"}</td><td>${(s as any).boarding_status === "boarder" ? "Boarder" : "Day"}</td><td>${s.guardian_phone || "—"}</td><td>${s.status}</td></tr>`).join("");
+    const title = filterForm !== "all" ? `${filterForm} Students` : "All Students";
+    printWindow.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>${title} — ${new Date().toLocaleDateString()}</h2><p>Total: ${filtered.length} students</p><table><thead><tr><th>Adm #</th><th>Name</th><th>Form/Stream</th><th>Gender</th><th>Status</th><th>Guardian Phone</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
+    printWindow.document.close();
+  };
+
   const exportCSV = () => {
     const headers = ["Admission #", "Full Name", "Form", "Stream", "Gender", "Guardian Phone", "Status"];
     const rows = filtered.map(s => [s.admission_number, s.full_name, s.form, s.stream || "", s.gender || "", s.guardian_phone || "", s.status]);
@@ -672,6 +681,7 @@ export default function StudentManagement() {
         <h2 className="font-heading text-2xl font-bold text-foreground">Student Management</h2>
         <div className="flex flex-wrap gap-2">
           <BulkGenerateCodes />
+          <Button onClick={printStudents} variant="outline" size="sm"><Printer className="mr-1 h-4 w-4" /> Print</Button>
           <Button onClick={exportCSV} variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Export CSV</Button>
           <Button onClick={openAdd} className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="mr-1 h-4 w-4" /> Add Student</Button>
         </div>
