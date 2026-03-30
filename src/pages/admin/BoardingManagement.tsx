@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical } from "lucide-react";
+import { Building, Plus, Edit, Trash2, Users, BedDouble, Heart, Search, Download, Eye, Phone, ArrowRightLeft, GripVertical, Printer } from "lucide-react";
 
 type Hostel = {
   id: string; name: string; total_capacity: number; current_occupancy: number;
@@ -276,9 +276,17 @@ export default function BoardingManagement() {
     return matchSearch && matchHostel && matchForm;
   });
 
+  const printBoarders = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = boarders.map(b => `<tr><td>${b.student?.admission_number}</td><td>${b.student?.full_name}</td><td>${b.student?.form}</td><td>${b.hostel?.name || "Not Allocated"}</td><td>${b.room?.room_number || "—"}</td><td>${b.bed_number || "—"}</td><td>${b.student?.emergency_contact || "—"}</td></tr>`).join("");
+    printWindow.document.write(`<html><head><title>Boarders List</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>Boarders List — ${new Date().toLocaleDateString()}</h2><p>Total: ${boarders.length} boarders</p><table><thead><tr><th>Adm #</th><th>Name</th><th>Form</th><th>Hostel</th><th>Room</th><th>Bed</th><th>Emergency</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
+    printWindow.document.close();
+  };
+
   const exportBoarders = () => {
-    const header = "Admission #,Name,Form,Hostel,Room,Bed,Guardian Phone,Emergency Contact";
-    const rows = boarders.map(b => `${b.student?.admission_number},"${b.student?.full_name}",${b.student?.form},${b.hostel?.name || ""},${b.room?.room_number || ""},${b.bed_number || ""},${b.student?.guardian_phone || ""},${b.student?.emergency_contact || ""}`);
+    const header = "Admission #,Name,Form,Hostel,Room,Bed,Status,Guardian Phone,Emergency Contact";
+    const rows = boarders.map(b => `${b.student?.admission_number},"${b.student?.full_name}",${b.student?.form},${b.hostel?.name || "Not Allocated"},${b.room?.room_number || ""},${b.bed_number || ""},${b.allocation ? "Allocated" : "Unallocated"},${b.student?.guardian_phone || ""},${b.student?.emergency_contact || ""}`);
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
