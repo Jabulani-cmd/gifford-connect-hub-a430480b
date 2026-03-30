@@ -49,6 +49,38 @@ export default function TermRegistration() {
   const [bulkStudents, setBulkStudents] = useState<any[]>([]);
   const [bulkLoading, setBulkLoading] = useState(false);
 
+  // De-registration
+  const [deregTarget, setDeregTarget] = useState<any>(null);
+  const [deregistering, setDeregistering] = useState(false);
+
+  async function deregisterStudent() {
+    if (!deregTarget) return;
+    setDeregistering(true);
+    try {
+      const reg = registrations.find((r) => r.student_id === deregTarget.id);
+      if (!reg) throw new Error("Registration not found");
+
+      // Delete the term registration
+      await supabase.from("term_registrations").delete().eq("id", reg.id);
+
+      // Optionally void the associated invoice if it was auto-created and unpaid
+      if (reg.invoice_id) {
+        const { data: inv } = await supabase.from("invoices").select("status, paid_usd").eq("id", reg.invoice_id).maybeSingle();
+        if (inv && inv.status === "unpaid" && parseFloat(inv.paid_usd) === 0) {
+          await supabase.from("invoice_items").delete().eq("invoice_id", reg.invoice_id);
+          await supabase.from("invoices").delete().eq("id", reg.invoice_id);
+        }
+      }
+
+      toast({ title: "Student de-registered", description: `${deregTarget.full_name} has been de-registered from ${term} ${academicYear}. Unpaid invoice was removed.` });
+      setDeregTarget(null);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "De-registration failed", description: err.message, variant: "destructive" });
+    }
+    setDeregistering(false);
+  }
+
   useEffect(() => {
     fetchAll();
   }, [academicYear, term]);
