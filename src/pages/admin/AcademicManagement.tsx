@@ -693,20 +693,22 @@ export default function AcademicManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {timeSlots.map((slot, si) => (
-                        <tr key={si} className={slot.isBreak ? "bg-muted/50" : ""}>
+                      {timeSlots.filter(s => s.slot_type !== "sports").map((slot, si) => {
+                        const isBreak = slot.slot_type === "break";
+                        return (
+                        <tr key={si} className={isBreak ? "bg-muted/50" : ""}>
                           <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">
-                            {slot.start}–{slot.end}
-                            {slot.isBreak && <span className="block text-muted-foreground">{slot.label}</span>}
+                            {slot.start_time}–{slot.end_time}
+                            {isBreak && <span className="block text-muted-foreground">{slot.label || "Break"}</span>}
                           </td>
-                          {slot.isBreak ? (
-                            <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label}</td>
+                          {isBreak ? (
+                            <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label || "Break"}</td>
                           ) : (
                             dayNames.map((_, di) => {
-                              const entry = getTTEntry(di, slot.start, slot.end);
+                              const entry = getTTEntry(di, slot.start_time, slot.end_time);
                               return (
                                 <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
-                                  onClick={() => { setTtEditCell({ day: di, slot }); setTtSubject(entry?.subject_id || ""); setTtTeacher(entry?.teacher_id || ""); setTtRoom(entry?.room || ""); }}>
+                                  onClick={() => { setTtEditCell({ day: di, slot: { start_time: slot.start_time, end_time: slot.end_time } }); setTtSubject(entry?.subject_id || ""); setTtTeacher(entry?.teacher_id || ""); setTtRoom(entry?.room || ""); }}>
                                   {entry ? (
                                     <div className="text-xs">
                                       <p className="font-semibold text-accent">{entry.subjects?.name || "—"}</p>
@@ -719,7 +721,8 @@ export default function AcademicManagement() {
                             })
                           )}
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
