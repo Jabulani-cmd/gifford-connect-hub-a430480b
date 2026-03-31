@@ -77,7 +77,11 @@ export default function Register() {
         throw new Error("An account with this email already exists. Please sign in on the Login page instead, or check your inbox for a confirmation email if you registered recently.");
       }
 
-      // Use edge function to assign role + link children (service role, no session needed)
+      // Use edge function to assign role + link children
+      // After signUp, Supabase has an active session — grab the access token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`,
         {
@@ -85,6 +89,7 @@ export default function Register() {
           headers: {
             "Content-Type": "application/json",
             "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             action: "register-parent",
