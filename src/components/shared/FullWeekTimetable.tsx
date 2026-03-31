@@ -72,7 +72,7 @@ export default function FullWeekTimetable({
     };
   }, [sportsSchedule]);
 
-  if (loading) {
+  if (loading || slotsLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
