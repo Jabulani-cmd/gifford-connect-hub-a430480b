@@ -272,12 +272,12 @@ export default function AcademicManagement() {
 
   async function saveTTEntry() {
     if (!ttEditCell || !ttViewClass) return;
-    const existing = getTTEntry(ttEditCell.day, ttEditCell.slot.start, ttEditCell.slot.end);
+    const existing = getTTEntry(ttEditCell.day, ttEditCell.slot.start_time, ttEditCell.slot.end_time);
 
     // Clash detection
     if (ttTeacher) {
       const { data: teacherClash } = await supabase.from("timetable_entries").select("id, classes(name)")
-        .eq("teacher_id", ttTeacher).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start)
+        .eq("teacher_id", ttTeacher).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
       if (teacherClash && teacherClash.length > 0) {
         toast({ title: "Teacher clash!", description: `Teacher is already assigned at this time`, variant: "destructive" });
@@ -286,7 +286,7 @@ export default function AcademicManagement() {
     }
     if (ttRoom) {
       const { data: roomClash } = await supabase.from("timetable_entries").select("id, classes(name)")
-        .eq("room", ttRoom).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start)
+        .eq("room", ttRoom).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
       if (roomClash && roomClash.length > 0) {
         toast({ title: "Room clash!", description: `Room is already booked at this time`, variant: "destructive" });
@@ -296,7 +296,7 @@ export default function AcademicManagement() {
 
     const payload = {
       class_id: ttViewClass, subject_id: ttSubject || null, teacher_id: ttTeacher || null,
-      day_of_week: ttEditCell.day, start_time: ttEditCell.slot.start, end_time: ttEditCell.slot.end,
+      day_of_week: ttEditCell.day, start_time: ttEditCell.slot.start_time, end_time: ttEditCell.slot.end_time,
       room: ttRoom || null,
     };
 
