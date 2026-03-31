@@ -754,12 +754,12 @@ export default function AcademicManagement() {
                     <tbody>
                       {sportsSlots.map((slot, si) => (
                         <tr key={si}>
-                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start}–{slot.end}</td>
+                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start_time}–{slot.end_time}</td>
                           {dayNames.map((_, di) => {
-                            const entry = getSportsEntry(di, slot.start, slot.end);
+                            const entry = getSportsEntry(di, slot.start_time, slot.end_time);
                             return (
                               <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
-                                onClick={() => { setSportsEditCell({ day: di, slot }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
+                                onClick={() => { setSportsEditCell({ day: di, slot: { start_time: slot.start_time, end_time: slot.end_time } }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
                                 {entry ? (
                                   <div className="text-xs">
                                     <p className="font-semibold text-accent">{entry.activity_name}</p>
