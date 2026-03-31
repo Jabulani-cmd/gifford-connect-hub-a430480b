@@ -1138,7 +1138,7 @@ export default function AcademicManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Timetable Slot</DialogTitle>
-            <DialogDescription>{ttEditCell && `${dayNames[ttEditCell.day]} ${ttEditCell.slot.start}–${ttEditCell.slot.end}`}</DialogDescription>
+            <DialogDescription>{ttEditCell && `${dayNames[ttEditCell.day]} ${ttEditCell.slot.start_time}–${ttEditCell.slot.end_time}`}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Subject</Label>
