@@ -11,26 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
-const timeSlots = [
-  { start: "07:30", end: "08:10" },
-  { start: "08:10", end: "08:50" },
-  { start: "08:50", end: "09:30" },
-  { start: "09:30", end: "09:50", isBreak: true, label: "Break" },
-  { start: "09:50", end: "10:30" },
-  { start: "10:30", end: "11:10" },
-  { start: "11:10", end: "11:50" },
-  { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:10" },
-  { start: "13:10", end: "13:50", isBreak: true, label: "Lunch" },
-  { start: "13:50", end: "14:30" },
-  { start: "14:30", end: "15:10" },
-  { start: "15:10", end: "15:30", isBreak: true, label: "Break" },
-  { start: "15:30", end: "16:10", isSports: true },
-  { start: "16:10", end: "17:00", isSports: true },
-];
 
 interface TimetableEntry {
   day_of_week: number;
@@ -63,6 +46,8 @@ export default function FullWeekTimetable({
   hasClass = true,
 }: Props) {
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
+  const { timeSlots, loading: slotsLoading } = useTimeSlots();
+
 
   const getCell = useMemo(() => {
     return (startTime: string, dayIndex: number) => {
@@ -87,7 +72,7 @@ export default function FullWeekTimetable({
     };
   }, [sportsSchedule]);
 
-  if (loading) {
+  if (loading || slotsLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
@@ -138,42 +123,45 @@ export default function FullWeekTimetable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {timeSlots.map((slot, si) => (
+              {timeSlots.map((slot, si) => {
+                const isBreak = slot.slot_type === "break";
+                const isSports = slot.slot_type === "sports";
+                return (
                 <TableRow
                   key={si}
                   className={
-                    slot.isBreak
+                    isBreak
                       ? "bg-muted/40"
-                      : slot.isSports
+                      : isSports
                         ? "bg-accent/5"
                         : ""
                   }
                 >
                   <TableCell className="whitespace-nowrap py-2 text-xs font-medium">
-                    {slot.start}–{slot.end}
-                    {slot.isBreak && (
+                    {slot.start_time}–{slot.end_time}
+                    {isBreak && (
                       <span className="block text-[10px] text-muted-foreground italic">
-                        {slot.label}
+                        {slot.label || "Break"}
                       </span>
                     )}
-                    {slot.isSports && (
+                    {isSports && (
                       <span className="block text-[10px] text-muted-foreground italic">
                         Sports/Clubs
                       </span>
                     )}
                   </TableCell>
-                  {slot.isBreak ? (
+                  {isBreak ? (
                     <TableCell
                       colSpan={5}
                       className="py-2 text-center text-xs italic text-muted-foreground"
                     >
-                      {slot.label}
+                      {slot.label || "Break"}
                     </TableCell>
                   ) : (
                     days.map((_, di) => {
-                      const entry = slot.isSports
-                        ? getSportsCell(slot.start, di)
-                        : getCell(slot.start, di);
+                      const entry = isSports
+                        ? getSportsCell(slot.start_time, di)
+                        : getCell(slot.start_time, di);
 
                       return (
                         <TableCell
@@ -209,7 +197,8 @@ export default function FullWeekTimetable({
                     })
                   )}
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
 import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
 import TermReportsTab from "@/components/admin/TermReportsTab";
 import TeacherClassAssignment from "@/components/admin/TeacherClassAssignment";
+import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
@@ -35,26 +36,7 @@ const examTypes = [
   { value: "zimsec", label: "ZIMSEC" },
 ];
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timeSlots = [
-  { start: "07:30", end: "08:10" },
-  { start: "08:10", end: "08:50" },
-  { start: "08:50", end: "09:30" },
-  { start: "09:30", end: "09:50", isBreak: true, label: "Break" },
-  { start: "09:50", end: "10:30" },
-  { start: "10:30", end: "11:10" },
-  { start: "11:10", end: "11:50" },
-  { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:10" },
-  { start: "13:10", end: "13:50", isBreak: true, label: "Lunch" },
-  { start: "13:50", end: "14:30" },
-  { start: "14:30", end: "15:10" },
-  { start: "15:10", end: "15:30", isBreak: true, label: "Break" },
-];
-
-const sportsSlots = [
-  { start: "15:30", end: "16:10" },
-  { start: "16:10", end: "17:00" },
-];
+// Hardcoded slots removed — now fetched from DB via useTimeSlots hook
 
 const sportsActivityOptions = [
   "Rugby", "Soccer", "Cricket", "Hockey", "Tennis", "Netball", "Basketball",
@@ -86,6 +68,7 @@ function gradeColor(grade: string): string {
 export default function AcademicManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { timeSlots, lessonSlots, sportsSlots, refetch: refetchSlots } = useTimeSlots();
 
   // ─── State ───
   const [classes, setClasses] = useState<any[]>([]);
@@ -98,6 +81,11 @@ export default function AcademicManagement() {
   const [exams, setExams] = useState<any[]>([]);
   const [examResults, setExamResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Time slot management
+  const [slotDialogOpen, setSlotDialogOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
+  const [slotForm, setSlotForm] = useState({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "0" });
 
   // Dialogs
   const [classDialogOpen, setClassDialogOpen] = useState(false);
@@ -114,7 +102,7 @@ export default function AcademicManagement() {
   const [assignTeacher, setAssignTeacher] = useState("");
 
   const [ttViewClass, setTtViewClass] = useState("");
-  const [ttEditCell, setTtEditCell] = useState<{ day: number; slot: typeof timeSlots[0] } | null>(null);
+  const [ttEditCell, setTtEditCell] = useState<{ day: number; slot: { start_time: string; end_time: string } } | null>(null);
   const [ttSubject, setTtSubject] = useState("");
   const [ttTeacher, setTtTeacher] = useState("");
   const [ttRoom, setTtRoom] = useState("");
@@ -122,7 +110,7 @@ export default function AcademicManagement() {
   // Sports schedule state
   const [sportsEntries, setSportsEntries] = useState<any[]>([]);
   const [sportsViewClass, setSportsViewClass] = useState("");
-  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start: string; end: string } } | null>(null);
+  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start_time: string; end_time: string } } | null>(null);
   const [sportsActivity, setSportsActivity] = useState("");
   const [sportsVenue, setSportsVenue] = useState("");
   const [sportsCoach, setSportsCoach] = useState("");
@@ -284,12 +272,12 @@ export default function AcademicManagement() {
 
   async function saveTTEntry() {
     if (!ttEditCell || !ttViewClass) return;
-    const existing = getTTEntry(ttEditCell.day, ttEditCell.slot.start, ttEditCell.slot.end);
+    const existing = getTTEntry(ttEditCell.day, ttEditCell.slot.start_time, ttEditCell.slot.end_time);
 
     // Clash detection
     if (ttTeacher) {
       const { data: teacherClash } = await supabase.from("timetable_entries").select("id, classes(name)")
-        .eq("teacher_id", ttTeacher).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start)
+        .eq("teacher_id", ttTeacher).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
       if (teacherClash && teacherClash.length > 0) {
         toast({ title: "Teacher clash!", description: `Teacher is already assigned at this time`, variant: "destructive" });
@@ -298,7 +286,7 @@ export default function AcademicManagement() {
     }
     if (ttRoom) {
       const { data: roomClash } = await supabase.from("timetable_entries").select("id, classes(name)")
-        .eq("room", ttRoom).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start)
+        .eq("room", ttRoom).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
       if (roomClash && roomClash.length > 0) {
         toast({ title: "Room clash!", description: `Room is already booked at this time`, variant: "destructive" });
@@ -308,7 +296,7 @@ export default function AcademicManagement() {
 
     const payload = {
       class_id: ttViewClass, subject_id: ttSubject || null, teacher_id: ttTeacher || null,
-      day_of_week: ttEditCell.day, start_time: ttEditCell.slot.start, end_time: ttEditCell.slot.end,
+      day_of_week: ttEditCell.day, start_time: ttEditCell.slot.start_time, end_time: ttEditCell.slot.end_time,
       room: ttRoom || null,
     };
 
@@ -339,11 +327,11 @@ export default function AcademicManagement() {
 
   async function saveSportsEntry() {
     if (!sportsEditCell || !sportsViewClass) return;
-    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start, sportsEditCell.slot.end);
+    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start_time, sportsEditCell.slot.end_time);
 
     const payload = {
       class_id: sportsViewClass, activity_name: sportsActivity, activity_type: sportsType,
-      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start, end_time: sportsEditCell.slot.end,
+      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start_time, end_time: sportsEditCell.slot.end_time,
       venue: sportsVenue || null, coach_id: sportsCoach || null,
     };
 
@@ -363,6 +351,40 @@ export default function AcademicManagement() {
     toast({ title: "Sports schedule updated" });
     setSportsEditCell(null);
     fetchSportsSchedule();
+  }
+
+  // ═══ TIME SLOT CRUD ═══
+  function openAddSlot() {
+    setEditingSlot(null);
+    const maxOrder = timeSlots.length > 0 ? Math.max(...timeSlots.map(s => s.display_order)) + 1 : 1;
+    setSlotForm({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: String(maxOrder) });
+    setSlotDialogOpen(true);
+  }
+  function openEditSlot(s: TimeSlot) {
+    setEditingSlot(s);
+    setSlotForm({ start_time: s.start_time, end_time: s.end_time, label: s.label || "", slot_type: s.slot_type, display_order: String(s.display_order) });
+    setSlotDialogOpen(true);
+  }
+  async function saveSlot() {
+    if (!slotForm.start_time || !slotForm.end_time) { toast({ title: "Start and end time required", variant: "destructive" }); return; }
+    const payload = { start_time: slotForm.start_time, end_time: slotForm.end_time, label: slotForm.label || null, slot_type: slotForm.slot_type, display_order: parseInt(slotForm.display_order) || 0 };
+    if (editingSlot) {
+      const { error } = await supabase.from("timetable_time_slots").update(payload).eq("id", editingSlot.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Time slot updated" });
+    } else {
+      const { error } = await supabase.from("timetable_time_slots").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Time slot created" });
+    }
+    setSlotDialogOpen(false);
+    refetchSlots();
+  }
+  async function deleteSlot(id: string) {
+    if (!confirm("Delete this time slot?")) return;
+    await supabase.from("timetable_time_slots").delete().eq("id", id);
+    toast({ title: "Time slot deleted" });
+    refetchSlots();
   }
 
   const attStudents = students.filter(s => {
@@ -527,6 +549,7 @@ export default function AcademicManagement() {
           <TabsTrigger value="classes"><Users className="mr-1 h-4 w-4" /> Classes</TabsTrigger>
           <TabsTrigger value="subjects"><BookOpen className="mr-1 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="teacher-assign"><UserCheck className="mr-1 h-4 w-4" /> Teacher Assignments</TabsTrigger>
+          <TabsTrigger value="time-slots"><Clock className="mr-1 h-4 w-4" /> Time Slots</TabsTrigger>
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
           <TabsTrigger value="sports-schedule"><Trophy className="mr-1 h-4 w-4" /> Sports & Clubs</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
@@ -649,7 +672,44 @@ export default function AcademicManagement() {
           />
         </TabsContent>
 
-        {/* ═══ TIMETABLE ═══ */}
+        {/* ═══ TIME SLOTS MANAGEMENT ═══ */}
+        <TabsContent value="time-slots">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+              <div><CardTitle className="font-heading">Time Slots</CardTitle><CardDescription>Define the time periods used in timetables across all portals</CardDescription></div>
+              <Button onClick={openAddSlot} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="mr-1 h-4 w-4" /> Add Time Slot</Button>
+            </CardHeader>
+            <CardContent>
+              {timeSlots.length === 0 ? <p className="text-center py-8 text-muted-foreground">No time slots configured yet.</p> : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>#</TableHead><TableHead>Start</TableHead><TableHead>End</TableHead><TableHead>Type</TableHead><TableHead>Label</TableHead><TableHead>Actions</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {timeSlots.map((s, i) => (
+                        <TableRow key={s.id} className={s.slot_type === "break" ? "bg-muted/40" : s.slot_type === "sports" ? "bg-accent/5" : ""}>
+                          <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="font-mono font-medium">{s.start_time}</TableCell>
+                          <TableCell className="font-mono font-medium">{s.end_time}</TableCell>
+                          <TableCell><Badge variant={s.slot_type === "break" ? "secondary" : s.slot_type === "sports" ? "outline" : "default"} className="capitalize">{s.slot_type}</Badge></TableCell>
+                          <TableCell>{s.label || "—"}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEditSlot(s)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteSlot(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="timetable">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
@@ -670,20 +730,22 @@ export default function AcademicManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {timeSlots.map((slot, si) => (
-                        <tr key={si} className={slot.isBreak ? "bg-muted/50" : ""}>
+                      {timeSlots.filter(s => s.slot_type !== "sports").map((slot, si) => {
+                        const isBreak = slot.slot_type === "break";
+                        return (
+                        <tr key={si} className={isBreak ? "bg-muted/50" : ""}>
                           <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">
-                            {slot.start}–{slot.end}
-                            {slot.isBreak && <span className="block text-muted-foreground">{slot.label}</span>}
+                            {slot.start_time}–{slot.end_time}
+                            {isBreak && <span className="block text-muted-foreground">{slot.label || "Break"}</span>}
                           </td>
-                          {slot.isBreak ? (
-                            <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label}</td>
+                          {isBreak ? (
+                            <td colSpan={5} className="border text-center text-xs text-muted-foreground italic">{slot.label || "Break"}</td>
                           ) : (
                             dayNames.map((_, di) => {
-                              const entry = getTTEntry(di, slot.start, slot.end);
+                              const entry = getTTEntry(di, slot.start_time, slot.end_time);
                               return (
                                 <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
-                                  onClick={() => { setTtEditCell({ day: di, slot }); setTtSubject(entry?.subject_id || ""); setTtTeacher(entry?.teacher_id || ""); setTtRoom(entry?.room || ""); }}>
+                                  onClick={() => { setTtEditCell({ day: di, slot: { start_time: slot.start_time, end_time: slot.end_time } }); setTtSubject(entry?.subject_id || ""); setTtTeacher(entry?.teacher_id || ""); setTtRoom(entry?.room || ""); }}>
                                   {entry ? (
                                     <div className="text-xs">
                                       <p className="font-semibold text-accent">{entry.subjects?.name || "—"}</p>
@@ -696,7 +758,8 @@ export default function AcademicManagement() {
                             })
                           )}
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -728,12 +791,12 @@ export default function AcademicManagement() {
                     <tbody>
                       {sportsSlots.map((slot, si) => (
                         <tr key={si}>
-                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start}–{slot.end}</td>
+                          <td className="px-2 py-1 border text-xs font-medium whitespace-nowrap">{slot.start_time}–{slot.end_time}</td>
                           {dayNames.map((_, di) => {
-                            const entry = getSportsEntry(di, slot.start, slot.end);
+                            const entry = getSportsEntry(di, slot.start_time, slot.end_time);
                             return (
                               <td key={di} className="px-1 py-1 border cursor-pointer hover:bg-accent/10 transition-colors"
-                                onClick={() => { setSportsEditCell({ day: di, slot }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
+                                onClick={() => { setSportsEditCell({ day: di, slot: { start_time: slot.start_time, end_time: slot.end_time } }); setSportsActivity(entry?.activity_name || ""); setSportsVenue(entry?.venue || ""); setSportsCoach(entry?.coach_id || ""); setSportsType(entry?.activity_type || "sport"); }}>
                                 {entry ? (
                                   <div className="text-xs">
                                     <p className="font-semibold text-accent">{entry.activity_name}</p>
@@ -1112,7 +1175,7 @@ export default function AcademicManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Timetable Slot</DialogTitle>
-            <DialogDescription>{ttEditCell && `${dayNames[ttEditCell.day]} ${ttEditCell.slot.start}–${ttEditCell.slot.end}`}</DialogDescription>
+            <DialogDescription>{ttEditCell && `${dayNames[ttEditCell.day]} ${ttEditCell.slot.start_time}–${ttEditCell.slot.end_time}`}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Subject</Label>
@@ -1146,7 +1209,7 @@ export default function AcademicManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Sports/Club Slot</DialogTitle>
-            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start}–${sportsEditCell.slot.end}`}</DialogDescription>
+            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start_time}–${sportsEditCell.slot.end_time}`}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Activity</Label>
@@ -1253,6 +1316,37 @@ export default function AcademicManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setExamDialogOpen(false)}>Cancel</Button>
             <Button onClick={saveExam} className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingExam ? "Update" : "Create"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Time Slot Dialog */}
+      <Dialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingSlot ? "Edit Time Slot" : "Add Time Slot"}</DialogTitle><DialogDescription>Configure a timetable period</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Start Time</Label><Input type="time" value={slotForm.start_time} onChange={e => setSlotForm(p => ({ ...p, start_time: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>End Time</Label><Input type="time" value={slotForm.end_time} onChange={e => setSlotForm(p => ({ ...p, end_time: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Type</Label>
+                <Select value={slotForm.slot_type} onValueChange={v => setSlotForm(p => ({ ...p, slot_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lesson">Lesson</SelectItem>
+                    <SelectItem value="break">Break</SelectItem>
+                    <SelectItem value="sports">Sports/Clubs</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Label (optional)</Label><Input value={slotForm.label} onChange={e => setSlotForm(p => ({ ...p, label: e.target.value }))} placeholder="e.g. Lunch, Break" /></div>
+            </div>
+            <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={slotForm.display_order} onChange={e => setSlotForm(p => ({ ...p, display_order: e.target.value }))} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSlotDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveSlot} className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingSlot ? "Update" : "Create"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

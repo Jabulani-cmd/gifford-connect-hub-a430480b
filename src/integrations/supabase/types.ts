@@ -3249,6 +3249,36 @@ export type Database = {
           },
         ]
       }
+      timetable_time_slots: {
+        Row: {
+          created_at: string
+          display_order: number
+          end_time: string
+          id: string
+          label: string | null
+          slot_type: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          end_time: string
+          id?: string
+          label?: string | null
+          slot_type?: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          end_time?: string
+          id?: string
+          label?: string | null
+          slot_type?: string
+          start_time?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
