@@ -28,38 +28,48 @@ Deno.serve(async (req) => {
 
     // Verify caller authentication
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const token = authHeader.replace("Bearer ", "");
 
-    // Use getClaims for faster validation
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const userId = claimsData.claims.sub;
-
-    // For register-parent: caller must be registering themselves
+    // For register-parent: allow unauthenticated calls (user just signed up,
+    // may not have a confirmed session yet). Validate that user_id exists instead.
     if (action === "register-parent") {
-      if (payload.user_id !== userId) {
-        return new Response(JSON.stringify({ error: "Forbidden: can only register yourself as parent" }), {
-          status: 403,
+      const { user_id } = payload;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "Missing user_id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Verify user exists in auth.users
+      const { data: userExists, error: userErr } = await supabaseAdmin.auth.admin.getUserById(user_id);
+      if (userErr || !userExists?.user) {
+        return new Response(JSON.stringify({ error: "Invalid user_id" }), {
+          status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     } else {
+      // All other actions require a valid JWT
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const token = authHeader.replace("Bearer ", "");
+
+      const supabaseAuth = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user: callerUser }, error: callerError } = await supabaseAuth.auth.getUser(token);
+      if (callerError || !callerUser) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const userId = callerUser.id;
       // Admin-level actions require admin/principal/admin_supervisor role
       const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
         _user_id: userId,
