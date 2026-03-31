@@ -31,13 +31,14 @@ function zimGrade(pct: number): string {
 }
 
 interface Props {
-  userId: string;
+  teacherId: string;
+  teacherIds: string[];
   classes: any[];
   subjects: any[];
   students: any[];
 }
 
-export default function AssessmentsTab({ userId, classes, subjects, students }: Props) {
+export default function AssessmentsTab({ teacherId, teacherIds, classes, subjects, students }: Props) {
   const { toast } = useToast();
   const [assessments, setAssessments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,7 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
     const { data } = await supabase
       .from("assessments")
       .select("*")
-      .eq("teacher_id", userId)
+      .in("teacher_id", teacherIds)
       .order("created_at", { ascending: false });
     if (data) {
       setAssessments(data);
@@ -99,14 +100,14 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
     let file_url = null;
     if (formFile) {
       const ext = formFile.name.split(".").pop();
-      const path = `assessments/${userId}/${Date.now()}.${ext}`;
+      const path = `assessments/${teacherId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("school-media").upload(path, formFile);
       if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setSubmitting(false); return; }
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
     }
 
     const { error } = await supabase.from("assessments").insert({
-      teacher_id: userId,
+      teacher_id: teacherId,
       title: form.title,
       assessment_type: form.assessment_type,
       class_id: form.class_id,
@@ -183,14 +184,14 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
       await supabase.from("assessment_results").update({
         marks_obtained: marksObtained, percentage: pct, grade,
         teacher_feedback: gradeForm.feedback || null,
-        graded_by: userId, graded_date: new Date().toISOString(),
+        graded_by: teacherId, graded_date: new Date().toISOString(),
       }).eq("id", currentResult.id);
     } else {
       await supabase.from("assessment_results").insert({
         assessment_id: selectedAssessment.id, student_id: currentStudent.id,
         marks_obtained: marksObtained, percentage: pct, grade,
         teacher_feedback: gradeForm.feedback || null,
-        graded_by: userId, graded_date: new Date().toISOString(),
+        graded_by: teacherId, graded_date: new Date().toISOString(),
       });
     }
 
