@@ -327,11 +327,11 @@ export default function AcademicManagement() {
 
   async function saveSportsEntry() {
     if (!sportsEditCell || !sportsViewClass) return;
-    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start, sportsEditCell.slot.end);
+    const existing = getSportsEntry(sportsEditCell.day, sportsEditCell.slot.start_time, sportsEditCell.slot.end_time);
 
     const payload = {
       class_id: sportsViewClass, activity_name: sportsActivity, activity_type: sportsType,
-      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start, end_time: sportsEditCell.slot.end,
+      day_of_week: sportsEditCell.day, start_time: sportsEditCell.slot.start_time, end_time: sportsEditCell.slot.end_time,
       venue: sportsVenue || null, coach_id: sportsCoach || null,
     };
 
@@ -351,6 +351,40 @@ export default function AcademicManagement() {
     toast({ title: "Sports schedule updated" });
     setSportsEditCell(null);
     fetchSportsSchedule();
+  }
+
+  // ═══ TIME SLOT CRUD ═══
+  function openAddSlot() {
+    setEditingSlot(null);
+    const maxOrder = timeSlots.length > 0 ? Math.max(...timeSlots.map(s => s.display_order)) + 1 : 1;
+    setSlotForm({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: String(maxOrder) });
+    setSlotDialogOpen(true);
+  }
+  function openEditSlot(s: TimeSlot) {
+    setEditingSlot(s);
+    setSlotForm({ start_time: s.start_time, end_time: s.end_time, label: s.label || "", slot_type: s.slot_type, display_order: String(s.display_order) });
+    setSlotDialogOpen(true);
+  }
+  async function saveSlot() {
+    if (!slotForm.start_time || !slotForm.end_time) { toast({ title: "Start and end time required", variant: "destructive" }); return; }
+    const payload = { start_time: slotForm.start_time, end_time: slotForm.end_time, label: slotForm.label || null, slot_type: slotForm.slot_type, display_order: parseInt(slotForm.display_order) || 0 };
+    if (editingSlot) {
+      const { error } = await supabase.from("timetable_time_slots").update(payload).eq("id", editingSlot.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Time slot updated" });
+    } else {
+      const { error } = await supabase.from("timetable_time_slots").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Time slot created" });
+    }
+    setSlotDialogOpen(false);
+    refetchSlots();
+  }
+  async function deleteSlot(id: string) {
+    if (!confirm("Delete this time slot?")) return;
+    await supabase.from("timetable_time_slots").delete().eq("id", id);
+    toast({ title: "Time slot deleted" });
+    refetchSlots();
   }
 
   const attStudents = students.filter(s => {
