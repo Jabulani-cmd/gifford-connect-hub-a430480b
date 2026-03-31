@@ -1172,7 +1172,7 @@ export default function AcademicManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Sports/Club Slot</DialogTitle>
-            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start}–${sportsEditCell.slot.end}`}</DialogDescription>
+            <DialogDescription>{sportsEditCell && `${dayNames[sportsEditCell.day]} ${sportsEditCell.slot.start_time}–${sportsEditCell.slot.end_time}`}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2"><Label>Activity</Label>
