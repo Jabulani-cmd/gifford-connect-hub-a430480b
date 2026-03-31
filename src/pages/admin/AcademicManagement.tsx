@@ -110,7 +110,7 @@ export default function AcademicManagement() {
   // Sports schedule state
   const [sportsEntries, setSportsEntries] = useState<any[]>([]);
   const [sportsViewClass, setSportsViewClass] = useState("");
-  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start: string; end: string } } | null>(null);
+  const [sportsEditCell, setSportsEditCell] = useState<{ day: number; slot: { start_time: string; end_time: string } } | null>(null);
   const [sportsActivity, setSportsActivity] = useState("");
   const [sportsVenue, setSportsVenue] = useState("");
   const [sportsCoach, setSportsCoach] = useState("");
