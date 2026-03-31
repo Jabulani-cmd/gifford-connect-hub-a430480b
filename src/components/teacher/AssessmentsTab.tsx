@@ -307,11 +307,65 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           </CardContent></Card>
         </div>
 
-        <Tabs defaultValue="grade" className="space-y-4">
+        <Tabs defaultValue="submissions" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="submissions">Submissions ({submissions.length})</TabsTrigger>
             <TabsTrigger value="grade">Grade Students</TabsTrigger>
             <TabsTrigger value="results">Results Table ({gradedCount})</TabsTrigger>
           </TabsList>
+
+          {/* Submissions Tab */}
+          <TabsContent value="submissions">
+            {submissions.length === 0 ? (
+              <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No submissions yet for this assessment.</CardContent></Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Student Submissions</CardTitle>
+                  <CardDescription>{submissions.length} student(s) have submitted work</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {submissions.map(sub => {
+                    const hasResult = results.find(r => r.student_id === sub.student_id);
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">{sub.students?.full_name || "Unknown Student"}</p>
+                          <p className="text-xs text-muted-foreground">{sub.students?.admission_number}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Submitted: {format(new Date(sub.created_at), "MMM d, yyyy 'at' h:mm a")}
+                          </p>
+                          {sub.comments && <p className="text-xs text-muted-foreground mt-1 italic">"{sub.comments}"</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {hasResult ? (
+                            <Badge variant="default">{hasResult.grade} ({hasResult.marks_obtained}/{selectedAssessment.max_marks})</Badge>
+                          ) : (
+                            <Badge variant="secondary">Not Graded</Badge>
+                          )}
+                          {sub.file_url && (
+                            <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <FileText className="h-3 w-3 mr-1" /> View File
+                              </Button>
+                            </a>
+                          )}
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
+                            const idx = classStudents.findIndex(s => s.id === sub.student_id);
+                            if (idx >= 0) { setGradingStudentIdx(idx); }
+                            const tabsEl = document.querySelector('[data-state="active"][value="grade"], [value="grade"]');
+                            if (tabsEl) (tabsEl as HTMLElement).click();
+                          }}>
+                            Grade
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
           {/* Inline Grading */}
           <TabsContent value="grade">
