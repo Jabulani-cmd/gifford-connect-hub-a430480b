@@ -125,9 +125,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
         csData.forEach(cs => assignedClassIds.add(cs.class_id));
       }
       
-      if (assignedClassIds.size > 0) {
-        teacherClasses = allClasses.filter(c => assignedClassIds.has(c.id));
-      }
+      // Only show assigned classes - never fall back to all classes
+      teacherClasses = allClasses.filter(c => assignedClassIds.has(c.id));
     }
 
     setClasses(teacherClasses);
