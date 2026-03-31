@@ -1319,6 +1319,37 @@ export default function AcademicManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Time Slot Dialog */}
+      <Dialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingSlot ? "Edit Time Slot" : "Add Time Slot"}</DialogTitle><DialogDescription>Configure a timetable period</DialogDescription></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Start Time</Label><Input type="time" value={slotForm.start_time} onChange={e => setSlotForm(p => ({ ...p, start_time: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>End Time</Label><Input type="time" value={slotForm.end_time} onChange={e => setSlotForm(p => ({ ...p, end_time: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Type</Label>
+                <Select value={slotForm.slot_type} onValueChange={v => setSlotForm(p => ({ ...p, slot_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lesson">Lesson</SelectItem>
+                    <SelectItem value="break">Break</SelectItem>
+                    <SelectItem value="sports">Sports/Clubs</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Label (optional)</Label><Input value={slotForm.label} onChange={e => setSlotForm(p => ({ ...p, label: e.target.value }))} placeholder="e.g. Lunch, Break" /></div>
+            </div>
+            <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={slotForm.display_order} onChange={e => setSlotForm(p => ({ ...p, display_order: e.target.value }))} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSlotDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveSlot} className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingSlot ? "Update" : "Create"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
