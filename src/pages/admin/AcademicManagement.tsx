@@ -549,6 +549,7 @@ export default function AcademicManagement() {
           <TabsTrigger value="classes"><Users className="mr-1 h-4 w-4" /> Classes</TabsTrigger>
           <TabsTrigger value="subjects"><BookOpen className="mr-1 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="teacher-assign"><UserCheck className="mr-1 h-4 w-4" /> Teacher Assignments</TabsTrigger>
+          <TabsTrigger value="time-slots"><Clock className="mr-1 h-4 w-4" /> Time Slots</TabsTrigger>
           <TabsTrigger value="timetable"><Clock className="mr-1 h-4 w-4" /> Timetable</TabsTrigger>
           <TabsTrigger value="sports-schedule"><Trophy className="mr-1 h-4 w-4" /> Sports & Clubs</TabsTrigger>
           <TabsTrigger value="attendance"><Calendar className="mr-1 h-4 w-4" /> Attendance</TabsTrigger>
