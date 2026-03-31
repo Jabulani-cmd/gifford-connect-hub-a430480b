@@ -46,6 +46,8 @@ export default function FullWeekTimetable({
   hasClass = true,
 }: Props) {
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
+  const { timeSlots, loading: slotsLoading } = useTimeSlots();
+
 
   const getCell = useMemo(() => {
     return (startTime: string, dayIndex: number) => {
