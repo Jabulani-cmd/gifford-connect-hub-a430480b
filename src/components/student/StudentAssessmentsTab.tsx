@@ -188,7 +188,7 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
                   </Button>
                 </>
               )}
-              {!sub && !res && a.assessment_type === "assignment" && (
+              {!sub && !res && (
                 <Button
                   size="sm"
                   variant="outline"
