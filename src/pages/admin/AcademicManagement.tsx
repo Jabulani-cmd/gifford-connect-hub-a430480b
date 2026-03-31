@@ -22,6 +22,7 @@ import {
 import ExamTimetableTab from "@/components/admin/ExamTimetableTab";
 import TermReportsTab from "@/components/admin/TermReportsTab";
 import TeacherClassAssignment from "@/components/admin/TeacherClassAssignment";
+import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
