@@ -46,6 +46,7 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
   const [gradingStudentIdx, setGradingStudentIdx] = useState(0);
   const [results, setResults] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([]);
 
   // Create form
   const [form, setForm] = useState({
@@ -73,7 +74,19 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
       .select("*")
       .eq("teacher_id", userId)
       .order("created_at", { ascending: false });
-    if (data) setAssessments(data);
+    if (data) {
+      setAssessments(data);
+      // Fetch all submissions for this teacher's assessments
+      const assessmentIds = data.map((a: any) => a.id);
+      if (assessmentIds.length > 0) {
+        const { data: allSubs } = await supabase
+          .from("assessment_submissions")
+          .select("*, students(full_name, admission_number), assessments(title, class_id, subject_id)")
+          .in("assessment_id", assessmentIds)
+          .order("created_at", { ascending: false });
+        setAllSubmissions(allSubs || []);
+      }
+    }
     setLoading(false);
   };
 
@@ -398,6 +411,46 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
 
   return (
     <div className="space-y-4">
+      {/* Recent Submissions Alert */}
+      {allSubmissions.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="h-4 w-4 text-primary" />
+              Recent Submissions ({allSubmissions.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-60 overflow-y-auto">
+            {allSubmissions.slice(0, 10).map(sub => {
+              const assess = assessments.find(a => a.id === sub.assessment_id);
+              return (
+                <div key={sub.id} className="flex items-center justify-between rounded-lg bg-background p-2 text-sm border">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-xs">{sub.students?.full_name || "Unknown"}</p>
+                    <p className="text-[11px] text-muted-foreground">{assess?.title || sub.assessments?.title || "Assessment"}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(sub.created_at), "MMM d, h:mm a")}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {sub.file_url && (
+                      <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="sm" className="h-7 text-xs">
+                          <FileText className="h-3 w-3 mr-1" /> View
+                        </Button>
+                      </a>
+                    )}
+                    {assess && (
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openAssessmentDetail(assess)}>
+                        Grade
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <Select value={filterClass} onValueChange={setFilterClass}>

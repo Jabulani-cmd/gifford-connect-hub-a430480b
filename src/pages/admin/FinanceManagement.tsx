@@ -159,8 +159,8 @@ export default function FinanceManagement() {
   );
   const isFinanceOrAdmin =
     role === "finance" || role === "finance_clerk" || role === "bursar" || role === "admin_supervisor" || role === "principal" || role === "deputy_principal";
-  const isAdminSupervisor = role === "admin_supervisor" || role === "principal" || role === "deputy_principal";
-  const isFinanceClerk = role === "finance" || role === "finance_clerk"; // needs approval for destructive actions — only admin_supervisor can void/delete directly
+  const isAdminSupervisor = role === "admin_supervisor" || role === "principal" || role === "deputy_principal" || role === "bursar";
+  const isFinanceClerk = role === "finance" || role === "finance_clerk"; // needs approval for destructive actions — burser/admin_supervisor can void/delete directly
 
   // Helper: request supervisor approval instead of direct delete
   async function requestApproval(
