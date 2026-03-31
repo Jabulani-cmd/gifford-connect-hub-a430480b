@@ -49,6 +49,46 @@ export default function StudentDashboard() {
     fetchData();
   }, [user]);
 
+  const resolveStudentClass = async (studentRec: any, prof: any, uid: string) => {
+    if (!studentRec) return null;
+
+    const [{ data: studentClass }, { data: userClass }] = await Promise.all([
+      supabase.from("student_classes").select("class_id").eq("student_id", studentRec.id).limit(1).maybeSingle(),
+      supabase.from("student_classes").select("class_id").eq("student_id", uid).limit(1).maybeSingle(),
+    ]);
+
+    if (studentClass?.class_id) return studentClass.class_id;
+    if (userClass?.class_id) return userClass.class_id;
+
+    if (studentRec.form) {
+      const { data: classOptions } = await supabase
+        .from("classes")
+        .select("id, name, form_level, stream")
+        .eq("form_level", studentRec.form)
+        .order("name");
+
+      const normalizedStream = studentRec.stream?.trim();
+      const matchedClass = (classOptions || []).find((cls: any) => {
+        if (!normalizedStream) return !cls.stream;
+        return cls.stream === normalizedStream || cls.name === `${studentRec.form}${normalizedStream}` || cls.name === normalizedStream;
+      }) || classOptions?.[0];
+
+      if (matchedClass?.id) return matchedClass.id;
+    }
+
+    if (prof?.class_name) {
+      const { data: profileClass } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("name", prof.class_name)
+        .maybeSingle();
+
+      if (profileClass?.id) return profileClass.id;
+    }
+
+    return null;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     const uid = user!.id;
@@ -62,37 +102,8 @@ export default function StudentDashboard() {
     setProfile(prof);
     setStudent(studentRec);
 
-    // Get class ID from student_classes or profile
-    let classId: string | null = null;
-    if (studentRec) {
-      // Try student table ID first, then auth user ID
-      const { data: sc } = await supabase
-        .from("student_classes")
-        .select("class_id")
-        .eq("student_id", studentRec.id)
-        .limit(1)
-        .maybeSingle();
-      if (sc) {
-        classId = sc.class_id;
-      } else {
-        // student_classes may reference auth.users ID
-        const { data: sc2 } = await supabase
-          .from("student_classes")
-          .select("class_id")
-          .eq("student_id", uid)
-          .limit(1)
-          .maybeSingle();
-        if (sc2) classId = sc2.class_id;
-      }
-    }
-    if (!classId && prof?.class_name) {
-      const { data: c } = await supabase
-        .from("classes")
-        .select("id")
-        .eq("name", prof.class_name)
-        .maybeSingle();
-      if (c) classId = c.id;
-    }
+    // Get class ID from student_classes first, then derive it from the student's form/stream
+    const classId = await resolveStudentClass(studentRec, prof, uid);
     setStudentClassId(classId);
 
     // Fetch class name

@@ -26,14 +26,14 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 interface Props {
-  userId: string;
+  teacherId: string;
   classes: any[];
   subjects: any[];
   materials: any[];
   onRefresh: () => void;
 }
 
-export default function EnhancedMaterialsTab({ userId, classes, subjects, materials, onRefresh }: Props) {
+export default function EnhancedMaterialsTab({ teacherId, classes, subjects, materials, onRefresh }: Props) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
@@ -81,7 +81,7 @@ export default function EnhancedMaterialsTab({ userId, classes, subjects, materi
 
     if (file) {
       const ext = file.name.split(".").pop();
-      const path = `materials/${userId}/${Date.now()}.${ext}`;
+      const path = `materials/${teacherId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
       if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setUploading(false); return; }
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
@@ -90,7 +90,7 @@ export default function EnhancedMaterialsTab({ userId, classes, subjects, materi
     const tags = form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
 
     const { error } = await supabase.from("study_materials").insert({
-      teacher_id: userId, title: form.title,
+      teacher_id: teacherId, title: form.title,
       description: form.description || null,
       class_id: form.class_id, subject_id: form.subject_id,
       material_type: form.material_type, file_url,
@@ -102,7 +102,7 @@ export default function EnhancedMaterialsTab({ userId, classes, subjects, materi
     else {
       toast({ title: "Material uploaded!" });
       await supabase.from("notifications").insert({
-        user_id: userId, title: "Material Uploaded",
+        user_id: teacherId, title: "Material Uploaded",
         message: `"${form.title}" has been published.`, type: "material"
       });
       setForm({ title: "", description: "", class_id: "", subject_id: "", material_type: "document", link_url: "", is_published: true, expiry_date: "", tags: "" });

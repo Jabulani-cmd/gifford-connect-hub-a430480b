@@ -77,30 +77,18 @@ export default function Register() {
         throw new Error("An account with this email already exists. Please sign in on the Login page instead, or check your inbox for a confirmation email if you registered recently.");
       }
 
-      // Use edge function to assign role + link children
-      // After signUp, Supabase has an active session — grab the access token
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      // Use backend function to assign role + link children
+      const { data: result, error: invokeError } = await supabase.functions.invoke("manage-users", {
+        body: {
+          action: "register-parent",
+          user_id: userId,
+          phone,
+          children: children.filter(c => c.admissionNumber && c.verificationCode),
+        },
+      });
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-          },
-          body: JSON.stringify({
-            action: "register-parent",
-            user_id: userId,
-            phone,
-            children: children.filter(c => c.admissionNumber && c.verificationCode),
-          }),
-        }
-      );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error);
+      if (invokeError) throw new Error(invokeError.message || "Parent registration failed.");
+      if (result?.error) throw new Error(result.error);
 
       const linkResults: string[] = result.linkResults || [];
 

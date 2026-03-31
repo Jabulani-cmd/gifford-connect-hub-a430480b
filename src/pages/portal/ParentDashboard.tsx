@@ -150,7 +150,7 @@ export default function ParentDashboard() {
     const uid = user!.id;
 
     const [{ data: prof }, { data: links }, { data: ann }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", uid).single(),
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("parent_students").select("student_id").eq("parent_id", uid),
       supabase
         .from("announcements")

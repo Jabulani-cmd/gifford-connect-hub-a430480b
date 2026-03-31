@@ -89,6 +89,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
   const [selectedTTClass, setSelectedTTClass] = useState("");
   const [timetableData, setTimetableData] = useState<any[]>([]);
 
+  const activeTeacherIds = [user?.id, staffInfo?.id].filter(Boolean) as string[];
+
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
   const fetchAll = async () => {
@@ -136,7 +138,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
     const { data: allStudents } = await supabase.from("students").select("id, full_name, form, stream, admission_number").eq("status", "active").order("full_name");
     if (allStudents) setStudents(allStudents);
 
-    const { data: mats } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false });
+    const { data: mats } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").in("teacher_id", [user!.id, staffRes.data?.id].filter(Boolean)).order("created_at", { ascending: false });
     if (mats) setMyMaterials(mats);
 
     const { data: marksData } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
@@ -243,7 +245,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
   const markAllAbsent = () => { const r: Record<string, string> = {}; attStudents.forEach(s => { r[s.id] = "absent"; }); setAttRecords(r); };
 
   const refreshMaterials = async () => {
-    const { data } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").in("teacher_id", activeTeacherIds).order("created_at", { ascending: false });
     if (data) { setMyMaterials(data); setStats(p => ({ ...p, materialsCount: data.length })); }
   };
 
@@ -368,12 +370,12 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
 
           {/* MATERIALS - Enhanced */}
           <TabsContent value="materials">
-            <EnhancedMaterialsTab userId={user!.id} classes={classes} subjects={subjects} materials={myMaterials} onRefresh={refreshMaterials} />
+            <EnhancedMaterialsTab teacherId={staffInfo?.id || user!.id} classes={classes} subjects={subjects} materials={myMaterials} onRefresh={refreshMaterials} />
           </TabsContent>
 
           {/* ASSESSMENTS - New */}
           <TabsContent value="assessments">
-            <AssessmentsTab userId={user!.id} classes={classes} subjects={subjects} students={students} />
+            <AssessmentsTab teacherId={staffInfo?.id || user!.id} teacherIds={activeTeacherIds} classes={classes} subjects={subjects} students={students} />
           </TabsContent>
           {/* EXAM RESULTS UPLOAD */}
           <TabsContent value="exam-results">
