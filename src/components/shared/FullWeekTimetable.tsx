@@ -11,26 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
-const timeSlots = [
-  { start: "07:30", end: "08:10" },
-  { start: "08:10", end: "08:50" },
-  { start: "08:50", end: "09:30" },
-  { start: "09:30", end: "09:50", isBreak: true, label: "Break" },
-  { start: "09:50", end: "10:30" },
-  { start: "10:30", end: "11:10" },
-  { start: "11:10", end: "11:50" },
-  { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:10" },
-  { start: "13:10", end: "13:50", isBreak: true, label: "Lunch" },
-  { start: "13:50", end: "14:30" },
-  { start: "14:30", end: "15:10" },
-  { start: "15:10", end: "15:30", isBreak: true, label: "Break" },
-  { start: "15:30", end: "16:10", isSports: true },
-  { start: "16:10", end: "17:00", isSports: true },
-];
 
 interface TimetableEntry {
   day_of_week: number;
