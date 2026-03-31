@@ -74,7 +74,19 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
       .select("*")
       .eq("teacher_id", userId)
       .order("created_at", { ascending: false });
-    if (data) setAssessments(data);
+    if (data) {
+      setAssessments(data);
+      // Fetch all submissions for this teacher's assessments
+      const assessmentIds = data.map((a: any) => a.id);
+      if (assessmentIds.length > 0) {
+        const { data: allSubs } = await supabase
+          .from("assessment_submissions")
+          .select("*, students(full_name, admission_number), assessments(title, class_id, subject_id)")
+          .in("assessment_id", assessmentIds)
+          .order("created_at", { ascending: false });
+        setAllSubmissions(allSubs || []);
+      }
+    }
     setLoading(false);
   };
 
