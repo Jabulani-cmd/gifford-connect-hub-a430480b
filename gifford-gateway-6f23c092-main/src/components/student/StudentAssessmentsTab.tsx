@@ -102,6 +102,27 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
       setShowSubmit(false);
       setSubmitComment("");
       setSubmitFile(null);
+
+      // Notify the teacher
+      const teacherId = selectedAssessment.teacher_id;
+      if (teacherId) {
+        // Get student name for the notification
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("full_name")
+          .eq("id", studentId)
+          .single();
+
+        const studentName = studentData?.full_name || "A student";
+
+        await supabase.from("notifications").insert({
+          user_id: teacherId,
+          title: "New Submission",
+          message: `${studentName} has submitted work for "${selectedAssessment.title}". Please review and mark.`,
+          type: "submission",
+        });
+      }
+
       fetchAll();
     }
     setSubmitting(false);
