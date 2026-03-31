@@ -153,7 +153,10 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
   const classStudents = selectedAssessment
     ? students.filter(s => {
         const cls = classes.find(c => c.id === selectedAssessment.class_id);
-        return cls ? s.form === cls.form_level : false;
+        if (!cls) return false;
+        if (s.form !== cls.form_level) return false;
+        if (!cls.stream || !s.stream) return true;
+        return s.stream === cls.stream || `${s.form}${s.stream}` === cls.name || s.stream === cls.name;
       })
     : [];
 

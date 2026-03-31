@@ -24,6 +24,57 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const assignStudentToMatchedClass = async (studentId?: string, form?: string | null, stream?: string | null, enrollmentDate?: string | null) => {
+      if (!studentId || !form) return null;
+
+      const { data: classOptions } = await supabaseAdmin
+        .from("classes")
+        .select("id, name, form_level, stream")
+        .eq("form_level", form)
+        .order("name");
+
+      if (!classOptions || classOptions.length === 0) return null;
+
+      const normalizedStream = stream?.trim();
+      const matchedClass = classOptions.find((cls) => {
+        if (!normalizedStream) return !cls.stream;
+        return cls.stream === normalizedStream || cls.name === `${form}${normalizedStream}` || cls.name === normalizedStream;
+      }) || classOptions[0];
+
+      if (!matchedClass?.id) return null;
+
+      const { data: existingClassLink } = await supabaseAdmin
+        .from("student_classes")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("class_id", matchedClass.id)
+        .maybeSingle();
+
+      if (!existingClassLink) {
+        await supabaseAdmin.from("student_classes").insert({ student_id: studentId, class_id: matchedClass.id });
+      }
+
+      const academicYear = new Date().getFullYear().toString();
+      const { data: existingEnrollment } = await supabaseAdmin
+        .from("enrollments")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("class_id", matchedClass.id)
+        .eq("academic_year", academicYear)
+        .maybeSingle();
+
+      if (!existingEnrollment) {
+        await supabaseAdmin.from("enrollments").insert({
+          student_id: studentId,
+          class_id: matchedClass.id,
+          academic_year: academicYear,
+          enrollment_date: enrollmentDate || new Date().toISOString().split("T")[0],
+        });
+      }
+
+      return matchedClass.id;
+    };
+
     const { action, ...payload } = await req.json();
 
     // Verify caller authentication
@@ -218,14 +269,16 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("profiles").update({ phone: phone || null }).eq("id", userId);
       if (effectivePortalRole === "student") {
         // Create student record linked to auth user
-        await supabaseAdmin.from("students").insert({
+        const { data: studentRecord } = await supabaseAdmin.from("students").insert({
           full_name,
           user_id: userId,
           form: grade || null,
           stream: class_name || null,
           guardian_phone: phone || null,
           status: "active",
-        });
+        }).select("id, enrollment_date").single();
+
+        await assignStudentToMatchedClass(studentRecord?.id, grade || null, class_name || null, studentRecord?.enrollment_date || null);
       } else if (effectivePortalRole !== "parent") {
         // Determine proper category
         let staffCategory = "teaching";
@@ -649,6 +702,19 @@ Deno.serve(async (req) => {
       if (createError) throw createError;
       await supabaseAdmin.from("profiles").update({ grade, class_name, phone }).eq("id", newUser.user.id);
       await supabaseAdmin.from("user_roles").insert({ user_id: newUser.user.id, role: "student" });
+      const normalizedClassName = (class_name || "").trim();
+      const derivedStream = grade && normalizedClassName.startsWith(grade)
+        ? normalizedClassName.slice(grade.length).trim()
+        : normalizedClassName;
+      const { data: studentRecord } = await supabaseAdmin.from("students").insert({
+        full_name,
+        user_id: newUser.user.id,
+        form: grade || null,
+        stream: derivedStream || normalizedClassName || null,
+        guardian_phone: phone || null,
+        status: "active",
+      }).select("id, enrollment_date").single();
+      await assignStudentToMatchedClass(studentRecord?.id, grade || null, derivedStream || normalizedClassName || null, studentRecord?.enrollment_date || null);
       return new Response(JSON.stringify({ message: "Student registered", user_id: newUser.user.id }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -719,6 +785,14 @@ Deno.serve(async (req) => {
 
       // Link student record to auth user
       await supabaseAdmin.from("students").update({ user_id: userId }).eq("id", student_id);
+
+      const { data: linkedStudent } = await supabaseAdmin
+        .from("students")
+        .select("id, form, stream, enrollment_date")
+        .eq("id", student_id)
+        .maybeSingle();
+
+      await assignStudentToMatchedClass(linkedStudent?.id, linkedStudent?.form || null, linkedStudent?.stream || null, linkedStudent?.enrollment_date || null);
 
       // Update profile with guardian email if available
       if (guardian_email) {
