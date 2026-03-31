@@ -672,7 +672,44 @@ export default function AcademicManagement() {
           />
         </TabsContent>
 
-        {/* ═══ TIMETABLE ═══ */}
+        {/* ═══ TIME SLOTS MANAGEMENT ═══ */}
+        <TabsContent value="time-slots">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+              <div><CardTitle className="font-heading">Time Slots</CardTitle><CardDescription>Define the time periods used in timetables across all portals</CardDescription></div>
+              <Button onClick={openAddSlot} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="mr-1 h-4 w-4" /> Add Time Slot</Button>
+            </CardHeader>
+            <CardContent>
+              {timeSlots.length === 0 ? <p className="text-center py-8 text-muted-foreground">No time slots configured yet.</p> : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>#</TableHead><TableHead>Start</TableHead><TableHead>End</TableHead><TableHead>Type</TableHead><TableHead>Label</TableHead><TableHead>Actions</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {timeSlots.map((s, i) => (
+                        <TableRow key={s.id} className={s.slot_type === "break" ? "bg-muted/40" : s.slot_type === "sports" ? "bg-accent/5" : ""}>
+                          <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="font-mono font-medium">{s.start_time}</TableCell>
+                          <TableCell className="font-mono font-medium">{s.end_time}</TableCell>
+                          <TableCell><Badge variant={s.slot_type === "break" ? "secondary" : s.slot_type === "sports" ? "outline" : "default"} className="capitalize">{s.slot_type}</Badge></TableCell>
+                          <TableCell>{s.label || "—"}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEditSlot(s)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteSlot(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="timetable">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
