@@ -123,42 +123,45 @@ export default function FullWeekTimetable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {timeSlots.map((slot, si) => (
+              {timeSlots.map((slot, si) => {
+                const isBreak = slot.slot_type === "break";
+                const isSports = slot.slot_type === "sports";
+                return (
                 <TableRow
                   key={si}
                   className={
-                    slot.isBreak
+                    isBreak
                       ? "bg-muted/40"
-                      : slot.isSports
+                      : isSports
                         ? "bg-accent/5"
                         : ""
                   }
                 >
                   <TableCell className="whitespace-nowrap py-2 text-xs font-medium">
-                    {slot.start}–{slot.end}
-                    {slot.isBreak && (
+                    {slot.start_time}–{slot.end_time}
+                    {isBreak && (
                       <span className="block text-[10px] text-muted-foreground italic">
-                        {slot.label}
+                        {slot.label || "Break"}
                       </span>
                     )}
-                    {slot.isSports && (
+                    {isSports && (
                       <span className="block text-[10px] text-muted-foreground italic">
                         Sports/Clubs
                       </span>
                     )}
                   </TableCell>
-                  {slot.isBreak ? (
+                  {isBreak ? (
                     <TableCell
                       colSpan={5}
                       className="py-2 text-center text-xs italic text-muted-foreground"
                     >
-                      {slot.label}
+                      {slot.label || "Break"}
                     </TableCell>
                   ) : (
                     days.map((_, di) => {
-                      const entry = slot.isSports
-                        ? getSportsCell(slot.start, di)
-                        : getCell(slot.start, di);
+                      const entry = isSports
+                        ? getSportsCell(slot.start_time, di)
+                        : getCell(slot.start_time, di);
 
                       return (
                         <TableCell
@@ -194,7 +197,8 @@ export default function FullWeekTimetable({
                     })
                   )}
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
