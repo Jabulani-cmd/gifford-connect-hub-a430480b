@@ -66,7 +66,23 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const [filterClass, setFilterClass] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  useEffect(() => { fetchAssessments(); }, []);
+  useEffect(() => {
+    fetchAssessments();
+
+    // Realtime subscription for new submissions
+    const channel = supabase
+      .channel('teacher-submissions')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'assessment_submissions',
+      }, () => {
+        fetchAssessments();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const fetchAssessments = async () => {
     setLoading(true);
