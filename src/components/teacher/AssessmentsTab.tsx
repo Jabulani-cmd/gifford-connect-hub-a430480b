@@ -46,6 +46,7 @@ export default function AssessmentsTab({ userId, classes, subjects, students }: 
   const [gradingStudentIdx, setGradingStudentIdx] = useState(0);
   const [results, setResults] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([]);
 
   // Create form
   const [form, setForm] = useState({
