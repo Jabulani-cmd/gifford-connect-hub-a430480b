@@ -68,6 +68,7 @@ function gradeColor(grade: string): string {
 export default function AcademicManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { timeSlots, lessonSlots, sportsSlots, refetch: refetchSlots } = useTimeSlots();
 
   // ─── State ───
   const [classes, setClasses] = useState<any[]>([]);
@@ -80,6 +81,11 @@ export default function AcademicManagement() {
   const [exams, setExams] = useState<any[]>([]);
   const [examResults, setExamResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Time slot management
+  const [slotDialogOpen, setSlotDialogOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
+  const [slotForm, setSlotForm] = useState({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "0" });
 
   // Dialogs
   const [classDialogOpen, setClassDialogOpen] = useState(false);
@@ -96,7 +102,7 @@ export default function AcademicManagement() {
   const [assignTeacher, setAssignTeacher] = useState("");
 
   const [ttViewClass, setTtViewClass] = useState("");
-  const [ttEditCell, setTtEditCell] = useState<{ day: number; slot: typeof timeSlots[0] } | null>(null);
+  const [ttEditCell, setTtEditCell] = useState<{ day: number; slot: { start_time: string; end_time: string } } | null>(null);
   const [ttSubject, setTtSubject] = useState("");
   const [ttTeacher, setTtTeacher] = useState("");
   const [ttRoom, setTtRoom] = useState("");
