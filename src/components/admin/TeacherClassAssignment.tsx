@@ -348,13 +348,13 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
                     </tr>
                   </thead>
                   <tbody>
-                    {timeSlots.map(slot => (
-                      <tr key={slot.start}>
-                        <td className="border px-2 py-1 font-medium whitespace-nowrap">{slot.start}-{slot.end}</td>
+                    {lessonSlots.map(slot => (
+                      <tr key={slot.start_time}>
+                        <td className="border px-2 py-1 font-medium whitespace-nowrap">{slot.start_time}-{slot.end_time}</td>
                         {dayNames.map((_, di) => {
                           const entry = timetableEntries.find(
                             e => e.teacher_id === selectedTeacher && e.day_of_week === di &&
-                              e.start_time === slot.start && e.end_time === slot.end
+                              e.start_time === slot.start_time && e.end_time === slot.end_time
                           );
                           return (
                             <td key={di} className="border px-1 py-1 text-center">
