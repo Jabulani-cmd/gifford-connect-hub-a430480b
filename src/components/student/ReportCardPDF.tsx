@@ -156,8 +156,14 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
 <button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
 <div class="container">
   <div class="header">
-    <div class="school-name">Gifford High School</div>
-    <div class="school-motto">"Excellence Through Discipline and Hard Work"</div>
+    <div class="header-top">
+      ${logoBase64 ? `<img src="${logoBase64}" class="school-logo" alt="School Crest" />` : ""}
+      <div>
+        <div class="school-name">Gifford High School</div>
+        <div class="school-motto">"Hinc Orior — From Here I Arise"</div>
+      </div>
+      ${logoBase64 ? `<img src="${logoBase64}" class="school-logo" alt="School Crest" />` : ""}
+    </div>
     <div class="report-title">Termly Report Card</div>
   </div>
 
