@@ -84,12 +84,12 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
   .info-label { font-weight: bold; color: #555; min-width: 110px; }
   .info-value { color: #1a1a1a; }
 
-  /* Results Table */
+   /* Results Table */
   .results-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 10pt; }
-  .results-table th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; }
-  .results-table th:nth-child(n+3) { text-align: center; }
-  .results-table td { padding: 7px 10px; border-bottom: 1px solid #dee2e6; }
-  .results-table td:nth-child(n+3) { text-align: center; }
+  .results-table th { background: #1a5276; color: #fff; padding: 8px 6px; text-align: left; font-weight: 600; }
+  .results-table th:nth-child(3), .results-table th:nth-child(4), .results-table th:nth-child(5) { text-align: center; }
+  .results-table td { padding: 7px 6px; border-bottom: 1px solid #dee2e6; }
+  .results-table td:nth-child(3), .results-table td:nth-child(4), .results-table td:nth-child(5) { text-align: center; }
   .results-table tr:nth-child(even) { background: #f8f9fa; }
   .results-table tr:hover { background: #e9ecef; }
   .results-table .total-row { background: #1a5276 !important; color: #fff; font-weight: bold; }
