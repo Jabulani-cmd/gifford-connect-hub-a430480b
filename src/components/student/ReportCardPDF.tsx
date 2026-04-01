@@ -116,8 +116,14 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
   .grading-key-grid { display: flex; gap: 8px; flex-wrap: wrap; font-size: 9pt; }
   .grading-key-item { padding: 2px 8px; border: 1px solid #ccc; border-radius: 3px; }
 
+   /* Comments Section */
+  .comments-section { margin: 16px 0; }
+  .comment-box { border: 1px solid #dee2e6; border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; }
+  .comment-box h3 { font-size: 10pt; color: #1a5276; margin-bottom: 6px; font-weight: bold; }
+  .comment-box p { font-size: 10pt; color: #333; font-style: italic; min-height: 24px; }
+
   /* Signatures */
-  .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 40px; padding-top: 10px; }
+  .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 30px; padding-top: 10px; }
   .sig-block { text-align: center; }
   .sig-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; font-size: 9pt; color: #555; }
 
