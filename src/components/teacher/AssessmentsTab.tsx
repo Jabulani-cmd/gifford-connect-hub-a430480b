@@ -347,11 +347,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                             <Badge variant="secondary">Not Graded</Badge>
                           )}
                           {sub.file_url && (
-                            <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                <FileText className="h-3 w-3 mr-1" /> View File
-                              </Button>
-                            </a>
+                            <div className="flex items-center gap-1">
+                              <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <Eye className="h-3 w-3 mr-1" /> View
+                                </Button>
+                              </a>
+                              <a href={sub.file_url} download>
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <Download className="h-3 w-3 mr-1" /> Download
+                                </Button>
+                              </a>
+                            </div>
                           )}
                           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
                             const idx = classStudents.findIndex(s => s.id === sub.student_id);
