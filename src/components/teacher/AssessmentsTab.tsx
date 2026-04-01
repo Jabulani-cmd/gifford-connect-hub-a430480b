@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft,
+  Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
   FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
