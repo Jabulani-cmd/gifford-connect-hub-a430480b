@@ -26,6 +26,7 @@ interface Props {
 
 export default function TeacherClassAssignment({ classes, subjects, staff, onRefresh }: Props) {
   const { toast } = useToast();
+  const { lessonSlots, loading: slotsLoading } = useTimeSlots();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [timetableEntries, setTimetableEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
