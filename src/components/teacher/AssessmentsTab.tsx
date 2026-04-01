@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft,
+  Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
   FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -347,11 +347,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                             <Badge variant="secondary">Not Graded</Badge>
                           )}
                           {sub.file_url && (
-                            <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                <FileText className="h-3 w-3 mr-1" /> View File
-                              </Button>
-                            </a>
+                            <div className="flex items-center gap-1">
+                              <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <Eye className="h-3 w-3 mr-1" /> View
+                                </Button>
+                              </a>
+                              <a href={sub.file_url} download>
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <Download className="h-3 w-3 mr-1" /> Download
+                                </Button>
+                              </a>
+                            </div>
                           )}
                           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
                             const idx = classStudents.findIndex(s => s.id === sub.student_id);
@@ -401,7 +408,14 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                       <p className="text-sm font-medium text-primary">📎 Student submitted work</p>
                       {submissions.find(s => s.student_id === currentStudent?.id)?.file_url && (
-                        <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">View submission</a>
+                        <div className="flex items-center gap-3 mt-1">
+                          <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline flex items-center gap-1">
+                            <Eye className="h-3 w-3" /> View submission
+                          </a>
+                          <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} download className="text-xs text-primary underline flex items-center gap-1">
+                            <Download className="h-3 w-3" /> Download
+                          </a>
+                        </div>
                       )}
                       {submissions.find(s => s.student_id === currentStudent?.id)?.comments && (
                         <p className="text-xs text-muted-foreground mt-1">{submissions.find(s => s.student_id === currentStudent?.id)?.comments}</p>
@@ -509,11 +523,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   </div>
                   <div className="flex items-center gap-2">
                     {sub.file_url && (
-                      <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="h-7 text-xs">
-                          <FileText className="h-3 w-3 mr-1" /> View
-                        </Button>
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                            <Eye className="h-3 w-3 mr-1" /> View
+                          </Button>
+                        </a>
+                        <a href={sub.file_url} download>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                            <Download className="h-3 w-3 mr-1" /> Download
+                          </Button>
+                        </a>
+                      </div>
                     )}
                     {assess && (
                       <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openAssessmentDetail(assess)}>
