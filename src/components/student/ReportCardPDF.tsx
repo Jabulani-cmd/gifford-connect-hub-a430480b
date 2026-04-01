@@ -219,6 +219,17 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
     </div>
   </div>
 
+  <div class="comments-section">
+    <div class="comment-box">
+      <h3>Class Teacher's Comment:</h3>
+      <p>${props.classTeacherComment || "________________________________________________________________________________________________________"}</p>
+    </div>
+    <div class="comment-box">
+      <h3>Headmaster's Comment:</h3>
+      <p>${props.headComment || "________________________________________________________________________________________________________"}</p>
+    </div>
+  </div>
+
   <div class="signatures">
     <div class="sig-block"><div class="sig-line">Class Teacher</div></div>
     <div class="sig-block"><div class="sig-line">Head of Department</div></div>
