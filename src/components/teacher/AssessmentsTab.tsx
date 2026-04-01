@@ -113,10 +113,13 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     }
     setSubmitting(true);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    const authUid = user?.id || teacherId;
+
     let file_url = null;
     if (formFile) {
       const ext = formFile.name.split(".").pop();
-      const path = `assessments/${teacherId}/${Date.now()}.${ext}`;
+      const path = `assessments/${authUid}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("school-media").upload(path, formFile);
       if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setSubmitting(false); return; }
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
