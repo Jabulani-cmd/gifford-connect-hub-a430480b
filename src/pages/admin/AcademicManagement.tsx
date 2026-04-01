@@ -276,18 +276,22 @@ export default function AcademicManagement() {
 
     // Clash detection
     if (ttTeacher) {
-      const { data: teacherClash } = await supabase.from("timetable_entries").select("id, classes(name)")
+      let teacherQuery = supabase.from("timetable_entries").select("id, classes(name)")
         .eq("teacher_id", ttTeacher).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
+      if (existing) teacherQuery = teacherQuery.neq("id", existing.id);
+      const { data: teacherClash } = await teacherQuery;
       if (teacherClash && teacherClash.length > 0) {
         toast({ title: "Teacher clash!", description: `Teacher is already assigned at this time`, variant: "destructive" });
         return;
       }
     }
     if (ttRoom) {
-      const { data: roomClash } = await supabase.from("timetable_entries").select("id, classes(name)")
+      let roomQuery = supabase.from("timetable_entries").select("id, classes(name)")
         .eq("room", ttRoom).eq("day_of_week", ttEditCell.day).eq("start_time", ttEditCell.slot.start_time)
         .neq("class_id", ttViewClass);
+      if (existing) roomQuery = roomQuery.neq("id", existing.id);
+      const { data: roomClash } = await roomQuery;
       if (roomClash && roomClash.length > 0) {
         toast({ title: "Room clash!", description: `Room is already booked at this time`, variant: "destructive" });
         return;
