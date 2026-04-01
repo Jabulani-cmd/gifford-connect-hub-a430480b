@@ -408,7 +408,14 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                       <p className="text-sm font-medium text-primary">📎 Student submitted work</p>
                       {submissions.find(s => s.student_id === currentStudent?.id)?.file_url && (
-                        <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">View submission</a>
+                        <div className="flex items-center gap-3 mt-1">
+                          <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline flex items-center gap-1">
+                            <Eye className="h-3 w-3" /> View submission
+                          </a>
+                          <a href={submissions.find(s => s.student_id === currentStudent?.id)?.file_url} download className="text-xs text-primary underline flex items-center gap-1">
+                            <Download className="h-3 w-3" /> Download
+                          </a>
+                        </div>
                       )}
                       {submissions.find(s => s.student_id === currentStudent?.id)?.comments && (
                         <p className="text-xs text-muted-foreground mt-1">{submissions.find(s => s.student_id === currentStudent?.id)?.comments}</p>
