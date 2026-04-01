@@ -27,6 +27,8 @@ interface ReportCardProps {
   averageMark: number;
   averageGrade: string;
   studentId: string | null;
+  classTeacherComment?: string | null;
+  headComment?: string | null;
 }
 
 export default function ReportCardDownloadButton(props: ReportCardProps) {
