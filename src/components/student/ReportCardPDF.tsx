@@ -89,6 +89,8 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
 
   /* Header */
   .header { text-align: center; border-bottom: 3px double #1a5276; padding-bottom: 12px; margin-bottom: 16px; }
+  .header-top { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 6px; }
+  .school-logo { width: 70px; height: 70px; object-fit: contain; }
   .school-name { font-size: 22pt; font-weight: bold; color: #1a5276; letter-spacing: 1px; text-transform: uppercase; }
   .school-motto { font-size: 9pt; color: #555; font-style: italic; margin-top: 2px; }
   .report-title { font-size: 14pt; font-weight: bold; margin-top: 10px; color: #2c3e50; text-transform: uppercase; letter-spacing: 2px; border: 2px solid #1a5276; display: inline-block; padding: 4px 20px; }
