@@ -211,7 +211,7 @@ export default function StudentTermReportsTab() {
                     </div>
 
                     {/* Download Button */}
-                    <ReportCardDownloadButton
+                     <ReportCardDownloadButton
                       studentName={studentInfo.full_name}
                       admissionNumber={studentInfo.admission_number}
                       form={report.form_level}
@@ -224,7 +224,7 @@ export default function StudentTermReportsTab() {
                         subject_code: null,
                         mark: r.mark || 0,
                         grade: r.grade || "U",
-                        teacher_comment: null,
+                        teacher_comment: r.teacher_comment || null,
                         class_rank: null,
                         class_size: null
                       }))}
@@ -232,6 +232,8 @@ export default function StudentTermReportsTab() {
                       averageMark={report.average_mark ?? 0}
                       averageGrade={report.overall_grade ?? "U"}
                       studentId={studentInfo.id}
+                      classTeacherComment={report.class_teacher_comment}
+                      headComment={report.head_comment}
                     />
                   </div>
                 </div>
