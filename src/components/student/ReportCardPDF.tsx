@@ -27,6 +27,8 @@ interface ReportCardProps {
   averageMark: number;
   averageGrade: string;
   studentId: string | null;
+  classTeacherComment?: string | null;
+  headComment?: string | null;
 }
 
 export default function ReportCardDownloadButton(props: ReportCardProps) {
@@ -82,12 +84,12 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
   .info-label { font-weight: bold; color: #555; min-width: 110px; }
   .info-value { color: #1a1a1a; }
 
-  /* Results Table */
+   /* Results Table */
   .results-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 10pt; }
-  .results-table th { background: #1a5276; color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; }
-  .results-table th:nth-child(n+3) { text-align: center; }
-  .results-table td { padding: 7px 10px; border-bottom: 1px solid #dee2e6; }
-  .results-table td:nth-child(n+3) { text-align: center; }
+  .results-table th { background: #1a5276; color: #fff; padding: 8px 6px; text-align: left; font-weight: 600; }
+  .results-table th:nth-child(3), .results-table th:nth-child(4), .results-table th:nth-child(5) { text-align: center; }
+  .results-table td { padding: 7px 6px; border-bottom: 1px solid #dee2e6; }
+  .results-table td:nth-child(3), .results-table td:nth-child(4), .results-table td:nth-child(5) { text-align: center; }
   .results-table tr:nth-child(even) { background: #f8f9fa; }
   .results-table tr:hover { background: #e9ecef; }
   .results-table .total-row { background: #1a5276 !important; color: #fff; font-weight: bold; }
@@ -114,8 +116,14 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
   .grading-key-grid { display: flex; gap: 8px; flex-wrap: wrap; font-size: 9pt; }
   .grading-key-item { padding: 2px 8px; border: 1px solid #ccc; border-radius: 3px; }
 
+   /* Comments Section */
+  .comments-section { margin: 16px 0; }
+  .comment-box { border: 1px solid #dee2e6; border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; }
+  .comment-box h3 { font-size: 10pt; color: #1a5276; margin-bottom: 6px; font-weight: bold; }
+  .comment-box p { font-size: 10pt; color: #333; font-style: italic; min-height: 24px; }
+
   /* Signatures */
-  .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 40px; padding-top: 10px; }
+  .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 30px; padding-top: 10px; }
   .sig-block { text-align: center; }
   .sig-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; font-size: 9pt; color: #555; }
 
@@ -166,7 +174,7 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
           <td><strong>${r.mark}</strong></td>
           <td><span class="grade-badge grade-${(r.grade || "U").toLowerCase().replace("*", "-star")}">${r.grade}</span></td>
           <td>${r.class_rank && r.class_size ? r.class_rank + " of " + r.class_size : "—"}</td>
-          <td style="font-size:9pt;color:#555;max-width:120px;">${r.teacher_comment || "—"}</td>
+           <td style="font-size:9pt;color:#555;text-align:left;min-width:160px;">${r.teacher_comment || "—"}</td>
         </tr>`
         )
         .join("")}
@@ -208,6 +216,17 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
       <span class="grading-key-item"><strong>D</strong> 50-59</span>
       <span class="grading-key-item"><strong>E</strong> 40-49</span>
       <span class="grading-key-item"><strong>U</strong> 0-39</span>
+    </div>
+  </div>
+
+  <div class="comments-section">
+    <div class="comment-box">
+      <h3>Class Teacher's Comment:</h3>
+      <p>${props.classTeacherComment || "________________________________________________________________________________________________________"}</p>
+    </div>
+    <div class="comment-box">
+      <h3>Headmaster's Comment:</h3>
+      <p>${props.headComment || "________________________________________________________________________________________________________"}</p>
     </div>
   </div>
 
