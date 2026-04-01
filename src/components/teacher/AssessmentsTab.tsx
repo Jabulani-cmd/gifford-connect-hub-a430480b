@@ -516,11 +516,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   </div>
                   <div className="flex items-center gap-2">
                     {sub.file_url && (
-                      <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="h-7 text-xs">
-                          <FileText className="h-3 w-3 mr-1" /> View
-                        </Button>
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                            <Eye className="h-3 w-3 mr-1" /> View
+                          </Button>
+                        </a>
+                        <a href={sub.file_url} download>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                            <Download className="h-3 w-3 mr-1" /> Download
+                          </Button>
+                        </a>
+                      </div>
                     )}
                     {assess && (
                       <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openAssessmentDetail(assess)}>
