@@ -80,24 +80,10 @@ Deno.serve(async (req) => {
     // Verify caller authentication
     const authHeader = req.headers.get("Authorization");
 
-    // For register-parent: allow unauthenticated calls (user just signed up,
-    // may not have a confirmed session yet). Validate that user_id exists instead.
+    // For register-parent: allow unauthenticated calls — the edge function
+    // creates the auth user itself via admin API, so no JWT is needed.
     if (action === "register-parent") {
-      const { user_id } = payload;
-      if (!user_id) {
-        return new Response(JSON.stringify({ error: "Missing user_id" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      // Verify user exists in auth.users
-      const { data: userExists, error: userErr } = await supabaseAdmin.auth.admin.getUserById(user_id);
-      if (userErr || !userExists?.user) {
-        return new Response(JSON.stringify({ error: "Invalid user_id" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      // No auth check needed — validated by email/password in the handler below
     } else {
       // All other actions require a valid JWT
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
