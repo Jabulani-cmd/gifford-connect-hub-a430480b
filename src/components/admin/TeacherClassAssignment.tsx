@@ -160,19 +160,19 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
       let slotsAssigned = 0;
       const targetSlots = 2; // 2 periods per subject per class per week
 
-      for (let attempt = 0; attempt < dayNames.length * timeSlots.length && slotsAssigned < targetSlots; attempt++) {
+      for (let attempt = 0; attempt < dayNames.length * lessonSlots.length && slotsAssigned < targetSlots; attempt++) {
         const dayIdx = (slotIdx + attempt) % dayNames.length;
-        const timeIdx = Math.floor((slotIdx + attempt) / dayNames.length) % timeSlots.length;
-        const slot = timeSlots[timeIdx];
+        const timeIdx = Math.floor((slotIdx + attempt) / dayNames.length) % lessonSlots.length;
+        const slot = lessonSlots[timeIdx];
 
-        if (isSlotFree(dayIdx, slot.start, slot.end, assignment.class_id)) {
+        if (isSlotFree(dayIdx, slot.start_time, slot.end_time, assignment.class_id)) {
           const entry = {
             class_id: assignment.class_id,
             subject_id: assignment.subject_id,
             teacher_id: autoTTTeacher,
             day_of_week: dayIdx,
-            start_time: slot.start,
-            end_time: slot.end,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
           };
           newEntries.push(entry);
           // Add to existing to prevent self-clashes
