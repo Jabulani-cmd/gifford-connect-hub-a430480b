@@ -212,7 +212,7 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
     return { ...t, assignmentCount: ta.length, periodCount: tt.length };
   }).filter(t => t.assignmentCount > 0 || selectedTeacher === "all");
 
-  if (loading) {
+  if (loading || slotsLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
