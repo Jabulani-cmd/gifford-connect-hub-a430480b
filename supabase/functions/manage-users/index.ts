@@ -80,24 +80,10 @@ Deno.serve(async (req) => {
     // Verify caller authentication
     const authHeader = req.headers.get("Authorization");
 
-    // For register-parent: allow unauthenticated calls (user just signed up,
-    // may not have a confirmed session yet). Validate that user_id exists instead.
+    // For register-parent: allow unauthenticated calls — the edge function
+    // creates the auth user itself via admin API, so no JWT is needed.
     if (action === "register-parent") {
-      const { user_id } = payload;
-      if (!user_id) {
-        return new Response(JSON.stringify({ error: "Missing user_id" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      // Verify user exists in auth.users
-      const { data: userExists, error: userErr } = await supabaseAdmin.auth.admin.getUserById(user_id);
-      if (userErr || !userExists?.user) {
-        return new Response(JSON.stringify({ error: "Invalid user_id" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      // No auth check needed — validated by email/password in the handler below
     } else {
       // All other actions require a valid JWT
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -613,33 +599,56 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ==================== REGISTER PARENT (public, post-signup) ====================
+    // ==================== REGISTER PARENT (public, self-service) ====================
     if (action === "register-parent") {
-      const { user_id, phone, children } = payload;
-      if (!user_id) {
-        return new Response(JSON.stringify({ error: "user_id required" }), {
+      const { email, password, full_name, phone, children } = payload;
+      if (!email || !password || !full_name) {
+        return new Response(JSON.stringify({ error: "email, password, and full_name are required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Verify user exists
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user_id);
-      if (userError || !userData?.user) {
-        return new Response(JSON.stringify({ error: "Invalid user" }), {
+      // Check if email already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
+      // Use a targeted lookup
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      const emailExists = listData?.users?.some((u: any) => u.email === email);
+      if (emailExists) {
+        return new Response(JSON.stringify({ error: "An account with this email already exists. Please sign in on the Login page instead." }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Update phone on profile (profiles.id = auth user id)
+      // Create user via admin API (auto-confirmed, no email verification needed)
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name },
+      });
+      if (createError) {
+        return new Response(JSON.stringify({ error: createError.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const user_id = newUser.user.id;
+
+      // Update phone on profile
       if (phone) {
         await supabaseAdmin.from("profiles").update({ phone }).eq("id", user_id);
       }
 
-      // Assign parent role (ignore if already exists)
+      // Assign parent role
       await supabaseAdmin.from("user_roles").upsert(
         { user_id, role: "parent" },
         { onConflict: "user_id,role" }
       );
+
+      // Set must_change_password flag
+      await supabaseAdmin.auth.admin.updateUserById(user_id, {
+        app_metadata: { must_change_password: false },
+      });
 
       // Link children via verification codes
       const linkResults: string[] = [];

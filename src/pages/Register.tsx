@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, UserPlus, Plus, X } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +19,6 @@ interface ChildEntry {
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -58,44 +56,22 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const { data, error } = await signUp(email, password, fullName);
-      
-      if (error) {
-        // Handle specific Supabase auth errors
-        if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
-          throw new Error("An account with this email already exists. Please sign in on the Login page instead.");
-        }
-        throw error;
-      }
-
-      const userId = data?.user?.id;
-      if (!userId) throw new Error("Registration failed — please try again.");
-
-      // Detect repeated signup (Supabase returns fake user with empty identities)
-      const identities = data?.user?.identities;
-      if (!identities || identities.length === 0) {
-        throw new Error("An account with this email already exists. Please sign in on the Login page instead, or check your inbox for a confirmation email if you registered recently.");
-      }
-
-      // Use backend function to assign role + link children
+      // Call edge function to create the parent account server-side
       const { data: result, error: invokeError } = await supabase.functions.invoke("manage-users", {
         body: {
           action: "register-parent",
-          user_id: userId,
+          email,
+          password,
+          full_name: fullName,
           phone,
           children: children.filter(c => c.admissionNumber && c.verificationCode),
         },
       });
 
-      if (invokeError) throw new Error(invokeError.message || "Parent registration failed.");
+      if (invokeError) throw new Error(invokeError.message || "Registration failed.");
       if (result?.error) throw new Error(result.error);
 
-      const linkResults: string[] = result.linkResults || [];
-
-      // Sign out so the stale session (with no role) is cleared,
-      // then redirect to login for a clean sign-in that will pick up the role.
-      await supabase.auth.signOut();
-
+      const linkResults: string[] = result?.linkResults || [];
       const description = linkResults.length > 0
         ? `Linked: ${linkResults.join(", ")}. Please sign in.`
         : "Please sign in with your new account.";
