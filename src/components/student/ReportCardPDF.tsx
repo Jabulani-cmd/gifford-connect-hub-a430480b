@@ -38,6 +38,20 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
   const handleDownload = async () => {
     setGenerating(true);
 
+    // Convert school logo to base64 for HTML embedding
+    let logoBase64 = "";
+    try {
+      const response = await fetch(schoolLogoPrint);
+      const blob = await response.blob();
+      logoBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn("Could not load school logo for report card");
+    }
+
     // Fetch attendance summary
     let attendanceSummary = { total: 0, present: 0, absent: 0, late: 0 };
     if (props.studentId) {
