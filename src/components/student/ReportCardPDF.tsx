@@ -174,7 +174,7 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
           <td><strong>${r.mark}</strong></td>
           <td><span class="grade-badge grade-${(r.grade || "U").toLowerCase().replace("*", "-star")}">${r.grade}</span></td>
           <td>${r.class_rank && r.class_size ? r.class_rank + " of " + r.class_size : "—"}</td>
-          <td style="font-size:9pt;color:#555;max-width:120px;">${r.teacher_comment || "—"}</td>
+           <td style="font-size:9pt;color:#555;text-align:left;min-width:160px;">${r.teacher_comment || "—"}</td>
         </tr>`
         )
         .join("")}
