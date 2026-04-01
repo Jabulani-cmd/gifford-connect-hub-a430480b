@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import schoolLogoPrint from "@/assets/school-logo-print.png";
 
 interface ResultRow {
   subject_name: string;
