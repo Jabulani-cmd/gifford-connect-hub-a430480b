@@ -13,20 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Plus, Trash2, Loader2, UserCheck, CalendarClock, Wand2
 } from "lucide-react";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timeSlots = [
-  { start: "07:30", end: "08:10" },
-  { start: "08:10", end: "08:50" },
-  { start: "08:50", end: "09:30" },
-  { start: "09:50", end: "10:30" },
-  { start: "10:30", end: "11:10" },
-  { start: "11:10", end: "11:50" },
-  { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:10" },
-  { start: "13:50", end: "14:30" },
-  { start: "14:30", end: "15:10" },
-];
 
 interface Props {
   classes: any[];
@@ -37,6 +26,7 @@ interface Props {
 
 export default function TeacherClassAssignment({ classes, subjects, staff, onRefresh }: Props) {
   const { toast } = useToast();
+  const { lessonSlots, loading: slotsLoading } = useTimeSlots();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [timetableEntries, setTimetableEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,19 +160,19 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
       let slotsAssigned = 0;
       const targetSlots = 2; // 2 periods per subject per class per week
 
-      for (let attempt = 0; attempt < dayNames.length * timeSlots.length && slotsAssigned < targetSlots; attempt++) {
+      for (let attempt = 0; attempt < dayNames.length * lessonSlots.length && slotsAssigned < targetSlots; attempt++) {
         const dayIdx = (slotIdx + attempt) % dayNames.length;
-        const timeIdx = Math.floor((slotIdx + attempt) / dayNames.length) % timeSlots.length;
-        const slot = timeSlots[timeIdx];
+        const timeIdx = Math.floor((slotIdx + attempt) / dayNames.length) % lessonSlots.length;
+        const slot = lessonSlots[timeIdx];
 
-        if (isSlotFree(dayIdx, slot.start, slot.end, assignment.class_id)) {
+        if (isSlotFree(dayIdx, slot.start_time, slot.end_time, assignment.class_id)) {
           const entry = {
             class_id: assignment.class_id,
             subject_id: assignment.subject_id,
             teacher_id: autoTTTeacher,
             day_of_week: dayIdx,
-            start_time: slot.start,
-            end_time: slot.end,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
           };
           newEntries.push(entry);
           // Add to existing to prevent self-clashes
@@ -222,7 +212,7 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
     return { ...t, assignmentCount: ta.length, periodCount: tt.length };
   }).filter(t => t.assignmentCount > 0 || selectedTeacher === "all");
 
-  if (loading) {
+  if (loading || slotsLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
@@ -358,13 +348,13 @@ export default function TeacherClassAssignment({ classes, subjects, staff, onRef
                     </tr>
                   </thead>
                   <tbody>
-                    {timeSlots.map(slot => (
-                      <tr key={slot.start}>
-                        <td className="border px-2 py-1 font-medium whitespace-nowrap">{slot.start}-{slot.end}</td>
+                    {lessonSlots.map(slot => (
+                      <tr key={slot.start_time}>
+                        <td className="border px-2 py-1 font-medium whitespace-nowrap">{slot.start_time}-{slot.end_time}</td>
                         {dayNames.map((_, di) => {
                           const entry = timetableEntries.find(
                             e => e.teacher_id === selectedTeacher && e.day_of_week === di &&
-                              e.start_time === slot.start && e.end_time === slot.end
+                              e.start_time === slot.start_time && e.end_time === slot.end_time
                           );
                           return (
                             <td key={di} className="border px-1 py-1 text-center">

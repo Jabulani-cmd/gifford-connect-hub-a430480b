@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import schoolLogoPrint from "@/assets/school-logo-print.png";
 
 interface ResultRow {
   subject_name: string;
@@ -36,6 +37,20 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
 
   const handleDownload = async () => {
     setGenerating(true);
+
+    // Convert school logo to base64 for HTML embedding
+    let logoBase64 = "";
+    try {
+      const response = await fetch(schoolLogoPrint);
+      const blob = await response.blob();
+      logoBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn("Could not load school logo for report card");
+    }
 
     // Fetch attendance summary
     let attendanceSummary = { total: 0, present: 0, absent: 0, late: 0 };
@@ -74,6 +89,8 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
 
   /* Header */
   .header { text-align: center; border-bottom: 3px double #1a5276; padding-bottom: 12px; margin-bottom: 16px; }
+  .header-top { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 6px; }
+  .school-logo { width: 70px; height: 70px; object-fit: contain; }
   .school-name { font-size: 22pt; font-weight: bold; color: #1a5276; letter-spacing: 1px; text-transform: uppercase; }
   .school-motto { font-size: 9pt; color: #555; font-style: italic; margin-top: 2px; }
   .report-title { font-size: 14pt; font-weight: bold; margin-top: 10px; color: #2c3e50; text-transform: uppercase; letter-spacing: 2px; border: 2px solid #1a5276; display: inline-block; padding: 4px 20px; }
@@ -139,8 +156,14 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
 <button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
 <div class="container">
   <div class="header">
-    <div class="school-name">Gifford High School</div>
-    <div class="school-motto">"Excellence Through Discipline and Hard Work"</div>
+    <div class="header-top">
+      ${logoBase64 ? `<img src="${logoBase64}" class="school-logo" alt="School Crest" />` : ""}
+      <div>
+        <div class="school-name">Gifford High School</div>
+        <div class="school-motto">"Hinc Orior — From Here I Arise"</div>
+      </div>
+      ${logoBase64 ? `<img src="${logoBase64}" class="school-logo" alt="School Crest" />` : ""}
+    </div>
     <div class="report-title">Termly Report Card</div>
   </div>
 
