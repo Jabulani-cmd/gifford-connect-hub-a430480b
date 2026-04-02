@@ -609,14 +609,28 @@ Deno.serve(async (req) => {
       }
 
       // Check if email already exists
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
-      // Use a targeted lookup
       const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-      const emailExists = listData?.users?.some((u: any) => u.email === email);
-      if (emailExists) {
-        return new Response(JSON.stringify({ error: "An account with this email already exists. Please sign in on the Login page instead." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const existingUser = listData?.users?.find((u: any) => u.email === email);
+
+      let user_id: string;
+
+      if (existingUser) {
+        // Check if this user already has a parent role (genuine duplicate)
+        const { data: hasRole } = await supabaseAdmin
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", existingUser.id)
+          .eq("role", "parent")
+          .maybeSingle();
+
+        if (hasRole) {
+          return new Response(JSON.stringify({ error: "An account with this email already exists. Please sign in on the Login page instead." }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Ghost user from a previous failed registration — delete and recreate
+        await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
       }
 
       // Create user via admin API (auto-confirmed, no email verification needed)
@@ -632,7 +646,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const user_id = newUser.user.id;
+      user_id = newUser.user.id;
 
       // Update phone on profile
       if (phone) {
