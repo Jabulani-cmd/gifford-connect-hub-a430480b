@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import schoolLogoPrint from "@/assets/school-logo-print.png";
 
 // School branding constants
 export const SCHOOL_NAME = "Gifford High School";
@@ -7,7 +8,15 @@ export const SCHOOL_MOTTO = "Hinc Orior – From Here I Arise";
 export const SCHOOL_ADDRESS = "P.O. Box 1965, Bulawayo, Zimbabwe";
 export const SCHOOL_PHONE = "+263 29 288 3621";
 export const SCHOOL_EMAIL = "info@giffordhigh.ac.zw";
-export const SCHOOL_LOGO_URL = "/images/school-logo-print.png";
+export const SCHOOL_LOGO_URL = schoolLogoPrint;
+
+// Cache for logo data URL
+let _logoDataUrlCache: string | null = null;
+export async function getLogoDataUrl(): Promise<string> {
+  if (_logoDataUrlCache) return _logoDataUrlCache;
+  _logoDataUrlCache = await urlToDataUrl(schoolLogoPrint);
+  return _logoDataUrlCache;
+}
 
 export type Money = { usd: number; zig: number };
 
