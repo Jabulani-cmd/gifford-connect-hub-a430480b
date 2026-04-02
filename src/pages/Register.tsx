@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, UserPlus, Plus, X } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -68,7 +69,18 @@ export default function Register() {
         },
       });
 
-      if (invokeError) throw new Error(invokeError.message || "Registration failed.");
+      if (invokeError) {
+        if (invokeError instanceof FunctionsHttpError) {
+          try {
+            const errorContext = await invokeError.context.json();
+            throw new Error(errorContext?.error || errorContext?.message || invokeError.message || "Registration failed.");
+          } catch {
+            throw new Error(invokeError.message || "Registration failed.");
+          }
+        }
+
+        throw new Error(invokeError.message || "Registration failed.");
+      }
       if (result?.error) throw new Error(result.error);
 
       const linkResults: string[] = result?.linkResults || [];
