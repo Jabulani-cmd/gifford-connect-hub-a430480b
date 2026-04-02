@@ -36,6 +36,7 @@ import {
   buildStatementHtml,
   buildReceiptHtml,
   SCHOOL_LOGO_URL,
+  getLogoDataUrl,
 } from "@/lib/finance/pdf";
 import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
 import { printReceipt, openPrintWindow } from "@/lib/finance/print";
