@@ -36,6 +36,7 @@ import {
   buildStatementHtml,
   buildReceiptHtml,
   SCHOOL_LOGO_URL,
+  getLogoDataUrl,
 } from "@/lib/finance/pdf";
 import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
 import { printReceipt, openPrintWindow } from "@/lib/finance/print";
@@ -1181,8 +1182,9 @@ export default function FinanceManagement() {
       let invoiceItems: any[] = [];
       const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", inv.id);
       invoiceItems = data || [];
+      const logoDataUrl = await getLogoDataUrl();
       const html = buildInvoiceHtml({
-        logoDataUrl: SCHOOL_LOGO_URL,
+        logoDataUrl,
         invoiceNumber: inv.invoice_number,
         academicYear: inv.academic_year,
         term: inv.term,
