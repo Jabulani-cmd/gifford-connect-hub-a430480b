@@ -397,7 +397,6 @@ export default function TermReportsTab() {
             )}
           </div>
         )}
-        </div>
 
         {/* Stats */}
         {reports.length > 0 && (
