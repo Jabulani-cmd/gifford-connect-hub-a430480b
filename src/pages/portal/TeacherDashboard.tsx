@@ -343,6 +343,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <TabsTrigger value="lesson-plans" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Lessons</TabsTrigger>
             <TabsTrigger value="progress" className="text-xs sm:text-sm"><TrendingUp className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Progress</TabsTrigger>
             <TabsTrigger value="resources" className="text-xs sm:text-sm"><FolderOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resources</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm"><FileText className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="parent-log" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Parents</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Schedule</TabsTrigger>
             <TabsTrigger value="leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Leave</TabsTrigger>
