@@ -337,9 +337,19 @@ export default function TermReportsTab() {
             <Label>Year</Label>
             <Input value={filterYear} onChange={e => setFilterYear(e.target.value)} className="w-[100px]" />
           </div>
+          <div className="space-y-2">
+            <Label>Generate For</Label>
+            <Select value={generateMode} onValueChange={(v: "all" | "selected") => setGenerateMode(v)}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="selected">Selected Students</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={generateReports} disabled={generating} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {generating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
-            Generate Reports
+            Generate {generateMode === "selected" && selectedStudentIds.length > 0 ? `(${selectedStudentIds.length})` : "Reports"}
           </Button>
           {reports.length > 0 && (
             <>
@@ -351,6 +361,42 @@ export default function TermReportsTab() {
               </Button>
             </>
           )}
+        </div>
+
+        {/* Student Search & Selection (when generating for selected students) */}
+        {generateMode === "selected" && (
+          <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  placeholder="Search students by name or admission number..." 
+                  className="pl-9"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={toggleSelectAllStudents}>
+                {selectedStudentIds.length === filteredStudents.length ? "Deselect All" : "Select All"}
+              </Button>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto space-y-1">
+              {filteredStudents.map(s => (
+                <label key={s.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted cursor-pointer">
+                  <Checkbox
+                    checked={selectedStudentIds.includes(s.id)}
+                    onCheckedChange={() => toggleStudentSelect(s.id)}
+                  />
+                  <span className="text-sm font-medium">{s.full_name}</span>
+                  <span className="text-xs text-muted-foreground">({s.admission_number})</span>
+                </label>
+              ))}
+            </div>
+            {selectedStudentIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">{selectedStudentIds.length} student(s) selected for report generation</p>
+            )}
+          </div>
+        )}
         </div>
 
         {/* Stats */}
