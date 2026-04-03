@@ -194,13 +194,22 @@ export default function TermReportsTab() {
       studentAverages.sort((a, b) => b.avg - a.avg);
       const classSize = studentAverages.filter(s => s.count > 0).length;
 
-      // Delete existing reports for this combination
-      await supabase
-        .from("term_reports")
-        .delete()
-        .eq("form_level", filterForm)
-        .eq("term", filterTerm)
-        .eq("academic_year", filterYear);
+      // Delete existing reports for targeted students only
+      if (generateMode === "selected" && selectedStudentIds.length > 0) {
+        await supabase
+          .from("term_reports")
+          .delete()
+          .in("student_id", formStudents.map(s => s.id))
+          .eq("term", filterTerm)
+          .eq("academic_year", filterYear);
+      } else {
+        await supabase
+          .from("term_reports")
+          .delete()
+          .eq("form_level", filterForm)
+          .eq("term", filterTerm)
+          .eq("academic_year", filterYear);
+      }
 
       // Create new reports
       const reportsToInsert = studentAverages
