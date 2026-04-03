@@ -62,6 +62,9 @@ export default function TermReportsTab() {
   const [filterForm, setFilterForm] = useState("Form 1");
   const [filterTerm, setFilterTerm] = useState("Term 1");
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [generateMode, setGenerateMode] = useState<"all" | "selected">("all");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   
   // Selection for bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -79,7 +82,6 @@ export default function TermReportsTab() {
       .from("students")
       .select("id, full_name, admission_number, form")
       .eq("status", "active")
-      
       .order("full_name");
     if (data) setStudents(data);
     setLoading(false);
@@ -95,6 +97,27 @@ export default function TermReportsTab() {
       .order("class_rank", { nullsFirst: false });
     if (data) setReports(data);
   }
+
+  // Filter students for selection
+  const filteredStudents = students
+    .filter(s => s.form === filterForm)
+    .filter(s => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return s.full_name.toLowerCase().includes(q) || s.admission_number.toLowerCase().includes(q);
+    });
+
+  const toggleStudentSelect = (id: string) => {
+    setSelectedStudentIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAllStudents = () => {
+    if (selectedStudentIds.length === filteredStudents.length) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(filteredStudents.map(s => s.id));
+    }
+  };
 
   async function generateReports() {
     setGenerating(true);
