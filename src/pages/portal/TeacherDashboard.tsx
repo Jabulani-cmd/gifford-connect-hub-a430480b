@@ -559,6 +559,11 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <ResourceLibraryTab userId={user!.id} subjects={subjects} />
           </TabsContent>
 
+          {/* TERM REPORTS */}
+          <TabsContent value="reports">
+            <TeacherTermReportsTab userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
           {/* PARENT COMMUNICATION LOG */}
           <TabsContent value="parent-log">
             <ParentCommunicationLog userId={user!.id} students={students} />
