@@ -32,6 +32,7 @@ import LessonPlansTab from "@/components/teacher/LessonPlansTab";
 import StudentProgressTracker from "@/components/teacher/StudentProgressTracker";
 import ResourceLibraryTab from "@/components/teacher/ResourceLibraryTab";
 import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog";
+import TeacherTermReportsTab from "@/components/teacher/TeacherTermReportsTab";
 import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
