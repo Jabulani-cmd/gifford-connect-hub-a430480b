@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,9 @@ export default function TermReportsTab() {
   const [filterForm, setFilterForm] = useState("Form 1");
   const [filterTerm, setFilterTerm] = useState("Term 1");
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [generateMode, setGenerateMode] = useState<"all" | "selected">("all");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   
   // Selection for bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -79,7 +83,6 @@ export default function TermReportsTab() {
       .from("students")
       .select("id, full_name, admission_number, form")
       .eq("status", "active")
-      
       .order("full_name");
     if (data) setStudents(data);
     setLoading(false);
@@ -96,12 +99,39 @@ export default function TermReportsTab() {
     if (data) setReports(data);
   }
 
+  // Filter students for selection
+  const filteredStudents = students
+    .filter(s => s.form === filterForm)
+    .filter(s => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return s.full_name.toLowerCase().includes(q) || s.admission_number.toLowerCase().includes(q);
+    });
+
+  const toggleStudentSelect = (id: string) => {
+    setSelectedStudentIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAllStudents = () => {
+    if (selectedStudentIds.length === filteredStudents.length) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(filteredStudents.map(s => s.id));
+    }
+  };
+
   async function generateReports() {
     setGenerating(true);
     try {
-      const formStudents = students.filter(s => s.form === filterForm);
+      let formStudents = students.filter(s => s.form === filterForm);
+      
+      // If generating for selected students only, filter further
+      if (generateMode === "selected" && selectedStudentIds.length > 0) {
+        formStudents = formStudents.filter(s => selectedStudentIds.includes(s.id));
+      }
+      
       if (formStudents.length === 0) {
-        toast({ title: "No students", description: "No active students in this form level", variant: "destructive" });
+        toast({ title: "No students", description: generateMode === "selected" ? "No students selected" : "No active students in this form level", variant: "destructive" });
         setGenerating(false);
         return;
       }
@@ -165,13 +195,22 @@ export default function TermReportsTab() {
       studentAverages.sort((a, b) => b.avg - a.avg);
       const classSize = studentAverages.filter(s => s.count > 0).length;
 
-      // Delete existing reports for this combination
-      await supabase
-        .from("term_reports")
-        .delete()
-        .eq("form_level", filterForm)
-        .eq("term", filterTerm)
-        .eq("academic_year", filterYear);
+      // Delete existing reports for targeted students only
+      if (generateMode === "selected" && selectedStudentIds.length > 0) {
+        await supabase
+          .from("term_reports")
+          .delete()
+          .in("student_id", formStudents.map(s => s.id))
+          .eq("term", filterTerm)
+          .eq("academic_year", filterYear);
+      } else {
+        await supabase
+          .from("term_reports")
+          .delete()
+          .eq("form_level", filterForm)
+          .eq("term", filterTerm)
+          .eq("academic_year", filterYear);
+      }
 
       // Create new reports
       const reportsToInsert = studentAverages
@@ -298,9 +337,19 @@ export default function TermReportsTab() {
             <Label>Year</Label>
             <Input value={filterYear} onChange={e => setFilterYear(e.target.value)} className="w-[100px]" />
           </div>
+          <div className="space-y-2">
+            <Label>Generate For</Label>
+            <Select value={generateMode} onValueChange={(v: "all" | "selected") => setGenerateMode(v)}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="selected">Selected Students</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={generateReports} disabled={generating} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {generating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
-            Generate Reports
+            Generate {generateMode === "selected" && selectedStudentIds.length > 0 ? `(${selectedStudentIds.length})` : "Reports"}
           </Button>
           {reports.length > 0 && (
             <>
@@ -313,6 +362,41 @@ export default function TermReportsTab() {
             </>
           )}
         </div>
+
+        {/* Student Search & Selection (when generating for selected students) */}
+        {generateMode === "selected" && (
+          <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  placeholder="Search students by name or admission number..." 
+                  className="pl-9"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={toggleSelectAllStudents}>
+                {selectedStudentIds.length === filteredStudents.length ? "Deselect All" : "Select All"}
+              </Button>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto space-y-1">
+              {filteredStudents.map(s => (
+                <label key={s.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted cursor-pointer">
+                  <Checkbox
+                    checked={selectedStudentIds.includes(s.id)}
+                    onCheckedChange={() => toggleStudentSelect(s.id)}
+                  />
+                  <span className="text-sm font-medium">{s.full_name}</span>
+                  <span className="text-xs text-muted-foreground">({s.admission_number})</span>
+                </label>
+              ))}
+            </div>
+            {selectedStudentIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">{selectedStudentIds.length} student(s) selected for report generation</p>
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         {reports.length > 0 && (
