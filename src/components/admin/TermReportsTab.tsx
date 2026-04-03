@@ -122,9 +122,15 @@ export default function TermReportsTab() {
   async function generateReports() {
     setGenerating(true);
     try {
-      const formStudents = students.filter(s => s.form === filterForm);
+      let formStudents = students.filter(s => s.form === filterForm);
+      
+      // If generating for selected students only, filter further
+      if (generateMode === "selected" && selectedStudentIds.length > 0) {
+        formStudents = formStudents.filter(s => selectedStudentIds.includes(s.id));
+      }
+      
       if (formStudents.length === 0) {
-        toast({ title: "No students", description: "No active students in this form level", variant: "destructive" });
+        toast({ title: "No students", description: generateMode === "selected" ? "No students selected" : "No active students in this form level", variant: "destructive" });
         setGenerating(false);
         return;
       }
