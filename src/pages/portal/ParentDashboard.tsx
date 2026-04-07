@@ -344,6 +344,9 @@ export default function ParentDashboard() {
         </aside>
 
         <main className="flex-1 p-6 max-w-4xl">
+          {portalAccess.trialEndDate && portalAccess.status && (
+            <TrialBanner trialEndDate={portalAccess.trialEndDate} status={portalAccess.status} />
+          )}
           <ChildSelector
             children={children}
             selectedChildId={selectedChildId}
