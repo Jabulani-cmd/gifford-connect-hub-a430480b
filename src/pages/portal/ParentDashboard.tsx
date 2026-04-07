@@ -219,7 +219,21 @@ export default function ParentDashboard() {
     setInvoices(inv || []);
     setChildPayments(pay || []);
     setExams(exm || []);
-    setChildClassId(sc?.class_id || null);
+
+    let resolvedClassId = sc?.class_id || null;
+
+    // Fallback: resolve class from student form/stream if no student_classes entry
+    if (!resolvedClassId) {
+      const child = children.find((c) => c.id === studentId);
+      if (child?.form) {
+        let query = supabase.from("classes").select("id").eq("form_level", child.form);
+        if (child.stream) query = query.eq("stream", child.stream);
+        const { data: cls } = await query.limit(1).maybeSingle();
+        resolvedClassId = cls?.id || null;
+      }
+    }
+
+    setChildClassId(resolvedClassId);
 
     if (exm && exm.length > 0) {
       setSelectedExamId(exm[0].id);
@@ -1252,7 +1266,7 @@ function TabContent(props: TabContentProps) {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Assessments — {child.full_name}</h2>
-        <ParentAssessmentsTab studentId={child.id} />
+        <ParentAssessmentsTab studentId={child.id} studentClassId={childClassId} />
       </motion.div>
     );
   }

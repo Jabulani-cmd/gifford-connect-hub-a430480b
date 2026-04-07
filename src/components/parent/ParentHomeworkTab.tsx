@@ -21,13 +21,41 @@ export default function ParentHomeworkTab({ studentId, studentClassId, studentNa
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState("week");
 
+  const [resolvedClassId, setResolvedClassId] = useState<string | null>(studentClassId);
+
   useEffect(() => {
-    if (studentId && studentClassId) {
-      fetchAll();
+    setResolvedClassId(studentClassId);
+  }, [studentClassId]);
+
+  useEffect(() => {
+    if (!studentId) return;
+    if (resolvedClassId) {
+      fetchAll(resolvedClassId);
     } else {
-      setLoading(false);
+      // Fallback: resolve class from student form/stream
+      resolveAndFetch();
     }
-  }, [studentId, studentClassId]);
+  }, [studentId, resolvedClassId]);
+
+  const resolveAndFetch = async () => {
+    setLoading(true);
+    const { data: student } = await supabase
+      .from("students")
+      .select("form, stream")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    if (student?.form) {
+      let query = supabase.from("classes").select("id").eq("form_level", student.form);
+      if (student.stream) query = query.eq("stream", student.stream);
+      const { data: cls } = await query.limit(1).maybeSingle();
+      if (cls?.id) {
+        setResolvedClassId(cls.id);
+        return; // will trigger useEffect again with resolvedClassId
+      }
+    }
+    setLoading(false);
+  };
 
   const fetchAll = async () => {
     setLoading(true);
