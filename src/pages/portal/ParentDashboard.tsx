@@ -1178,6 +1178,16 @@ function TabContent(props: TabContentProps) {
                               {inv.status}
                             </Badge>
                           </td>
+                          <td className="px-3 py-2 text-center">
+                            {bal > 0 && (
+                              <PayFeesOnlineButton
+                                invoiceId={inv.id}
+                                studentId={selectedChildId || ""}
+                                studentName={selectedChild?.full_name || "Student"}
+                                amountDue={bal}
+                              />
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
