@@ -294,13 +294,14 @@ export default function ParentDashboard() {
   }
 
   // Show paywall if access is blocked
-  if (!portalAccess.hasAccess && portalAccess.subscriptionId) {
+  if (!portalAccess.hasAccess) {
     const selectedChild = children.find(c => c.id === selectedChildId);
     return (
       <ParentPaywall
         subscriptionId={portalAccess.subscriptionId}
         studentName={selectedChild?.full_name}
         amount={10}
+        reason={portalAccess.reason}
       />
     );
   }

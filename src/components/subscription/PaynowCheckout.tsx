@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, BookOpen, TrendingUp, Bell, Receipt, GraduationCap, Smartphone, CreditCard, Loader2, CheckCircle, XCircle } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 interface PaynowCheckoutProps {
   paymentType: "subscription" | "fees";
@@ -34,6 +36,23 @@ const features = [
 type PaymentMethod = "ecocash" | "onemoney" | "web";
 type CheckoutStep = "method" | "processing" | "polling" | "success" | "failed";
 
+function getCurrentTerm(): string {
+  const month = new Date().getMonth() + 1;
+  if (month >= 1 && month <= 4) return "Term 1";
+  if (month >= 5 && month <= 8) return "Term 2";
+  return "Term 3";
+}
+
+function getCurrentYear(): string {
+  return new Date().getFullYear().toString();
+}
+
+const TERM_OPTIONS = [
+  { value: "Term 1", label: "Term 1 (Jan – Apr)" },
+  { value: "Term 2", label: "Term 2 (May – Aug)" },
+  { value: "Term 3", label: "Term 3 (Sep – Dec)" },
+];
+
 export default function PaynowCheckout({
   paymentType,
   subscriptionId,
@@ -54,8 +73,23 @@ export default function PaynowCheckout({
   const [pollRef, setPollRef] = useState<string | null>(null);
   const [pollUrl, setPollUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState(getCurrentTerm());
+  const [selectedYear] = useState(getCurrentYear());
   const { toast } = useToast();
+  const { rate, usdToZig } = useExchangeRate();
   const pollIntervalRef = useRef<number | null>(null);
+
+  // Calculate ZiG amount when currency changes
+  useEffect(() => {
+    if (paymentType === "subscription") {
+      if (currency === "zig") {
+        setAmount(Math.round(usdToZig(defaultAmount) * 100) / 100);
+      } else {
+        setAmount(defaultAmount);
+      }
+    }
+  }, [currency, defaultAmount, rate]);
 
   // Get user email on mount
   useEffect(() => {
@@ -79,6 +113,7 @@ export default function PaynowCheckout({
 
     setLoading(true);
     setStep("processing");
+    setErrorMessage(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("paynow-initiate", {
@@ -92,10 +127,15 @@ export default function PaynowCheckout({
           method,
           phone: phone.replace(/\s/g, ""),
           email,
+          term: selectedTerm,
+          year: selectedYear,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // supabase.functions.invoke wraps non-2xx as error
+        throw new Error(error.message || "Payment request failed");
+      }
       if (data?.error) throw new Error(data.error);
 
       // Demo mode - payment auto-completed
@@ -129,10 +169,12 @@ export default function PaynowCheckout({
       }
     } catch (err: any) {
       console.error("Payment error:", err);
+      const msg = err.message || "Something went wrong. Please try again.";
+      setErrorMessage(msg);
       setStep("failed");
       toast({
         title: "Payment Failed",
-        description: err.message || "Something went wrong. Please try again.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -142,13 +184,14 @@ export default function PaynowCheckout({
 
   const startPolling = (ref: string, url: string | null) => {
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes at 5s intervals
+    const maxAttempts = 60;
 
     pollIntervalRef.current = window.setInterval(async () => {
       attempts++;
       if (attempts > maxAttempts) {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         setStep("failed");
+        setErrorMessage("Payment timed out. If you completed the payment, please wait a few minutes and refresh.");
         return;
       }
 
@@ -164,6 +207,7 @@ export default function PaynowCheckout({
         } else if (data?.status === "failed") {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           setStep("failed");
+          setErrorMessage("Payment was declined or cancelled.");
         }
       } catch (e) {
         console.error("Poll error:", e);
@@ -182,7 +226,7 @@ export default function PaynowCheckout({
             <h2 className="text-2xl font-bold text-foreground">Payment Successful!</h2>
             <p className="text-muted-foreground">
               {paymentType === "subscription"
-                ? "Your portal subscription is now active. You have full access."
+                ? `Your portal subscription for ${selectedTerm} ${selectedYear} is now active. You have full access.`
                 : "Your fee payment has been received and recorded."}
             </p>
             <Button onClick={() => window.location.reload()} className="mt-4">
@@ -204,9 +248,9 @@ export default function PaynowCheckout({
             </div>
             <h2 className="text-2xl font-bold text-foreground">Payment Failed</h2>
             <p className="text-muted-foreground">
-              The payment was not completed. Please try again.
+              {errorMessage || "The payment was not completed. Please try again."}
             </p>
-            <Button onClick={() => setStep("method")} variant="outline" className="mt-4">
+            <Button onClick={() => { setStep("method"); setErrorMessage(null); }} variant="outline" className="mt-4">
               Try Again
             </Button>
           </CardContent>
@@ -259,6 +303,23 @@ export default function PaynowCheckout({
         </CardHeader>
 
         <CardContent className="space-y-5">
+          {/* Term selection for subscriptions */}
+          {paymentType === "subscription" && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Select Term</Label>
+              <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TERM_OPTIONS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label} {selectedYear}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Currency selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Currency</Label>
@@ -291,11 +352,16 @@ export default function PaynowCheckout({
 
           {paymentType === "subscription" && (
             <div className="rounded-xl border-2 border-primary bg-primary/5 p-4 text-center">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Per Term</p>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{selectedTerm} {selectedYear}</p>
               <p className="text-3xl font-bold text-primary">
-                {currency === "usd" ? "$" : "ZiG "}{amount}
+                {currency === "usd" ? "$" : "ZiG "}{amount.toFixed(2)}
               </p>
               <p className="text-xs text-muted-foreground">per student per term</p>
+              {currency === "zig" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  (Rate: 1 USD = {rate} ZiG)
+                </p>
+              )}
             </div>
           )}
 
@@ -379,7 +445,7 @@ export default function PaynowCheckout({
                 ) : (
                   <CreditCard className="h-5 w-5" />
                 )}
-                Pay {currency === "usd" ? "$" : "ZiG "}{amount} via {method === "ecocash" ? "EcoCash" : method === "onemoney" ? "OneMoney" : "Card/Bank"}
+                Pay {currency === "usd" ? "$" : "ZiG "}{amount.toFixed(2)} via {method === "ecocash" ? "EcoCash" : method === "onemoney" ? "OneMoney" : "Card/Bank"}
               </>
             )}
           </Button>
