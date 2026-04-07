@@ -340,6 +340,7 @@ export default function StudentManagement() {
   );
 
   const openAdd = () => {
+    console.log("openAdd called, setting dialogOpen to true");
     setEditingId(null);
     setFormData(emptyForm);
     setPhotoUrl(null);
