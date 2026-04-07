@@ -267,11 +267,23 @@ export default function ParentDashboard() {
     navigate("/login");
   };
 
-  if (loading) {
+  if (loading || portalAccess.loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
       </div>
+    );
+  }
+
+  // Show paywall if access is blocked
+  if (!portalAccess.hasAccess && portalAccess.subscriptionId) {
+    const selectedChild = children.find(c => c.id === selectedChildId);
+    return (
+      <ParentPaywall
+        subscriptionId={portalAccess.subscriptionId}
+        studentName={selectedChild?.full_name}
+        amount={10}
+      />
     );
   }
 
