@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   LogOut, Users, GraduationCap, Calendar, DollarSign, Bell,
-  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText
+  TrendingUp, BookOpen, Trophy, Award, ChevronRight, LinkIcon, Plus, CalendarDays, FileText, ClipboardList
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,10 +21,11 @@ import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
+import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-type TabId = "overview" | "grades" | "homework" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "homework" | "assessments" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
@@ -188,6 +189,7 @@ export default function ParentDashboard() {
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
     { id: "homework", label: "Homework", icon: BookOpen },
+    { id: "assessments", label: "Assessments", icon: ClipboardList },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -681,6 +683,15 @@ function TabContent(props: TabContentProps) {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Homework & Assignments — {child.full_name}</h2>
         <ParentHomeworkTab studentId={child.id} />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "assessments") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Assessments — {child.full_name}</h2>
+        <ParentAssessmentsTab studentId={child.id} />
       </motion.div>
     );
   }
