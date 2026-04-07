@@ -49,8 +49,9 @@ import StudentMarksTab from "@/components/student/StudentMarksTab";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
+import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 
-type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments";
 
 interface ChildInfo {
   id: string;
@@ -297,6 +298,7 @@ export default function ParentDashboard() {
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
     { id: "homework", label: "Homework", icon: BookOpen },
+    { id: "assessments", label: "Assessments", icon: ClipboardList },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
