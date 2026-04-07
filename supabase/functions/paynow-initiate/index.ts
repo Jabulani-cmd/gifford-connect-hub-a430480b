@@ -86,6 +86,7 @@ serve(async (req) => {
 
     const integrationId = Deno.env.get("PAYNOW_INTEGRATION_ID");
     const integrationKey = Deno.env.get("PAYNOW_INTEGRATION_KEY");
+    const merchantTestEmail = Deno.env.get("PAYNOW_TEST_EMAIL")?.trim() || "";
     const isDemoMode = !integrationId || !integrationKey;
 
     const adminClient = createClient(
@@ -98,6 +99,7 @@ serve(async (req) => {
     // Build description
     let description = "";
     let studentName = "";
+    let studentAdmissionNumber = "";
     if (payment_type === "subscription" && subscription_id) {
       const { data: sub } = await adminClient
         .from("portal_subscriptions")
@@ -105,14 +107,16 @@ serve(async (req) => {
         .eq("id", subscription_id)
         .single();
       studentName = sub?.students?.full_name || "Student";
+      studentAdmissionNumber = sub?.students?.admission_number || "";
       description = `Portal subscription for ${studentName} (${currency.toUpperCase()})`;
     } else if (payment_type === "fees" && invoice_id) {
       const { data: inv } = await adminClient
         .from("invoices")
-        .select("*, students(full_name, admission_number)")
+        .select("invoice_number, students(full_name, admission_number)")
         .eq("id", invoice_id)
         .single();
       studentName = inv?.students?.full_name || "Student";
+      studentAdmissionNumber = inv?.students?.admission_number || "";
       description = `School fees for ${studentName} - ${inv?.invoice_number || ""} (${currency.toUpperCase()})`;
     } else {
       description = `Payment - Gifford High School (${currency.toUpperCase()})`;
@@ -137,7 +141,7 @@ serve(async (req) => {
         payment_type: "fees",
         status: isDemoMode ? "completed" : "pending",
         student_id: student_id || null,
-        student_number: reference,
+        student_number: studentAdmissionNumber || null,
         stripe_checkout_session_id: reference,
       });
     }
@@ -242,6 +246,10 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://gifford-connect-hub.lovable.app";
     const resultUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paynow-callback`;
     const returnUrl = `${origin}/portal/parent-teacher?payment=success&ref=${reference}`;
+    const normalizedPhone = (phone || "").replace(/\s+/g, "");
+    const authEmail = (method === "ecocash" || method === "onemoney")
+      ? (merchantTestEmail || email || "")
+      : (email || "");
 
     const fields: Record<string, string> = {
       id: integrationId,
@@ -250,7 +258,7 @@ serve(async (req) => {
       additionalinfo: description,
       returnurl: returnUrl,
       resulturl: resultUrl,
-      authemail: email || "",
+      authemail: authEmail,
       status: "Message",
     };
 
@@ -260,7 +268,7 @@ serve(async (req) => {
     ];
 
     if (method === "ecocash" || method === "onemoney") {
-      fields.phone = phone;
+      fields.phone = normalizedPhone;
       fields.method = method;
       hashValues.push(fields.phone, fields.method);
     }
@@ -273,11 +281,25 @@ serve(async (req) => {
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join("&");
 
-    const paynowRes = await fetch(paynowUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formBody,
-    });
+    let paynowRes: Response;
+    try {
+      paynowRes = await fetch(paynowUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody,
+      });
+    } catch (fetchErr) {
+      const isMobileMoney = method === "ecocash" || method === "onemoney";
+      console.error("Payment error:", fetchErr);
+      return new Response(JSON.stringify({
+        error: isMobileMoney
+          ? "Paynow mobile money test mode could not be reached. If your integration is still in test mode, set PAYNOW_TEST_EMAIL to the merchant login email and use Paynow test numbers like 0771111111."
+          : "Paynow could not be reached. Please try again shortly.",
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const responseText = await paynowRes.text();
     const parsed = parsePaynowResponse(responseText);

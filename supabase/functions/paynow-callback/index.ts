@@ -118,13 +118,13 @@ serve(async (req) => {
 
       // Handle fee payment
       if (txn.payment_type === "fees" && txn.invoice_id) {
-        // Update online_payments
+        // Update online_payments using the stored payment reference
         await adminClient
           .from("online_payments")
-          .update({ status: "completed", completed_at: new Date().toISOString() })
-          .eq("student_number", reference);
+          .update({ status: "completed", completed_at: new Date().toISOString(), stripe_payment_intent_id: paynowReference || reference })
+          .eq("stripe_checkout_session_id", reference);
 
-        // Find student and create payment record
+        // Create payment record
         if (txn.student_id) {
           const receiptNumber = `PNW-${Date.now().toString(36).toUpperCase()}`;
           await adminClient.from("payments").insert({
