@@ -20,10 +20,11 @@ import StudentExamTimetableTab from "@/components/student/StudentExamTimetableTa
 import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
+import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-type TabId = "overview" | "grades" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "homework" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
@@ -186,6 +187,7 @@ export default function ParentDashboard() {
     { id: "grades", label: "Grades", icon: GraduationCap },
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
+    { id: "homework", label: "Homework", icon: BookOpen },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -670,6 +672,15 @@ function TabContent(props: TabContentProps) {
             )}
           </>
         )}
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "homework") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Homework & Assignments — {child.full_name}</h2>
+        <ParentHomeworkTab studentId={child.id} />
       </motion.div>
     );
   }
