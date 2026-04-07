@@ -1117,6 +1117,16 @@ function TabContent(props: TabContentProps) {
                             {bal < 0 ? `+$${Math.abs(bal).toFixed(2)} credit` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
                           </span>
                         </div>
+                        {bal > 0 && (
+                          <div className="pt-2">
+                            <PayFeesOnlineButton
+                              invoiceId={inv.id}
+                              studentId={selectedChildId || ""}
+                              studentName={selectedChild?.full_name || "Student"}
+                              amountDue={bal}
+                            />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -1133,6 +1143,7 @@ function TabContent(props: TabContentProps) {
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Paid</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Balance</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Status</th>
+                      <th className="px-3 py-2 text-center font-medium text-muted-foreground">Action</th>
                     </tr>
                   </thead>
                   <tbody>
