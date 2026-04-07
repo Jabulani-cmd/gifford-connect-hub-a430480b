@@ -399,7 +399,16 @@ export default function FinanceManagement() {
         fetchInvoices();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "bank_transactions" }, () => {
-        // Refresh relevant data when bank transactions change
+        fetchPayments();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "paynow_transactions" }, () => {
+        fetchPayments();
+        fetchInvoices();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_payments" }, () => {
+        fetchPayments();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_subscriptions" }, () => {
         fetchPayments();
       })
       .subscribe();
