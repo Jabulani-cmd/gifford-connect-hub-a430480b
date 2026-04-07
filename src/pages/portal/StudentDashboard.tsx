@@ -203,12 +203,17 @@ export default function StudentDashboard() {
     navigate("/login");
   };
 
-  if (loading) {
+  if (loading || portalAccess.loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
       </div>
     );
+  }
+
+  // Block student portal if no active subscription
+  if (!portalAccess.hasAccess) {
+    return <StudentAccessBlocked />;
   }
 
   return (
