@@ -133,8 +133,8 @@ export default function PaynowCheckout({
       });
 
       if (error) {
-        // supabase.functions.invoke wraps non-2xx as error
-        throw new Error(error.message || "Payment request failed");
+        const fallbackMessage = data?.error || error.message || "Payment request failed";
+        throw new Error(fallbackMessage);
       }
       if (data?.error) throw new Error(data.error);
 
