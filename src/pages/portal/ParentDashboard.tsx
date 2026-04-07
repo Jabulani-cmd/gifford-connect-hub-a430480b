@@ -381,6 +381,9 @@ export default function ParentDashboard() {
       {/* Mobile */}
       <div className="md:hidden">
         <main className="container px-4 py-4 space-y-4">
+          {portalAccess.trialEndDate && portalAccess.status && (
+            <TrialBanner trialEndDate={portalAccess.trialEndDate} status={portalAccess.status} />
+          )}
           <ChildSelector
             children={children}
             selectedChildId={selectedChildId}
