@@ -1,4 +1,8 @@
 // @ts-nocheck
+// Subscription imports
+import { usePortalAccess } from "@/hooks/usePortalAccess";
+import TrialBanner from "@/components/subscription/TrialBanner";
+import ParentPaywall from "@/components/subscription/ParentPaywall";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";

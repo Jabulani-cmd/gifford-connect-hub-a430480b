@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { usePortalAccess } from "@/hooks/usePortalAccess";
+import StudentAccessBlocked from "@/components/subscription/StudentAccessBlocked";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
