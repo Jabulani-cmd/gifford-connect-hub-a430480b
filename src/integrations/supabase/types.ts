@@ -2211,6 +2211,100 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_payments: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          currency: string
+          id: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          subscription_id: string
+        }
+        Insert: {
+          amount_usd?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          subscription_id: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "portal_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_subscriptions: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          id: string
+          last_payment_date: string | null
+          parent_id: string
+          payment_due_date: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          student_id: string
+          trial_end_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usd?: number
+          created_at?: string
+          id?: string
+          last_payment_date?: string | null
+          parent_id: string
+          payment_due_date?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          student_id: string
+          trial_end_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          id?: string
+          last_payment_date?: string | null
+          parent_id?: string
+          payment_due_date?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          student_id?: string
+          trial_end_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_subscriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3412,6 +3506,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_portal_access: {
+        Args: { _role: string; _user_id: string }
+        Returns: Json
+      }
       column_exists: { Args: { col: string; tbl: string }; Returns: boolean }
       delete_class_cascade: { Args: { _class_id: string }; Returns: undefined }
       delete_staff_cascade: { Args: { _staff_id: string }; Returns: undefined }

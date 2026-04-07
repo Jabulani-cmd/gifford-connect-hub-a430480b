@@ -1,4 +1,8 @@
 // @ts-nocheck
+// Subscription imports
+import { usePortalAccess } from "@/hooks/usePortalAccess";
+import TrialBanner from "@/components/subscription/TrialBanner";
+import ParentPaywall from "@/components/subscription/ParentPaywall";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -90,6 +94,7 @@ export default function ParentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { rate, usdToZig } = useExchangeRate();
+  const portalAccess = usePortalAccess();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [children, setChildren] = useState<ChildInfo[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
@@ -262,11 +267,23 @@ export default function ParentDashboard() {
     navigate("/login");
   };
 
-  if (loading) {
+  if (loading || portalAccess.loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
       </div>
+    );
+  }
+
+  // Show paywall if access is blocked
+  if (!portalAccess.hasAccess && portalAccess.subscriptionId) {
+    const selectedChild = children.find(c => c.id === selectedChildId);
+    return (
+      <ParentPaywall
+        subscriptionId={portalAccess.subscriptionId}
+        studentName={selectedChild?.full_name}
+        amount={10}
+      />
     );
   }
 
@@ -327,6 +344,9 @@ export default function ParentDashboard() {
         </aside>
 
         <main className="flex-1 p-6 max-w-4xl">
+          {portalAccess.trialEndDate && portalAccess.status && (
+            <TrialBanner trialEndDate={portalAccess.trialEndDate} status={portalAccess.status} />
+          )}
           <ChildSelector
             children={children}
             selectedChildId={selectedChildId}
@@ -361,6 +381,9 @@ export default function ParentDashboard() {
       {/* Mobile */}
       <div className="md:hidden">
         <main className="container px-4 py-4 space-y-4">
+          {portalAccess.trialEndDate && portalAccess.status && (
+            <TrialBanner trialEndDate={portalAccess.trialEndDate} status={portalAccess.status} />
+          )}
           <ChildSelector
             children={children}
             selectedChildId={selectedChildId}

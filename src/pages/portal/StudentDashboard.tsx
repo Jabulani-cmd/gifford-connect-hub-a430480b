@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { usePortalAccess } from "@/hooks/usePortalAccess";
+import StudentAccessBlocked from "@/components/subscription/StudentAccessBlocked";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -29,6 +31,7 @@ type TabId = "home" | "materials" | "assessments" | "attendance" | "profile";
 export default function StudentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const portalAccess = usePortalAccess();
   const [activeTab, setActiveTab] = useState<TabId>("home");
 
   const [profile, setProfile] = useState<any>(null);
@@ -200,12 +203,17 @@ export default function StudentDashboard() {
     navigate("/login");
   };
 
-  if (loading) {
+  if (loading || portalAccess.loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
       </div>
     );
+  }
+
+  // Block student portal if no active subscription
+  if (!portalAccess.hasAccess) {
+    return <StudentAccessBlocked />;
   }
 
   return (
