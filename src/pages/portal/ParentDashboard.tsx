@@ -48,8 +48,9 @@ import PayFeesOnlineButton from "@/components/subscription/PayFeesOnlineButton";
 import StudentMarksTab from "@/components/student/StudentMarksTab";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 
-type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework";
 
 interface ChildInfo {
   id: string;
