@@ -28,6 +28,27 @@ function parsePaynowResponse(responseText: string): Record<string, string> {
   return result;
 }
 
+function normalizePhoneNumber(value: string): string {
+  const digits = value.replace(/\D+/g, "");
+  if (digits.startsWith("263") && digits.length === 12) {
+    return `0${digits.slice(3)}`;
+  }
+  return digits;
+}
+
+function getPaynowTestOutcome(phone: string): { status: "completed" | "failed"; message: string } | null {
+  switch (phone) {
+    case "0771111111":
+      return { status: "completed", message: "TEST MODE: EcoCash payment approved successfully." };
+    case "0773333333":
+      return { status: "failed", message: "TEST MODE: Payment was cancelled by the user." };
+    case "0774444444":
+      return { status: "failed", message: "TEST MODE: Payment failed because of insufficient balance." };
+    default:
+      return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -95,6 +116,8 @@ serve(async (req) => {
     );
 
     const reference = `GHS-${payment_type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const normalizedPhone = normalizePhoneNumber(phone || "");
+    const isMobileMoney = method === "ecocash" || method === "onemoney";
 
     // Build description
     let description = "";
@@ -242,11 +265,128 @@ serve(async (req) => {
       });
     }
 
+    const paynowTestOutcome = merchantTestEmail && isMobileMoney
+      ? getPaynowTestOutcome(normalizedPhone)
+      : null;
+
+    if (paynowTestOutcome) {
+      const paynowReference = `TEST-${Date.now()}`;
+
+      await adminClient.from("paynow_transactions").insert({
+        reference,
+        poll_url: null,
+        browser_url: null,
+        payment_type,
+        subscription_id: subscription_id || null,
+        invoice_id: invoice_id || null,
+        student_id: student_id || null,
+        parent_id: userId,
+        amount: parseFloat(amount),
+        currency,
+        method: method || "web",
+        status: paynowTestOutcome.status,
+        paynow_reference: paynowReference,
+      });
+
+      if (payment_type === "subscription" && subscription_id) {
+        await adminClient
+          .from("portal_payments")
+          .update({
+            status: paynowTestOutcome.status,
+            stripe_payment_intent_id: paynowReference,
+          })
+          .eq("stripe_checkout_session_id", reference);
+      } else if (payment_type === "fees") {
+        await adminClient
+          .from("online_payments")
+          .update({
+            status: paynowTestOutcome.status,
+            completed_at: paynowTestOutcome.status === "completed" ? new Date().toISOString() : null,
+            stripe_payment_intent_id: paynowReference,
+          })
+          .eq("stripe_checkout_session_id", reference);
+      }
+
+      if (paynowTestOutcome.status === "completed") {
+        if (payment_type === "subscription" && subscription_id) {
+          await adminClient
+            .from("portal_subscriptions")
+            .update({
+              status: "active",
+              last_payment_date: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", subscription_id);
+
+          if (userId) {
+            await adminClient.from("notifications").insert({
+              user_id: userId,
+              title: "Payment Successful (Test Mode)",
+              message: "Your portal subscription is now active. Full portal access has been granted.",
+              type: "payment",
+            });
+          }
+        }
+
+        if (payment_type === "fees" && student_id) {
+          const receiptNumber = `TEST-${Date.now().toString(36).toUpperCase()}`;
+          if (invoice_id) {
+            await adminClient.from("payments").insert({
+              student_id,
+              invoice_id,
+              amount_usd: currency === "usd" ? parseFloat(amount) : 0,
+              amount_zig: currency === "zig" ? parseFloat(amount) : 0,
+              payment_method: `paynow_${method || "web"}_test`,
+              receipt_number: receiptNumber,
+              reference_number: paynowReference,
+              notes: `Test payment via Paynow (${(method || "web").toUpperCase()})`,
+            });
+          }
+
+          if (userId) {
+            await adminClient.from("notifications").insert({
+              user_id: userId,
+              title: "Fee Payment Received (Test Mode)",
+              message: `Your school fee payment of ${currency.toUpperCase()} ${parseFloat(amount).toFixed(2)} has been recorded.`,
+              type: "payment",
+            });
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          demo: true,
+          test: true,
+          method,
+          message: paynowTestOutcome.message,
+          reference,
+          poll_url: null,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (userId) {
+        await adminClient.from("notifications").insert({
+          user_id: userId,
+          title: "Payment Failed (Test Mode)",
+          message: paynowTestOutcome.message,
+          type: "payment",
+        });
+      }
+
+      return new Response(JSON.stringify({
+        error: paynowTestOutcome.message,
+        test: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ─── LIVE MODE (Paynow keys configured) ──────────────────────
     const origin = req.headers.get("origin") || "https://gifford-connect-hub.lovable.app";
     const resultUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paynow-callback`;
     const returnUrl = `${origin}/portal/parent-teacher?payment=success&ref=${reference}`;
-    const normalizedPhone = (phone || "").replace(/\s+/g, "");
     const authEmail = (method === "ecocash" || method === "onemoney")
       ? (merchantTestEmail || email || "")
       : (email || "");
