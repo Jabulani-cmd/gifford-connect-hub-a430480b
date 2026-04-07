@@ -22,6 +22,7 @@ import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
+import ParentBottomNav from "@/components/parent/ParentBottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
