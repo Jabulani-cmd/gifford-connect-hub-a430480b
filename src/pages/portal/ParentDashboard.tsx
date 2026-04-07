@@ -1121,8 +1121,8 @@ function TabContent(props: TabContentProps) {
                           <div className="pt-2">
                             <PayFeesOnlineButton
                               invoiceId={inv.id}
-                              studentId={selectedChildId || ""}
-                              studentName={selectedChild?.full_name || "Student"}
+                              studentId={child.id}
+                              studentName={child.full_name || "Student"}
                               amountDue={bal}
                             />
                           </div>
@@ -1182,8 +1182,8 @@ function TabContent(props: TabContentProps) {
                             {bal > 0 && (
                               <PayFeesOnlineButton
                                 invoiceId={inv.id}
-                                studentId={selectedChildId || ""}
-                                studentName={selectedChild?.full_name || "Student"}
+                                studentId={child.id}
+                                studentName={child.full_name || "Student"}
                                 amountDue={bal}
                               />
                             )}
