@@ -683,7 +683,7 @@ export default function StudentManagement() {
           <BulkGenerateCodes />
           <Button onClick={printStudents} variant="outline" size="sm"><Printer className="mr-1 h-4 w-4" /> Print</Button>
           <Button onClick={exportCSV} variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Export CSV</Button>
-          <Button onClick={openAdd} className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="mr-1 h-4 w-4" /> Add Student</Button>
+          <Button type="button" onClick={() => openAdd()} className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="mr-1 h-4 w-4" /> Add Student</Button>
         </div>
       </div>
 
