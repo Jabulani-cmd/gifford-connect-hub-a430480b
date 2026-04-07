@@ -283,10 +283,14 @@ serve(async (req) => {
 
     let paynowRes: Response;
     try {
+      // Force HTTP/1.1 — Paynow runs on IIS which resets HTTP/2 connections
+      const httpClient = Deno.createHttpClient({ http1: true, http2: false });
       paynowRes = await fetch(paynowUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formBody,
+        // @ts-ignore Deno-specific option
+        client: httpClient,
       });
     } catch (fetchErr) {
       const isMobileMoney = method === "ecocash" || method === "onemoney";
