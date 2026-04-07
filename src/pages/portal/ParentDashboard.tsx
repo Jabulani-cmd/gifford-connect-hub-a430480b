@@ -209,7 +209,7 @@ export default function ParentDashboard() {
         .select("class_id")
         .eq("student_id", studentId)
         .limit(1)
-        .single(),
+        .maybeSingle(),
     ]);
 
     setAttendanceData(att || []);
