@@ -21,27 +21,55 @@ export default function ParentHomeworkTab({ studentId, studentClassId, studentNa
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState("week");
 
-  useEffect(() => {
-    if (studentId && studentClassId) {
-      fetchAll();
-    } else {
-      setLoading(false);
-    }
-  }, [studentId, studentClassId]);
+  const [resolvedClassId, setResolvedClassId] = useState<string | null>(studentClassId);
 
-  const fetchAll = async () => {
+  useEffect(() => {
+    setResolvedClassId(studentClassId);
+  }, [studentClassId]);
+
+  useEffect(() => {
+    if (!studentId) return;
+    if (resolvedClassId) {
+      fetchAll(resolvedClassId);
+    } else {
+      // Fallback: resolve class from student form/stream
+      resolveAndFetch();
+    }
+  }, [studentId, resolvedClassId]);
+
+  const resolveAndFetch = async () => {
+    setLoading(true);
+    const { data: student } = await supabase
+      .from("students")
+      .select("form, stream")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    if (student?.form) {
+      let query = supabase.from("classes").select("id").eq("form_level", student.form);
+      if (student.stream) query = query.eq("stream", student.stream);
+      const { data: cls } = await query.limit(1).maybeSingle();
+      if (cls?.id) {
+        setResolvedClassId(cls.id);
+        return; // will trigger useEffect again with resolvedClassId
+      }
+    }
+    setLoading(false);
+  };
+
+  const fetchAll = async (classId: string) => {
     setLoading(true);
     const [{ data: hw }, { data: assess }, { data: subs }, { data: res }] = await Promise.all([
       supabase
         .from("homework")
         .select("*, subjects(name)")
-        .eq("class_id", studentClassId!)
+        .eq("class_id", classId)
         .order("due_date", { ascending: true }),
       supabase
         .from("assessments")
         .select("*, subjects(name)")
         .eq("is_published", true)
-        .eq("class_id", studentClassId!)
+        .eq("class_id", classId)
         .order("due_date", { ascending: true }),
       supabase
         .from("assessment_submissions")
