@@ -385,7 +385,7 @@ export default function ParentDashboard() {
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden">
+      <div className="md:hidden pb-20">
         <main className="container px-4 py-4 space-y-4">
           {portalAccess.trialEndDate && portalAccess.status && (
             <TrialBanner trialEndDate={portalAccess.trialEndDate} status={portalAccess.status} />
@@ -396,22 +396,6 @@ export default function ParentDashboard() {
             onSelect={setSelectedChildId}
             onLinked={fetchInitialData}
           />
-          {/* Tab pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
-                  activeTab === t.id
-                    ? "bg-secondary text-secondary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
           <TabContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -435,6 +419,7 @@ export default function ParentDashboard() {
             usdToZig={usdToZig}
           />
         </main>
+        <ParentBottomNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as TabId)} />
       </div>
     </div>
   );
