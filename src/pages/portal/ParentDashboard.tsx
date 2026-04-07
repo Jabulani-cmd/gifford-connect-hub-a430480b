@@ -48,8 +48,9 @@ import PayFeesOnlineButton from "@/components/subscription/PayFeesOnlineButton";
 import StudentMarksTab from "@/components/student/StudentMarksTab";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 
-type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework";
 
 interface ChildInfo {
   id: string;
@@ -295,6 +296,7 @@ export default function ParentDashboard() {
     { id: "timetable", label: "Timetable", icon: Calendar },
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
+    { id: "homework", label: "Homework", icon: BookOpen },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
@@ -1241,6 +1243,19 @@ function TabContent(props: TabContentProps) {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Term Reports — {child.full_name}</h2>
         <StudentTermReportsTab />
+      </motion.div>
+    );
+  }
+
+  if (activeTab === "homework") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <h2 className="text-lg font-bold">Homework & Assignments — {child.full_name}</h2>
+        <ParentHomeworkTab
+          studentId={child.id}
+          studentClassId={childClassId}
+          studentName={child.full_name}
+        />
       </motion.div>
     );
   }
