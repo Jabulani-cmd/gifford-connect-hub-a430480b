@@ -98,6 +98,17 @@ export default function PaynowCheckout({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Demo mode - payment auto-completed
+      if (data.demo) {
+        toast({
+          title: "Payment Successful (Demo)",
+          description: data.message || "Demo payment completed successfully.",
+        });
+        setStep("success");
+        onSuccess?.();
+        return;
+      }
+
       if (method === "ecocash" || method === "onemoney") {
         // Mobile money - show polling UI
         setPollRef(data.reference);
