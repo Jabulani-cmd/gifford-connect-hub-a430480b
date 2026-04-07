@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
-// Paynow API endpoints
 const PAYNOW_INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction";
 const PAYNOW_MOBILE_URL = "https://www.paynow.co.zw/interface/remotetransaction";
 
@@ -57,14 +56,14 @@ serve(async (req) => {
     const userId = claims.claims.sub;
     const body = await req.json();
     const {
-      payment_type, // "subscription" | "fees"
+      payment_type,
       subscription_id,
       invoice_id,
       student_id,
       amount,
-      currency = "usd", // "usd" | "zig"
-      method, // "ecocash" | "onemoney" | "web" (for visa/zimswitch via browser)
-      phone, // required for ecocash/onemoney
+      currency = "usd",
+      method,
+      phone,
       email,
     } = body;
 
@@ -84,20 +83,13 @@ serve(async (req) => {
 
     const integrationId = Deno.env.get("PAYNOW_INTEGRATION_ID");
     const integrationKey = Deno.env.get("PAYNOW_INTEGRATION_KEY");
-
-    if (!integrationId || !integrationKey) {
-      return new Response(JSON.stringify({ error: "Payment system not configured. Please contact the school administration." }), {
-        status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const isDemoMode = !integrationId || !integrationKey;
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Generate unique reference
     const reference = `GHS-${payment_type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
     // Build description
@@ -123,11 +115,131 @@ serve(async (req) => {
       description = `Payment - Gifford High School (${currency.toUpperCase()})`;
     }
 
+    // Store in portal_payments or online_payments
+    if (payment_type === "subscription" && subscription_id) {
+      await adminClient.from("portal_payments").insert({
+        subscription_id,
+        amount_usd: currency === "usd" ? parseFloat(amount) : 0,
+        currency,
+        status: isDemoMode ? "completed" : "pending",
+        stripe_checkout_session_id: reference,
+      });
+    } else if (payment_type === "fees") {
+      await adminClient.from("online_payments").insert({
+        payer_name: studentName || "Parent",
+        payer_email: email || "",
+        payer_phone: phone || null,
+        amount_usd: currency === "usd" ? parseFloat(amount) : 0,
+        currency,
+        payment_type: "fees",
+        status: isDemoMode ? "completed" : "pending",
+        student_id: student_id || null,
+        student_number: reference,
+        stripe_checkout_session_id: reference,
+      });
+    }
+
+    // ─── DEMO MODE ───────────────────────────────────────────────
+    if (isDemoMode) {
+      console.log("DEMO MODE: Paynow keys not configured. Simulating successful payment.");
+
+      // Store transaction as completed immediately
+      await adminClient.from("paynow_transactions").insert({
+        reference,
+        poll_url: null,
+        browser_url: null,
+        payment_type,
+        subscription_id: subscription_id || null,
+        invoice_id: invoice_id || null,
+        student_id: student_id || null,
+        parent_id: userId,
+        amount: parseFloat(amount),
+        currency,
+        method: method || "web",
+        status: "completed",
+        paynow_reference: `DEMO-${Date.now()}`,
+      });
+
+      // Auto-activate subscription if applicable
+      if (payment_type === "subscription" && subscription_id) {
+        await adminClient
+          .from("portal_subscriptions")
+          .update({
+            status: "active",
+            last_payment_date: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", subscription_id);
+
+        if (userId) {
+          await adminClient.from("notifications").insert({
+            user_id: userId,
+            title: "Payment Successful (Demo)",
+            message: "Your portal subscription is now active. Full portal access has been granted.",
+            type: "payment",
+          });
+        }
+      }
+
+      // Auto-process fee payment
+      if (payment_type === "fees" && student_id) {
+        const receiptNumber = `DEMO-${Date.now().toString(36).toUpperCase()}`;
+        if (invoice_id) {
+          await adminClient.from("payments").insert({
+            student_id,
+            invoice_id,
+            amount_usd: currency === "usd" ? parseFloat(amount) : 0,
+            amount_zig: currency === "zig" ? parseFloat(amount) : 0,
+            payment_method: `paynow_${method || "web"}_demo`,
+            receipt_number: receiptNumber,
+            reference_number: reference,
+            notes: `Demo payment via Paynow (${(method || "web").toUpperCase()})`,
+          });
+        }
+
+        if (userId) {
+          await adminClient.from("notifications").insert({
+            user_id: userId,
+            title: "Fee Payment Received (Demo)",
+            message: `Your school fee payment of ${currency.toUpperCase()} ${parseFloat(amount).toFixed(2)} has been recorded.`,
+            type: "payment",
+          });
+        }
+      }
+
+      // Return success immediately for mobile money
+      if (method === "ecocash" || method === "onemoney") {
+        return new Response(JSON.stringify({
+          success: true,
+          demo: true,
+          method,
+          message: `DEMO MODE: Payment of ${currency.toUpperCase()} ${parseFloat(amount).toFixed(2)} simulated successfully. In production, a prompt will be sent to ${phone}.`,
+          reference,
+          poll_url: null,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // For web payment, return success (no redirect needed in demo)
+      return new Response(JSON.stringify({
+        success: true,
+        demo: true,
+        method: "web",
+        message: `DEMO MODE: Payment of ${currency.toUpperCase()} ${parseFloat(amount).toFixed(2)} simulated successfully.`,
+        redirect_url: null,
+        reference,
+        poll_url: null,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── LIVE MODE (Paynow keys configured) ──────────────────────
     const origin = req.headers.get("origin") || "https://gifford-connect-hub.lovable.app";
     const resultUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/paynow-callback`;
     const returnUrl = `${origin}/portal/parent-teacher?payment=success&ref=${reference}`;
 
-    // Prepare Paynow fields
     const fields: Record<string, string> = {
       id: integrationId,
       reference,
@@ -139,19 +251,11 @@ serve(async (req) => {
       status: "Message",
     };
 
-    // Generate hash (concat values in order + integration key)
     const hashValues = [
-      fields.id,
-      fields.reference,
-      fields.amount,
-      fields.additionalinfo,
-      fields.returnurl,
-      fields.resulturl,
-      fields.authemail,
-      fields.status,
+      fields.id, fields.reference, fields.amount, fields.additionalinfo,
+      fields.returnurl, fields.resulturl, fields.authemail, fields.status,
     ];
 
-    // For mobile money, add phone and method before hash
     if (method === "ecocash" || method === "onemoney") {
       fields.phone = phone;
       fields.method = method;
@@ -160,12 +264,8 @@ serve(async (req) => {
 
     fields.hash = await generateHash(hashValues, integrationKey);
 
-    // Choose endpoint
-    const paynowUrl = (method === "ecocash" || method === "onemoney")
-      ? PAYNOW_MOBILE_URL
-      : PAYNOW_INITIATE_URL;
+    const paynowUrl = (method === "ecocash" || method === "onemoney") ? PAYNOW_MOBILE_URL : PAYNOW_INITIATE_URL;
 
-    // Make request to Paynow
     const formBody = Object.entries(fields)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join("&");
@@ -188,32 +288,6 @@ serve(async (req) => {
       });
     }
 
-    // Store the transaction for callback matching
-    // Use portal_payments for subscriptions, online_payments for fees
-    if (payment_type === "subscription" && subscription_id) {
-      await adminClient.from("portal_payments").insert({
-        subscription_id,
-        amount_usd: currency === "usd" ? parseFloat(amount) : 0,
-        currency,
-        status: "pending",
-        stripe_checkout_session_id: reference, // reuse field for paynow reference
-      });
-    } else if (payment_type === "fees") {
-      await adminClient.from("online_payments").insert({
-        payer_name: studentName || "Parent",
-        payer_email: email || "",
-        payer_phone: phone || null,
-        amount_usd: currency === "usd" ? parseFloat(amount) : 0,
-        currency,
-        payment_type: "fees",
-        status: "pending",
-        student_id: student_id || null,
-        student_number: reference,
-        stripe_checkout_session_id: reference, // reuse for paynow ref
-      });
-    }
-
-    // Store paynow reference mapping for callback
     await adminClient.from("paynow_transactions").insert({
       reference,
       poll_url: parsed.pollurl || parsed.PollUrl || null,
@@ -232,7 +306,6 @@ serve(async (req) => {
     const browserUrl = parsed.browserurl || parsed.BrowserUrl;
     const pollUrl = parsed.pollurl || parsed.PollUrl;
 
-    // For mobile money, no browser redirect - payment is pushed to phone
     if (method === "ecocash" || method === "onemoney") {
       return new Response(JSON.stringify({
         success: true,
@@ -245,7 +318,6 @@ serve(async (req) => {
       });
     }
 
-    // For web payment (visa/zimswitch), redirect to Paynow
     return new Response(JSON.stringify({
       success: true,
       method: "web",
