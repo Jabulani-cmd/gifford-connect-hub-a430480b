@@ -31,6 +31,7 @@ type TabId = "home" | "materials" | "assessments" | "attendance" | "profile";
 export default function StudentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const portalAccess = usePortalAccess();
   const [activeTab, setActiveTab] = useState<TabId>("home");
 
   const [profile, setProfile] = useState<any>(null);

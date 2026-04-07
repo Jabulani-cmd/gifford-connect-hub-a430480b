@@ -94,6 +94,7 @@ export default function ParentDashboard() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { rate, usdToZig } = useExchangeRate();
+  const portalAccess = usePortalAccess();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [children, setChildren] = useState<ChildInfo[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
