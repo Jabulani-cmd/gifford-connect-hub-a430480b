@@ -43,7 +43,6 @@ export function usePortalAccess() {
 
       if (error) {
         console.error("Portal access check error:", error);
-        // Default to allowing access on error to not block users
         setState(prev => ({ ...prev, hasAccess: true, reason: "error", loading: false }));
         return;
       }
@@ -62,6 +61,31 @@ export function usePortalAccess() {
       setState(prev => ({ ...prev, hasAccess: true, reason: "error", loading: false }));
     }
   };
+
+  // Realtime: re-check access when subscription status changes
+  useEffect(() => {
+    if (!user || !role || (role !== "parent" && role !== "student")) return;
+    const channel = supabase
+      .channel(`portal-access-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "portal_subscriptions" },
+        () => {
+          checkAccess();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "portal_payments" },
+        () => {
+          checkAccess();
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, role]);
 
   const refreshAccess = () => {
     setState(prev => ({ ...prev, loading: true }));

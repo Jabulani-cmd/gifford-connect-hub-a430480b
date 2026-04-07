@@ -144,6 +144,20 @@ export default function ParentDashboard() {
           fetchChildData(selectedChildId);
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "online_payments", filter: `student_id=eq.${selectedChildId}` },
+        () => {
+          fetchChildData(selectedChildId);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "portal_subscriptions" },
+        () => {
+          portalAccess.refreshAccess();
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
