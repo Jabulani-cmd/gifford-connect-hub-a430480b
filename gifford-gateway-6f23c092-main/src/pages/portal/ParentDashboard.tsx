@@ -21,10 +21,11 @@ import StudentTermReportsTab from "@/components/student/StudentTermReportsTab";
 import NotificationBell from "@/components/NotificationBell";
 import StudentAnnouncementsSection from "@/components/student/StudentAnnouncementsSection";
 import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
+import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-type TabId = "overview" | "grades" | "homework" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
+type TabId = "overview" | "grades" | "homework" | "assessments" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports";
 
 interface ChildInfo {
   id: string;
@@ -188,6 +189,7 @@ export default function ParentDashboard() {
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
     { id: "homework", label: "Homework", icon: BookOpen },
+    { id: "assessments", label: "Assessments", icon: ClipboardList },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
