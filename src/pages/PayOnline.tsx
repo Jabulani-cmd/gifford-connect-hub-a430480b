@@ -36,7 +36,7 @@ export default function PayOnline() {
             transition={{ delay: 0.1 }}
             className="mt-2 text-secondary-foreground/80"
           >
-            Secure online payments for school fees and donations
+            Secure online payments for school fees and donations via EcoCash, OneMoney, Visa &amp; Zimswitch
           </motion.p>
         </div>
       </section>
@@ -72,11 +72,17 @@ function FeePaymentForm() {
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<"usd" | "zig">("usd");
+  const [paymentMethod, setPaymentMethod] = useState<"ecocash" | "onemoney" | "web">("ecocash");
   const [payerName, setPayerName] = useState("");
   const [payerEmail, setPayerEmail] = useState("");
   const [payerPhone, setPayerPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [pollRef, setPollRef] = useState<string | null>(null);
+  const [pollUrl, setPollUrl] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "completed" | "failed">("pending");
 
   const lookupStudent = async () => {
     if (!studentNumber.trim()) return;
@@ -86,7 +92,7 @@ function FeePaymentForm() {
 
     const { data } = await supabase
       .from("students")
-      .select("id, first_name, last_name, admission_number, form")
+      .select("id, full_name, admission_number, form")
       .eq("admission_number", studentNumber.trim().toUpperCase())
       .maybeSingle();
 
@@ -101,44 +107,127 @@ function FeePaymentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentInfo || !amount || !payerName || !payerEmail) return;
+    if ((paymentMethod === "ecocash" || paymentMethod === "onemoney") && !payerPhone) {
+      toast({ title: "Phone Required", description: "Enter your mobile money number.", variant: "destructive" });
+      return;
+    }
 
     setSubmitting(true);
-    const { error } = await supabase.from("online_payments").insert({
-      payment_type: "fees",
-      student_number: studentInfo.admission_number,
-      student_id: studentInfo.id,
-      payer_name: payerName,
-      payer_email: payerEmail,
-      payer_phone: payerPhone || null,
-      amount_usd: parseFloat(amount),
-      description: `Fee payment for ${studentInfo.first_name} ${studentInfo.last_name} (${studentInfo.admission_number})`,
-      status: "pending",
-    });
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paynow-initiate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            payment_type: "fees",
+            student_id: studentInfo.id,
+            amount: parseFloat(amount),
+            currency,
+            method: paymentMethod,
+            phone: payerPhone,
+            email: payerEmail,
+          }),
+        }
+      );
+      const data = await res.json();
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to initiate payment. Please try again.", variant: "destructive" });
-    } else {
-      setSubmitted(true);
-      toast({ title: "Payment Initiated", description: "Your payment request has been recorded. Stripe checkout will be available soon." });
+      if (data.error) {
+        toast({ title: "Payment Error", description: data.error, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+
+      if (paymentMethod === "ecocash" || paymentMethod === "onemoney") {
+        setPollRef(data.reference);
+        setPollUrl(data.poll_url);
+        setPolling(true);
+        setSubmitted(true);
+        toast({ title: "Check your phone", description: data.message });
+      } else if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+        return;
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Payment failed.", variant: "destructive" });
     }
     setSubmitting(false);
   };
 
-  if (submitted) {
+  useEffect(() => {
+    if (!polling || !pollRef) return;
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > 60) { clearInterval(interval); setPaymentStatus("failed"); setPolling(false); return; }
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paynow-poll`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ reference: pollRef, poll_url: pollUrl }),
+          }
+        );
+        const data = await res.json();
+        if (data.status === "completed") { setPaymentStatus("completed"); setPolling(false); clearInterval(interval); }
+        else if (data.status === "failed") { setPaymentStatus("failed"); setPolling(false); clearInterval(interval); }
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [polling, pollRef, pollUrl]);
+
+  if (submitted && paymentStatus === "completed") {
     return (
       <Card className="border-green-200 bg-green-50">
         <CardContent className="py-12 text-center">
           <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-600" />
-          <h3 className="text-xl font-bold text-green-800">Payment Request Recorded</h3>
+          <h3 className="text-xl font-bold text-green-800">Payment Successful!</h3>
           <p className="mt-2 text-green-700">
-            Your fee payment of <strong>${amount}</strong> for student{" "}
-            <strong>{studentInfo?.admission_number}</strong> has been recorded.
+            Your fee payment of <strong>{currency === "usd" ? "$" : "ZiG "}{amount}</strong> for student{" "}
+            <strong>{studentInfo?.admission_number}</strong> has been received.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Online payment processing via Stripe will be activated soon. For now, please proceed with bank transfer or visit the school bursar.
-          </p>
-          <Button className="mt-6" onClick={() => { setSubmitted(false); setStudentInfo(null); setAmount(""); }}>
+          <Button className="mt-6" onClick={() => { setSubmitted(false); setStudentInfo(null); setAmount(""); setPaymentStatus("pending"); }}>
             Make Another Payment
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (submitted && polling) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center space-y-4">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <h3 className="text-xl font-bold">Waiting for Payment</h3>
+          <p className="text-muted-foreground">
+            A payment prompt has been sent to <strong>{payerPhone}</strong>.
+            <br />Please enter your PIN to authorize the payment.
+          </p>
+          <p className="text-xs text-muted-foreground">This page updates automatically.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (submitted && paymentStatus === "failed") {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="py-12 text-center">
+          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-600" />
+          <h3 className="text-xl font-bold text-red-800">Payment Failed</h3>
+          <p className="mt-2 text-red-700">The payment was not completed. Please try again.</p>
+          <Button className="mt-6" variant="outline" onClick={() => { setSubmitted(false); setPaymentStatus("pending"); }}>
+            Try Again
           </Button>
         </CardContent>
       </Card>
@@ -158,7 +247,6 @@ function FeePaymentForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Student Lookup */}
           <div className="space-y-2">
             <Label>Student Number *</Label>
             <div className="flex gap-2">
@@ -188,7 +276,7 @@ function FeePaymentForm() {
                 <span className="text-sm font-medium text-green-800">Student Found</span>
               </div>
               <p className="mt-1 text-sm text-green-700">
-                <strong>{studentInfo.first_name} {studentInfo.last_name}</strong>
+                <strong>{studentInfo.full_name}</strong>
                 <Badge variant="outline" className="ml-2 text-xs">{studentInfo.form || "N/A"}</Badge>
               </p>
             </div>
@@ -197,56 +285,80 @@ function FeePaymentForm() {
           {studentInfo && (
             <>
               <div className="space-y-2">
-                <Label>Amount (USD) *</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                />
+                <Label>Currency</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="usd" checked={currency === "usd"} onChange={() => setCurrency("usd")} className="accent-primary" />
+                    <span className="text-sm">USD (US Dollar)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="zig" checked={currency === "zig"} onChange={() => setCurrency("zig")} className="accent-primary" />
+                    <span className="text-sm">ZiG (Zimbabwe Gold)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Amount ({currency.toUpperCase()}) *</Label>
+                <Input type="number" min="1" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Payment Method *</Label>
+                <div className="space-y-2">
+                  {[
+                    { value: "ecocash", label: "EcoCash", desc: "Econet mobile money", icon: "📱" },
+                    { value: "onemoney", label: "OneMoney", desc: "NetOne mobile money", icon: "📱" },
+                    { value: "web", label: "Visa / Mastercard / Zimswitch", desc: "Pay by card or bank transfer via Paynow", icon: "💳" },
+                  ].map((m) => (
+                    <label key={m.value} className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${paymentMethod === m.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                      <input type="radio" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value as any)} className="accent-primary" />
+                      <span className="text-lg">{m.icon}</span>
+                      <div>
+                        <span className="font-medium text-sm">{m.label}</span>
+                        <span className="block text-xs text-muted-foreground">{m.desc}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Your Name *</Label>
-                  <Input
-                    placeholder="Full name"
-                    value={payerName}
-                    onChange={(e) => setPayerName(e.target.value)}
-                    required
-                  />
+                  <Input placeholder="Full name" value={payerName} onChange={(e) => setPayerName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    placeholder="email@example.com"
-                    value={payerEmail}
-                    onChange={(e) => setPayerEmail(e.target.value)}
-                    required
-                  />
+                  <Input type="email" placeholder="email@example.com" value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Phone (optional)</Label>
+                <Label>Phone Number {(paymentMethod === "ecocash" || paymentMethod === "onemoney") ? "*" : "(optional)"}</Label>
                 <Input
-                  placeholder="Phone number"
+                  type="tel"
+                  placeholder={paymentMethod === "ecocash" ? "077XXXXXXX" : paymentMethod === "onemoney" ? "071XXXXXXX" : "Phone number"}
                   value={payerPhone}
                   onChange={(e) => setPayerPhone(e.target.value)}
+                  required={paymentMethod === "ecocash" || paymentMethod === "onemoney"}
                 />
+                {(paymentMethod === "ecocash" || paymentMethod === "onemoney") && (
+                  <p className="text-xs text-muted-foreground">
+                    Enter your {paymentMethod === "ecocash" ? "Econet" : "NetOne"} number linked to your mobile money wallet
+                  </p>
+                )}
               </div>
 
               <Button type="submit" className="w-full gap-2" size="lg" disabled={submitting || !amount}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                {submitting ? "Processing..." : `Pay $${amount || "0.00"}`}
+                {submitting
+                  ? "Processing..."
+                  : `Pay ${currency === "usd" ? "$" : "ZiG "}${amount || "0.00"} via ${paymentMethod === "ecocash" ? "EcoCash" : paymentMethod === "onemoney" ? "OneMoney" : "Card/Bank"}`}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">
-                Payments are processed securely via Stripe. You will receive a receipt by email.
+                Secure payments processed via Paynow Zimbabwe
               </p>
             </>
           )}
@@ -260,6 +372,8 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState(initialProjectId);
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<"usd" | "zig">("usd");
+  const [paymentMethod, setPaymentMethod] = useState<"ecocash" | "onemoney" | "web">("ecocash");
   const [payerName, setPayerName] = useState("");
   const [payerEmail, setPayerEmail] = useState("");
   const [payerPhone, setPayerPhone] = useState("");
@@ -278,6 +392,10 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !payerName || !payerEmail) return;
+    if ((paymentMethod === "ecocash" || paymentMethod === "onemoney") && !payerPhone) {
+      toast({ title: "Phone Required", description: "Enter your mobile money number.", variant: "destructive" });
+      return;
+    }
 
     setSubmitting(true);
     const selectedTitle = projects.find((p) => p.id === selectedProject)?.title || "General Fund";
@@ -288,8 +406,8 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
       payer_name: payerName,
       payer_email: payerEmail,
       payer_phone: payerPhone || null,
-      amount_usd: parseFloat(amount),
-      description: `Donation: ${selectedTitle}`,
+      amount_usd: currency === "usd" ? parseFloat(amount) : 0,
+      description: `Donation: ${selectedTitle} (${currency.toUpperCase()})`,
       status: "pending",
     });
 
@@ -297,7 +415,7 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
       toast({ title: "Error", description: "Failed to initiate donation. Please try again.", variant: "destructive" });
     } else {
       setSubmitted(true);
-      toast({ title: "Donation Initiated", description: "Your donation has been recorded. Thank you!" });
+      toast({ title: "Donation Recorded", description: "Your donation has been recorded. Thank you!" });
     }
     setSubmitting(false);
   };
@@ -309,10 +427,7 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
           <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-600" />
           <h3 className="text-xl font-bold text-green-800">Thank You for Your Generosity!</h3>
           <p className="mt-2 text-green-700">
-            Your donation of <strong>${amount}</strong> has been recorded.
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Online payment processing via Stripe will be activated soon. For now, please proceed with bank transfer.
+            Your donation of <strong>{currency === "usd" ? "$" : "ZiG "}{amount}</strong> has been recorded.
           </p>
           <Button className="mt-6" onClick={() => { setSubmitted(false); setAmount(""); }}>
             Make Another Donation
@@ -350,8 +465,23 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
             </Select>
           </div>
 
+          {/* Currency */}
           <div className="space-y-2">
-            <Label>Donation Amount (USD) *</Label>
+            <Label>Currency</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" value="usd" checked={currency === "usd"} onChange={() => setCurrency("usd")} className="accent-primary" />
+                <span className="text-sm">USD</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" value="zig" checked={currency === "zig"} onChange={() => setCurrency("zig")} className="accent-primary" />
+                <span className="text-sm">ZiG</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Donation Amount ({currency.toUpperCase()}) *</Label>
             <div className="grid grid-cols-4 gap-2">
               {["10", "25", "50", "100"].map((preset) => (
                 <Button
@@ -361,59 +491,65 @@ function DonationForm({ initialProjectId }: { initialProjectId: string }) {
                   onClick={() => setAmount(preset)}
                   className="text-sm"
                 >
-                  ${preset}
+                  {currency === "usd" ? "$" : "ZiG "}{preset}
                 </Button>
               ))}
             </div>
-            <Input
-              type="number"
-              min="1"
-              step="0.01"
-              placeholder="Or enter custom amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
+            <Input type="number" min="1" step="0.01" placeholder="Or enter custom amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </div>
+
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <Label>Payment Method *</Label>
+            <div className="space-y-2">
+              {[
+                { value: "ecocash", label: "EcoCash", desc: "Econet mobile money", icon: "📱" },
+                { value: "onemoney", label: "OneMoney", desc: "NetOne mobile money", icon: "📱" },
+                { value: "web", label: "Visa / Mastercard / Zimswitch", desc: "Pay by card or bank transfer via Paynow", icon: "💳" },
+              ].map((m) => (
+                <label key={m.value} className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${paymentMethod === m.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                  <input type="radio" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value as any)} className="accent-primary" />
+                  <span className="text-lg">{m.icon}</span>
+                  <div>
+                    <span className="font-medium text-sm">{m.label}</span>
+                    <span className="block text-xs text-muted-foreground">{m.desc}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Your Name *</Label>
-              <Input
-                placeholder="Full name"
-                value={payerName}
-                onChange={(e) => setPayerName(e.target.value)}
-                required
-              />
+              <Input placeholder="Full name" value={payerName} onChange={(e) => setPayerName(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>Email *</Label>
-              <Input
-                type="email"
-                placeholder="email@example.com"
-                value={payerEmail}
-                onChange={(e) => setPayerEmail(e.target.value)}
-                required
-              />
+              <Input type="email" placeholder="email@example.com" value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} required />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Phone (optional)</Label>
+            <Label>Phone Number {(paymentMethod === "ecocash" || paymentMethod === "onemoney") ? "*" : "(optional)"}</Label>
             <Input
-              placeholder="Phone number"
+              type="tel"
+              placeholder={paymentMethod === "ecocash" ? "077XXXXXXX" : paymentMethod === "onemoney" ? "071XXXXXXX" : "Phone number"}
               value={payerPhone}
               onChange={(e) => setPayerPhone(e.target.value)}
+              required={paymentMethod === "ecocash" || paymentMethod === "onemoney"}
             />
           </div>
 
           <Button type="submit" className="w-full gap-2" size="lg" disabled={submitting || !amount}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4" />}
-            {submitting ? "Processing..." : `Donate $${amount || "0.00"}`}
+            {submitting
+              ? "Processing..."
+              : `Donate ${currency === "usd" ? "$" : "ZiG "}${amount || "0.00"} via ${paymentMethod === "ecocash" ? "EcoCash" : paymentMethod === "onemoney" ? "OneMoney" : "Card/Bank"}`}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Donations are processed securely via Stripe. You will receive a receipt by email.
+            Secure payments processed via Paynow Zimbabwe
           </p>
         </form>
       </CardContent>

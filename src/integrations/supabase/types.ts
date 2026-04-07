@@ -2136,6 +2136,85 @@ export type Database = {
           },
         ]
       }
+      paynow_transactions: {
+        Row: {
+          amount: number
+          browser_url: string | null
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string | null
+          method: string
+          parent_id: string
+          payment_type: string
+          paynow_reference: string | null
+          poll_url: string | null
+          reference: string
+          status: string
+          student_id: string | null
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          browser_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          parent_id: string
+          payment_type: string
+          paynow_reference?: string | null
+          poll_url?: string | null
+          reference: string
+          status?: string
+          student_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          browser_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          parent_id?: string
+          payment_type?: string
+          paynow_reference?: string | null
+          poll_url?: string | null
+          reference?: string
+          status?: string
+          student_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paynow_transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paynow_transactions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paynow_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "portal_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personal_timetables: {
         Row: {
           activity: string

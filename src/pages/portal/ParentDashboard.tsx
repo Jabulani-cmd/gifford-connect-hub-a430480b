@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildReceiptHtml, buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
+import PayFeesOnlineButton from "@/components/subscription/PayFeesOnlineButton";
 import StudentMarksTab from "@/components/student/StudentMarksTab";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -1116,6 +1117,16 @@ function TabContent(props: TabContentProps) {
                             {bal < 0 ? `+$${Math.abs(bal).toFixed(2)} credit` : bal > 0 ? `$${bal.toFixed(2)}` : "$0.00"}
                           </span>
                         </div>
+                        {bal > 0 && (
+                          <div className="pt-2">
+                            <PayFeesOnlineButton
+                              invoiceId={inv.id}
+                              studentId={selectedChildId || ""}
+                              studentName={selectedChild?.full_name || "Student"}
+                              amountDue={bal}
+                            />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -1132,6 +1143,7 @@ function TabContent(props: TabContentProps) {
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Paid</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Balance</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Status</th>
+                      <th className="px-3 py-2 text-center font-medium text-muted-foreground">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1165,6 +1177,16 @@ function TabContent(props: TabContentProps) {
                             >
                               {inv.status}
                             </Badge>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {bal > 0 && (
+                              <PayFeesOnlineButton
+                                invoiceId={inv.id}
+                                studentId={selectedChildId || ""}
+                                studentName={selectedChild?.full_name || "Student"}
+                                amountDue={bal}
+                              />
+                            )}
                           </td>
                         </tr>
                       );
