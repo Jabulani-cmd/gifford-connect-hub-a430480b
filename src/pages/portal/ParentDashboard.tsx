@@ -296,6 +296,7 @@ export default function ParentDashboard() {
     { id: "timetable", label: "Timetable", icon: Calendar },
     { id: "exam-timetable", label: "Exam Timetable", icon: CalendarDays },
     { id: "reports", label: "Term Reports", icon: FileText },
+    { id: "homework", label: "Homework", icon: BookOpen },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
     { id: "announcements", label: "Announcements", icon: Bell },
