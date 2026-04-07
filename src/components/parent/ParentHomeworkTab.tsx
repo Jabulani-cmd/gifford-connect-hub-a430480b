@@ -63,13 +63,13 @@ export default function ParentHomeworkTab({ studentId, studentClassId, studentNa
       supabase
         .from("homework")
         .select("*, subjects(name)")
-        .eq("class_id", studentClassId!)
+        .eq("class_id", classId)
         .order("due_date", { ascending: true }),
       supabase
         .from("assessments")
         .select("*, subjects(name)")
         .eq("is_published", true)
-        .eq("class_id", studentClassId!)
+        .eq("class_id", classId)
         .order("due_date", { ascending: true }),
       supabase
         .from("assessment_submissions")
