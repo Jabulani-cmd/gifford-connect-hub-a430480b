@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const PAYNOW_INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction";
 const PAYNOW_MOBILE_URL = "https://www.paynow.co.zw/interface/remotetransaction";
@@ -44,16 +48,15 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claims?.claims) {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claims.claims.sub;
+    const userId = user.id;
     const body = await req.json();
     const {
       payment_type,
