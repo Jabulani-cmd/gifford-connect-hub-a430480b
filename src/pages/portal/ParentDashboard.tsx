@@ -50,6 +50,7 @@ import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
+import ParentBottomNav from "@/components/parent/ParentBottomNav";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments";
 
