@@ -57,7 +57,7 @@ export default function ParentHomeworkTab({ studentId, studentClassId, studentNa
     setLoading(false);
   };
 
-  const fetchAll = async () => {
+  const fetchAll = async (classId: string) => {
     setLoading(true);
     const [{ data: hw }, { data: assess }, { data: subs }, { data: res }] = await Promise.all([
       supabase
