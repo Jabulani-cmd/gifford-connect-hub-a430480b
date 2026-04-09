@@ -15,6 +15,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
   const [loading, setLoading] = useState(true);
   const [resolvedClassId, setResolvedClassId] = useState<string | null | undefined>(undefined);
 
+  // Resolve class ID from studentClassId prop or from student's form/stream
   useEffect(() => {
     let mounted = true;
 
@@ -29,6 +30,20 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         return;
       }
 
+      // First try student_classes table
+      const { data: sc } = await supabase
+        .from("student_classes")
+        .select("class_id")
+        .eq("student_id", studentId)
+        .limit(1)
+        .maybeSingle();
+
+      if (sc?.class_id) {
+        if (mounted) setResolvedClassId(sc.class_id);
+        return;
+      }
+
+      // Fallback: resolve from form/stream
       const { data: student } = await supabase
         .from("students")
         .select("form, stream")
@@ -71,41 +86,78 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
     return () => { mounted = false; };
   }, [studentClassId, studentId]);
 
-  useEffect(() => {
-    let mounted = true;
+  // Load timetable entries
+  const loadTimetable = async () => {
+    if (resolvedClassId === undefined) return;
 
-    const load = async () => {
-      if (resolvedClassId === undefined) return;
-
-      if (!resolvedClassId) {
-        if (mounted) { setEntries([]); setSportsSchedule([]); setLoading(false); }
-        return;
-      }
-
-      setLoading(true);
-      const [{ data: detailed }, { data: sports }] = await Promise.all([
-        supabase
-          .from("timetable_entries")
-          .select("*, subjects(name), staff(full_name), classes(name)")
-          .eq("class_id", resolvedClassId)
-          .order("start_time"),
-        supabase
-          .from("sports_schedule")
-          .select("*")
-          .eq("class_id", resolvedClassId)
-          .order("start_time"),
-      ]);
-
-      if (!mounted) return;
-      setEntries(detailed || []);
-      setSportsSchedule(sports || []);
+    if (!resolvedClassId) {
+      setEntries([]);
+      setSportsSchedule([]);
       setLoading(false);
-    };
+      return;
+    }
 
-    load();
-    return () => { mounted = false; };
+    setLoading(true);
+    const [{ data: detailed }, { data: sports }] = await Promise.all([
+      supabase
+        .from("timetable_entries")
+        .select("*, subjects(name), staff(full_name), classes(name)")
+        .eq("class_id", resolvedClassId)
+        .order("start_time"),
+      supabase
+        .from("sports_schedule")
+        .select("*")
+        .eq("class_id", resolvedClassId)
+        .order("start_time"),
+    ]);
+
+    setEntries(detailed || []);
+    setSportsSchedule(sports || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadTimetable();
   }, [resolvedClassId]);
 
+  // Realtime subscription for timetable_entries changes
+  useEffect(() => {
+    if (!resolvedClassId) return;
+
+    const channel = supabase
+      .channel(`timetable-${resolvedClassId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "timetable_entries",
+          filter: `class_id=eq.${resolvedClassId}`,
+        },
+        () => {
+          loadTimetable();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sports_schedule",
+          filter: `class_id=eq.${resolvedClassId}`,
+        },
+        () => {
+          loadTimetable();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [resolvedClassId]);
+
+  // Fetch sports activities
   useEffect(() => {
     let mounted = true;
     const fetchSports = async () => {
