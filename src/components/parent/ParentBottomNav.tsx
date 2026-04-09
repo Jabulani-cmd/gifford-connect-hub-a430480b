@@ -1,4 +1,4 @@
-import { Home, BookOpen, ClipboardCheck, DollarSign, Bell, User, CalendarDays, FileText } from "lucide-react";
+import { Home, BookOpen, ClipboardCheck, DollarSign, Bell, User, CalendarDays, FileText, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -11,7 +11,7 @@ const navItems = [
   { id: "homework", label: "Work", icon: BookOpen },
   { id: "assessments", label: "Assess", icon: ClipboardCheck },
   { id: "fees", label: "Fees", icon: DollarSign },
-  { id: "reports", label: "Reports", icon: FileText },
+  { id: "billing", label: "Plans", icon: CreditCard },
 ];
 
 export default function ParentBottomNav({ activeTab, onTabChange }: Props) {
