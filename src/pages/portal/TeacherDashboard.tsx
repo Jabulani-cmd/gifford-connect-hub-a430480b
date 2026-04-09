@@ -277,7 +277,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
         <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
           <div className="container flex h-20 sm:h-24 items-center justify-between px-3 sm:px-4">
             <div className="flex items-center gap-3">
-              <img src={schoolLogo} alt="Gifford High" className="h-14 w-14 sm:h-20 sm:w-20 object-contain" />
+              <img src={schoolLogo} alt="Gifford High" className="h-20 w-20 sm:h-28 sm:w-28 object-contain" />
               <div>
                 <span className="font-heading text-sm sm:text-lg font-bold text-primary">Teacher Portal</span>
                 <p className="text-[10px] sm:text-xs italic text-muted-foreground leading-tight">Hinc Orior — From Here I Arise</p>
