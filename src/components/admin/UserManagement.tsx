@@ -317,7 +317,30 @@ export default function UserManagement() {
         created_at: s.enrollment_date,
       }));
       console.log("Student users count:", studentUsers.length);
-      console.log("Student users:", studentUsers);
+
+      // 3b. Fetch parent users from profiles + user_roles
+      const parentUserIds = Object.entries(portalRoleMap)
+        .filter(([_, role]) => role === "parent")
+        .map(([uid]) => uid);
+
+      let parentUsers: ManagedUser[] = [];
+      if (parentUserIds.length > 0) {
+        const { data: parentProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, created_at")
+          .in("id", parentUserIds);
+
+        parentUsers = (parentProfiles || []).map((p: any) => ({
+          id: p.id,
+          email: p.email || "",
+          full_name: p.full_name || "",
+          portal_role: "parent",
+          staff_role: undefined,
+          department: undefined,
+          created_at: p.created_at,
+        }));
+      }
+      console.log("Parent users count:", parentUsers.length);
 
       // 4. Merge all sources (avoid duplicates by id)
       const combined = [...staffUsersFromEdge];
@@ -329,6 +352,11 @@ export default function UserManagement() {
       for (const student of studentUsers) {
         if (!combined.some((u) => u.id === student.id)) {
           combined.push(student);
+        }
+      }
+      for (const parent of parentUsers) {
+        if (!combined.some((u) => u.id === parent.id)) {
+          combined.push(parent);
         }
       }
       console.log("Combined users count:", combined.length);
