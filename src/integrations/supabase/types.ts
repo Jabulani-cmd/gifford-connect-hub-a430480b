@@ -2339,6 +2339,8 @@ export type Database = {
           last_payment_date: string | null
           parent_id: string
           payment_due_date: string | null
+          plan_id: string | null
+          plan_type: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -2353,6 +2355,8 @@ export type Database = {
           last_payment_date?: string | null
           parent_id: string
           payment_due_date?: string | null
+          plan_id?: string | null
+          plan_type?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2367,6 +2371,8 @@ export type Database = {
           last_payment_date?: string | null
           parent_id?: string
           payment_due_date?: string | null
+          plan_id?: string | null
+          plan_type?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2375,6 +2381,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "portal_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "portal_subscriptions_student_id_fkey"
             columns: ["student_id"]
@@ -2963,6 +2976,42 @@ export type Database = {
           id?: string
           is_examinable?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          billing_cycle: string
+          created_at: string
+          description: string | null
+          features: string[] | null
+          id: string
+          is_active: boolean
+          is_popular: boolean
+          name: string
+          price_usd: number
+        }
+        Insert: {
+          billing_cycle: string
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name: string
+          price_usd?: number
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          name?: string
+          price_usd?: number
         }
         Relationships: []
       }
