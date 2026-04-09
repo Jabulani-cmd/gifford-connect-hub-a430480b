@@ -52,7 +52,7 @@ import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 import ParentBottomNav from "@/components/parent/ParentBottomNav";
 
-type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments";
+type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments" | "billing";
 
 interface ChildInfo {
   id: string;
@@ -331,6 +331,7 @@ export default function ParentDashboard() {
     { id: "assessments", label: "Assessments", icon: ClipboardList },
     { id: "attendance", label: "Attendance", icon: Calendar },
     { id: "fees", label: "Fees", icon: DollarSign },
+    { id: "billing", label: "Plans & Billing", icon: CreditCard },
     { id: "announcements", label: "Announcements", icon: Bell },
   ];
 
