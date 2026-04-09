@@ -134,8 +134,8 @@ export default function FinanceDashboard() {
     <div className="min-h-screen bg-section-warm">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-3 sm:px-4 py-2 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <img src={schoolLogo} alt="Logo" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+          <div className="flex items-center gap-3">
+            <img src={schoolLogo} alt="Logo" className="h-14 w-14 sm:h-20 sm:w-20 object-contain" />
             <div>
               <h1 className="font-heading text-sm sm:text-lg font-bold text-primary">
                 {isBurser ? "Burser Portal" : "Finance Portal"}

@@ -222,9 +222,9 @@ export default function RegistrationDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-card shadow-sm">
-        <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <img src={schoolLogo} alt="GHS" className="h-10 w-10 sm:h-14 sm:w-14 object-contain" />
+        <div className="container flex h-20 sm:h-24 items-center justify-between px-3 sm:px-4">
+          <div className="flex items-center gap-3">
+            <img src={schoolLogo} alt="GHS" className="h-14 w-14 sm:h-20 sm:w-20 object-contain" />
             <div>
               <h1 className="font-heading text-sm sm:text-lg font-bold text-primary">Registration Portal</h1>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Gifford High School</p>
