@@ -341,12 +341,13 @@ export default function ParentDashboard() {
     <div className="min-h-screen bg-background pb-20 md:pb-6">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur-md">
-        <div className="container flex h-20 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <img src={schoolLogo} alt="Gifford High School" className="h-16 w-16 object-contain" />
-            <div className="hidden sm:block">
-              <span className="font-heading text-base font-bold text-foreground">Parent Portal</span>
-              <p className="text-xs text-muted-foreground leading-none">{displayName}</p>
+        <div className="container flex h-20 sm:h-24 items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <img src={schoolLogo} alt="Gifford High School" className="h-14 w-14 sm:h-20 sm:w-20 object-contain" />
+            <div>
+              <span className="font-heading text-sm sm:text-lg font-bold text-foreground">Parent Portal</span>
+              <p className="text-[10px] sm:text-xs italic text-muted-foreground leading-tight">Hinc Orior — From Here I Arise</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground leading-none mt-0.5">{displayName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
