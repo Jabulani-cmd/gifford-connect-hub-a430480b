@@ -367,29 +367,54 @@ Deno.serve(async (req) => {
     // ==================== LIST USERS ====================
     if (action === "list-users") {
       const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
-      const { data: allProfiles } = await supabaseAdmin.from("profiles").select("id, user_id, full_name, email");
-      const { data: allStaff } = await supabaseAdmin.from("staff").select("user_id, role, department");
+      const { data: allProfiles } = await supabaseAdmin.from("profiles").select("id, user_id, full_name, email, created_at");
+      const { data: allStaff } = await supabaseAdmin.from("staff").select("user_id, role, department, full_name, email");
+      const { data: authUsersData, error: authUsersError } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (authUsersError) {
+        throw authUsersError;
+      }
 
       const roleMap: Record<string, string> = {};
       (allRoles || []).forEach((r) => { roleMap[r.user_id] = r.role; });
 
-      const staffMap: Record<string, { role: string; department: string | null }> = {};
-      (allStaff || []).forEach((s) => {
-        if (s.user_id) staffMap[s.user_id] = { role: s.role || "", department: s.department };
-      });
-
-      const users = (allProfiles || []).map((p) => {
+      const profileMap: Record<string, { full_name: string; email: string; created_at?: string }> = {};
+      (allProfiles || []).forEach((p) => {
         const uid = p.user_id || p.id;
-        return {
-          id: uid,
-          email: p.email || "",
+        profileMap[uid] = {
           full_name: p.full_name || "",
-          portal_role: roleMap[uid] || "unknown",
-          staff_role: staffMap[uid]?.role || null,
-          department: staffMap[uid]?.department || null,
-          created_at: "",
+          email: p.email || "",
+          created_at: (p as any).created_at || "",
         };
       });
+
+      const staffMap: Record<string, { role: string; department: string | null; full_name: string; email: string }> = {};
+      (allStaff || []).forEach((s) => {
+        if (s.user_id) {
+          staffMap[s.user_id] = {
+            role: s.role || "",
+            department: s.department,
+            full_name: s.full_name || "",
+            email: s.email || "",
+          };
+        }
+      });
+
+      const users = (authUsersData?.users || []).map((u) => {
+        const uid = u.id;
+        const profile = profileMap[uid];
+        const staff = staffMap[uid];
+
+        return {
+          id: uid,
+          email: profile?.email || staff?.email || u.email || "",
+          full_name: profile?.full_name || staff?.full_name || (u.user_metadata?.full_name as string) || "",
+          portal_role: roleMap[uid] || "unknown",
+          staff_role: staff?.role || null,
+          department: staff?.department || null,
+          created_at: profile?.created_at || u.created_at || "",
+        };
+      }).filter((user) => user.portal_role !== "unknown");
 
       return new Response(JSON.stringify({ users }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
