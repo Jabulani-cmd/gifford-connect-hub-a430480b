@@ -145,10 +145,16 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
       toast({ title: "Assessment created!" });
+      const isOnline = form.assessment_type === "online_test";
       setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "" });
       setFormFile(null);
       setCreating(false);
-      fetchAssessments();
+      await fetchAssessments();
+      // Auto-open question builder for online tests
+      if (isOnline) {
+        const latest = assessments.find(a => a.title === form.title && a.is_online);
+        if (latest) setOnlineTestAssessment(latest);
+      }
     }
     setSubmitting(false);
   };
@@ -682,6 +688,11 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {a.is_online && (
+                      <Button variant="outline" size="sm" className="text-xs" onClick={e => { e.stopPropagation(); setOnlineTestAssessment(a); }}>
+                        <PenTool className="mr-1 h-3 w-3" /> Design Questions
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={e => { e.stopPropagation(); deleteAssessment(a.id); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
