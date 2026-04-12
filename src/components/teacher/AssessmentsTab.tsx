@@ -19,7 +19,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import OnlineTestBuilder from "./OnlineTestBuilder";
 
-const assessmentTypes = ["test", "exam", "assignment", "quiz", "project", "online_test"];
+const assessmentTypes = ["online_test", "test", "exam", "assignment", "quiz", "project"];
+const typeLabels: Record<string, string> = {
+  online_test: "📝 Online MCQ Test",
+  test: "Test",
+  exam: "Exam",
+  assignment: "Assignment",
+  quiz: "Quiz",
+  project: "Project",
+};
 
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
@@ -144,15 +152,17 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
-      toast({ title: "Assessment created!" });
       const isOnline = form.assessment_type === "online_test";
+      const savedTitle = form.title;
+      toast({ title: isOnline ? "Online test created! Now add your MCQ questions." : "Assessment created!" });
       setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "" });
       setFormFile(null);
       setCreating(false);
       await fetchAssessments();
       // Auto-open question builder for online tests
       if (isOnline) {
-        const latest = assessments.find(a => a.title === form.title && a.is_online);
+        // Need to re-read state after fetchAssessments updates
+        const { data: latest } = await supabase.from("assessments").select("*").eq("teacher_id", teacherId).eq("title", savedTitle).eq("is_online", true).order("created_at", { ascending: false }).limit(1).single();
         if (latest) setOnlineTestAssessment(latest);
       }
     }
@@ -606,11 +616,24 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
               <div className="space-y-2"><Label>Type</Label>
                 <Select value={form.assessment_type} onValueChange={v => setForm(p => ({ ...p, assessment_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{assessmentTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+                  <SelectContent>{assessmentTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t] || t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2"><Label>Max Marks</Label><Input type="number" value={form.max_marks} onChange={e => setForm(p => ({ ...p, max_marks: e.target.value }))} /></div>
             </div>
+            {form.assessment_type === "online_test" && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1">
+                <p className="font-medium text-primary">📝 Online MCQ Test</p>
+                <p className="text-xs text-muted-foreground">After creating this assessment, you'll be taken to the <strong>Question Builder</strong> where you can:</p>
+                <ul className="text-xs text-muted-foreground list-disc ml-4 space-y-0.5">
+                  <li>Add multiple-choice questions (A, B, C, D options)</li>
+                  <li>Set the correct answer for each question</li>
+                  <li>Assign marks per question</li>
+                  <li>Add explanations (shown after grading)</li>
+                </ul>
+                <p className="text-xs text-muted-foreground">Students will take the test online and it will be <strong>auto-graded</strong> instantly.</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Class *</Label>
                 <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))}>
