@@ -734,6 +734,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       {getClassName(a.class_id)} • {getSubjectName(a.subject_id)}
                       {a.due_date && ` • Due: ${format(new Date(a.due_date), "MMM d, yyyy")}`}
                       {a.max_marks && ` • ${a.max_marks} marks`}
+                      {a.time_limit_minutes && ` • ⏱ ${a.time_limit_minutes} min`}
+                      {a.scheduled_start && ` • Opens: ${format(new Date(a.scheduled_start), "MMM d, h:mm a")}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
