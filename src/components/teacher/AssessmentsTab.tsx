@@ -137,8 +137,10 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       due_date: form.due_date || null,
       instructions: form.instructions || null,
       file_url,
+      link_url: form.link_url || null,
       is_published: form.is_published,
-    });
+      is_online: form.assessment_type === "online_test",
+    } as any);
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
