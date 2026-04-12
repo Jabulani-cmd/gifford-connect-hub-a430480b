@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import OnlineTestBuilder from "./OnlineTestBuilder";
 
-const assessmentTypes = ["test", "exam", "assignment", "quiz", "project"];
+const assessmentTypes = ["test", "exam", "assignment", "quiz", "project", "online_test"];
 
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
@@ -43,6 +44,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const [assessments, setAssessments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [onlineTestAssessment, setOnlineTestAssessment] = useState<any | null>(null);
   const [selectedAssessment, setSelectedAssessment] = useState<any | null>(null);
   const [gradingStudentIdx, setGradingStudentIdx] = useState(0);
   const [results, setResults] = useState<any[]>([]);
@@ -135,8 +137,10 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       due_date: form.due_date || null,
       instructions: form.instructions || null,
       file_url,
+      link_url: form.link_url || null,
       is_published: form.is_published,
-    });
+      is_online: form.assessment_type === "online_test",
+    } as any);
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else {
@@ -244,6 +248,16 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const getClassName = (id: string) => classes.find(c => c.id === id)?.name || "";
   const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || "";
 
+  // Online test builder view
+  if (onlineTestAssessment) {
+    return (
+      <OnlineTestBuilder
+        assessment={onlineTestAssessment}
+        onBack={() => { setOnlineTestAssessment(null); fetchAssessments(); }}
+      />
+    );
+  }
+
   if (selectedAssessment) {
     const gradedCount = results.length;
     const totalStudents = classStudents.length;
@@ -251,9 +265,14 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
 
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
-          <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
+            <PenTool className="mr-1 h-4 w-4" /> Online Questions
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
@@ -653,7 +672,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       <Badge variant={!a.is_published ? "secondary" : isPast ? "destructive" : "default"} className="text-xs">
                         {!a.is_published ? "Draft" : isPast ? "Past" : "Active"}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">{a.assessment_type}</Badge>
+                      <Badge variant="outline" className="text-xs">{a.assessment_type === "online_test" ? "Online Test" : a.assessment_type}</Badge>
+                      {a.is_online && <Badge variant="outline" className="text-xs border-primary/40 text-primary">🖥 Online</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {getClassName(a.class_id)} • {getSubjectName(a.subject_id)}
