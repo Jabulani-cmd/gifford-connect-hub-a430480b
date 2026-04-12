@@ -62,7 +62,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   // Create form
   const [form, setForm] = useState({
     title: "", assessment_type: "test", class_id: "", subject_id: "",
-    max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: ""
+    max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "",
+    time_limit_minutes: "", scheduled_start: "", scheduled_end: ""
   });
   const [formFile, setFormFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
