@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import OnlineTestBuilder from "./OnlineTestBuilder";
 
-const assessmentTypes = ["test", "exam", "assignment", "quiz", "project"];
+const assessmentTypes = ["test", "exam", "assignment", "quiz", "project", "online_test"];
 
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
