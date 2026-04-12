@@ -44,6 +44,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const [assessments, setAssessments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [onlineTestAssessment, setOnlineTestAssessment] = useState<any | null>(null);
   const [selectedAssessment, setSelectedAssessment] = useState<any | null>(null);
   const [gradingStudentIdx, setGradingStudentIdx] = useState(0);
   const [results, setResults] = useState<any[]>([]);
