@@ -98,6 +98,122 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_attempts: {
+        Row: {
+          answers: Json | null
+          assessment_id: string
+          created_at: string
+          grade: string | null
+          id: string
+          is_submitted: boolean | null
+          percentage: number | null
+          score: number | null
+          started_at: string
+          student_id: string
+          submitted_at: string | null
+          total_marks: number | null
+        }
+        Insert: {
+          answers?: Json | null
+          assessment_id: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          is_submitted?: boolean | null
+          percentage?: number | null
+          score?: number | null
+          started_at?: string
+          student_id: string
+          submitted_at?: string | null
+          total_marks?: number | null
+        }
+        Update: {
+          answers?: Json | null
+          assessment_id?: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          is_submitted?: boolean | null
+          percentage?: number | null
+          score?: number | null
+          started_at?: string
+          student_id?: string
+          submitted_at?: string | null
+          total_marks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_attempts_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_questions: {
+        Row: {
+          assessment_id: string
+          correct_answer: string
+          created_at: string
+          display_order: number | null
+          explanation: string | null
+          id: string
+          marks: number | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question_text: string
+          question_type: string
+        }
+        Insert: {
+          assessment_id: string
+          correct_answer: string
+          created_at?: string
+          display_order?: number | null
+          explanation?: string | null
+          id?: string
+          marks?: number | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text: string
+          question_type?: string
+        }
+        Update: {
+          assessment_id?: string
+          correct_answer?: string
+          created_at?: string
+          display_order?: number | null
+          explanation?: string | null
+          id?: string
+          marks?: number | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text?: string
+          question_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_results: {
         Row: {
           assessment_id: string
@@ -212,10 +328,13 @@ export type Database = {
           file_url: string | null
           id: string
           instructions: string | null
+          is_online: boolean | null
           is_published: boolean | null
+          link_url: string | null
           max_marks: number | null
           subject_id: string | null
           teacher_id: string
+          time_limit_minutes: number | null
           title: string
         }
         Insert: {
@@ -226,10 +345,13 @@ export type Database = {
           file_url?: string | null
           id?: string
           instructions?: string | null
+          is_online?: boolean | null
           is_published?: boolean | null
+          link_url?: string | null
           max_marks?: number | null
           subject_id?: string | null
           teacher_id: string
+          time_limit_minutes?: number | null
           title: string
         }
         Update: {
@@ -240,10 +362,13 @@ export type Database = {
           file_url?: string | null
           id?: string
           instructions?: string | null
+          is_online?: boolean | null
           is_published?: boolean | null
+          link_url?: string | null
           max_marks?: number | null
           subject_id?: string | null
           teacher_id?: string
+          time_limit_minutes?: number | null
           title?: string
         }
         Relationships: [
