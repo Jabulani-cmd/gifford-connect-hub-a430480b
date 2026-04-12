@@ -672,7 +672,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       <Badge variant={!a.is_published ? "secondary" : isPast ? "destructive" : "default"} className="text-xs">
                         {!a.is_published ? "Draft" : isPast ? "Past" : "Active"}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">{a.assessment_type}</Badge>
+                      <Badge variant="outline" className="text-xs">{a.assessment_type === "online_test" ? "Online Test" : a.assessment_type}</Badge>
+                      {a.is_online && <Badge variant="outline" className="text-xs border-primary/40 text-primary">🖥 Online</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {getClassName(a.class_id)} • {getSubjectName(a.subject_id)}
