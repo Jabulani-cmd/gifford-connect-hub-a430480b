@@ -638,6 +638,28 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                 <p className="text-xs text-muted-foreground">Students will take the test online and it will be <strong>auto-graded</strong> instantly.</p>
               </div>
             )}
+            {form.assessment_type === "online_test" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <p className="text-sm font-medium flex items-center gap-1"><Clock className="h-4 w-4" /> Test Schedule & Timer</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Available From</Label>
+                    <Input type="datetime-local" value={form.scheduled_start} onChange={e => setForm(p => ({ ...p, scheduled_start: e.target.value }))} />
+                    <p className="text-[10px] text-muted-foreground">Students can only start after this time</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Available Until</Label>
+                    <Input type="datetime-local" value={form.scheduled_end} onChange={e => setForm(p => ({ ...p, scheduled_end: e.target.value }))} />
+                    <p className="text-[10px] text-muted-foreground">Test closes after this time</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Time Limit (minutes)</Label>
+                  <Input type="number" min="1" placeholder="e.g. 30" value={form.time_limit_minutes} onChange={e => setForm(p => ({ ...p, time_limit_minutes: e.target.value }))} />
+                  <p className="text-[10px] text-muted-foreground">Timer starts when student clicks "Start Test". Leave empty for no time limit.</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Class *</Label>
                 <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))}>
