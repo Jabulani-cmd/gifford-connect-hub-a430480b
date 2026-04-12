@@ -149,6 +149,9 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       link_url: form.link_url || null,
       is_published: form.is_published,
       is_online: form.assessment_type === "online_test",
+      time_limit_minutes: form.time_limit_minutes ? parseInt(form.time_limit_minutes) : null,
+      scheduled_start: form.scheduled_start ? new Date(form.scheduled_start).toISOString() : null,
+      scheduled_end: form.scheduled_end ? new Date(form.scheduled_end).toISOString() : null,
     } as any);
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
