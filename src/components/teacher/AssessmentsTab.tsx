@@ -62,7 +62,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   // Create form
   const [form, setForm] = useState({
     title: "", assessment_type: "test", class_id: "", subject_id: "",
-    max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: ""
+    max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "",
+    time_limit_minutes: "", scheduled_start: "", scheduled_end: ""
   });
   const [formFile, setFormFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -148,6 +149,9 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       link_url: form.link_url || null,
       is_published: form.is_published,
       is_online: form.assessment_type === "online_test",
+      time_limit_minutes: form.time_limit_minutes ? parseInt(form.time_limit_minutes) : null,
+      scheduled_start: form.scheduled_start ? new Date(form.scheduled_start).toISOString() : null,
+      scheduled_end: form.scheduled_end ? new Date(form.scheduled_end).toISOString() : null,
     } as any);
 
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
@@ -155,7 +159,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       const isOnline = form.assessment_type === "online_test";
       const savedTitle = form.title;
       toast({ title: isOnline ? "Online test created! Now add your MCQ questions." : "Assessment created!" });
-      setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "" });
+      setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "", time_limit_minutes: "", scheduled_start: "", scheduled_end: "" });
       setFormFile(null);
       setCreating(false);
       await fetchAssessments();
@@ -634,6 +638,28 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                 <p className="text-xs text-muted-foreground">Students will take the test online and it will be <strong>auto-graded</strong> instantly.</p>
               </div>
             )}
+            {form.assessment_type === "online_test" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <p className="text-sm font-medium flex items-center gap-1"><Clock className="h-4 w-4" /> Test Schedule & Timer</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Available From</Label>
+                    <Input type="datetime-local" value={form.scheduled_start} onChange={e => setForm(p => ({ ...p, scheduled_start: e.target.value }))} />
+                    <p className="text-[10px] text-muted-foreground">Students can only start after this time</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Available Until</Label>
+                    <Input type="datetime-local" value={form.scheduled_end} onChange={e => setForm(p => ({ ...p, scheduled_end: e.target.value }))} />
+                    <p className="text-[10px] text-muted-foreground">Test closes after this time</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Time Limit (minutes)</Label>
+                  <Input type="number" min="1" placeholder="e.g. 30" value={form.time_limit_minutes} onChange={e => setForm(p => ({ ...p, time_limit_minutes: e.target.value }))} />
+                  <p className="text-[10px] text-muted-foreground">Timer starts when student clicks "Start Test". Leave empty for no time limit.</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Class *</Label>
                 <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))}>
@@ -708,6 +734,8 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       {getClassName(a.class_id)} • {getSubjectName(a.subject_id)}
                       {a.due_date && ` • Due: ${format(new Date(a.due_date), "MMM d, yyyy")}`}
                       {a.max_marks && ` • ${a.max_marks} marks`}
+                      {a.time_limit_minutes && ` • ⏱ ${a.time_limit_minutes} min`}
+                      {a.scheduled_start && ` • Opens: ${format(new Date(a.scheduled_start), "MMM d, h:mm a")}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

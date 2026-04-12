@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Clock, CheckCircle2, AlertCircle, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, CheckCircle2, AlertCircle, Send, Play, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
@@ -37,15 +38,28 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
   const [existingAttempt, setExistingAttempt] = useState<any>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [startTime] = useState(new Date());
+  const [started, setStarted] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  const scheduledStart = assessment.scheduled_start ? new Date(assessment.scheduled_start) : null;
+  const scheduledEnd = assessment.scheduled_end ? new Date(assessment.scheduled_end) : null;
+  const isBeforeWindow = scheduledStart && now < scheduledStart;
+  const isAfterWindow = scheduledEnd && now > scheduledEnd;
+  const isWithinWindow = !isBeforeWindow && !isAfterWindow;
+
+  // Clock tick for schedule checking
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [assessment.id]);
 
-  // Timer
+  // Timer - only starts when student clicks Start
   useEffect(() => {
-    if (!assessment.time_limit_minutes || submitted || existingAttempt) return;
+    if (!started || !assessment.time_limit_minutes || submitted || existingAttempt) return;
     const totalSeconds = assessment.time_limit_minutes * 60;
     setTimeLeft(totalSeconds);
     const interval = setInterval(() => {
@@ -60,7 +74,7 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [assessment.time_limit_minutes, submitted, existingAttempt]);
+  }, [started, assessment.time_limit_minutes, submitted, existingAttempt]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -136,7 +150,7 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
     if (error) {
       toast({ title: "Error submitting test", description: error.message, variant: "destructive" });
     } else {
-      // Also save to assessment_results for the teacher's grading view
+      // Save to assessment_results for the teacher's grading view
       await supabase.from("assessment_results").insert({
         assessment_id: assessment.id,
         student_id: studentId,
@@ -148,11 +162,31 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
         is_published: true,
       });
 
+      // Auto-sync to marks table for all portals (parent, student, teacher, admin)
+      if (assessment.subject_id && assessment.teacher_id) {
+        await supabase.from("marks").insert({
+          student_id: studentId,
+          subject_id: assessment.subject_id,
+          teacher_id: assessment.teacher_id,
+          mark: score,
+          assessment_type: "online_test",
+          description: assessment.title,
+          term: getCurrentTerm(),
+        });
+      }
+
       setResult({ ...attempt, _correctMap: qMap });
       setSubmitted(true);
       toast({ title: `Test submitted! Score: ${score}/${totalMarks} (${grade})` });
     }
     setSubmitting(false);
+  };
+
+  const getCurrentTerm = () => {
+    const month = new Date().getMonth() + 1;
+    if (month >= 1 && month <= 4) return "Term 1";
+    if (month >= 5 && month <= 8) return "Term 2";
+    return "Term 3";
   };
 
   const answeredCount = Object.keys(answers).length;
@@ -235,6 +269,80 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  // Start screen - shown before student begins the test
+  if (!started && !submitted) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ChevronLeft className="mr-1 h-4 w-4" /> Back
+        </Button>
+
+        <Card className="border-primary/30">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">{assessment.title}</CardTitle>
+            <CardDescription>Online Test</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg bg-muted p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{questions.length}</p>
+                <p className="text-xs text-muted-foreground">Questions</p>
+              </div>
+              <div className="rounded-lg bg-muted p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{assessment.time_limit_minutes || "∞"}</p>
+                <p className="text-xs text-muted-foreground">{assessment.time_limit_minutes ? "Minutes" : "No Time Limit"}</p>
+              </div>
+            </div>
+
+            {assessment.instructions && (
+              <div className="rounded-lg border p-3">
+                <p className="text-xs font-medium mb-1">Instructions:</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{assessment.instructions}</p>
+              </div>
+            )}
+
+            {scheduledStart && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>📅 Available from: <strong>{format(scheduledStart, "MMM d, yyyy 'at' h:mm a")}</strong></p>
+                {scheduledEnd && <p>📅 Available until: <strong>{format(scheduledEnd, "MMM d, yyyy 'at' h:mm a")}</strong></p>}
+              </div>
+            )}
+
+            {isBeforeWindow && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
+                <Lock className="mx-auto h-8 w-8 text-amber-600 mb-2" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-400">Test Not Yet Available</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Opens in: <strong>{formatCountdown(scheduledStart.getTime() - now.getTime())}</strong>
+                </p>
+              </div>
+            )}
+
+            {isAfterWindow && (
+              <div className="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/20 p-3 text-center">
+                <AlertCircle className="mx-auto h-8 w-8 text-red-600 mb-2" />
+                <p className="text-sm font-medium text-red-800 dark:text-red-400">Test Window Has Closed</p>
+                <p className="text-xs text-muted-foreground mt-1">This test is no longer available.</p>
+              </div>
+            )}
+
+            {isWithinWindow && (
+              <div className="space-y-2">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-400">
+                  <AlertCircle className="inline h-3.5 w-3.5 mr-1" />
+                  Once you start, {assessment.time_limit_minutes ? `you will have ${assessment.time_limit_minutes} minutes to complete the test.` : "you can take as long as needed."} You cannot pause.
+                </div>
+                <Button onClick={() => setStarted(true)} className="w-full bg-green-600 hover:bg-green-700 text-lg py-6">
+                  <Play className="mr-2 h-5 w-5" /> Start Test
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -355,4 +463,15 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
       </Dialog>
     </div>
   );
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return "0s";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }

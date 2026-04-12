@@ -332,6 +332,8 @@ export type Database = {
           is_published: boolean | null
           link_url: string | null
           max_marks: number | null
+          scheduled_end: string | null
+          scheduled_start: string | null
           subject_id: string | null
           teacher_id: string
           time_limit_minutes: number | null
@@ -349,6 +351,8 @@ export type Database = {
           is_published?: boolean | null
           link_url?: string | null
           max_marks?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           subject_id?: string | null
           teacher_id: string
           time_limit_minutes?: number | null
@@ -366,6 +370,8 @@ export type Database = {
           is_published?: boolean | null
           link_url?: string | null
           max_marks?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           subject_id?: string | null
           teacher_id?: string
           time_limit_minutes?: number | null
