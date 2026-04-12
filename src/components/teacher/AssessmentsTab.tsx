@@ -19,7 +19,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import OnlineTestBuilder from "./OnlineTestBuilder";
 
-const assessmentTypes = ["test", "exam", "assignment", "quiz", "project", "online_test"];
+const assessmentTypes = ["online_test", "test", "exam", "assignment", "quiz", "project"];
+const typeLabels: Record<string, string> = {
+  online_test: "📝 Online MCQ Test",
+  test: "Test",
+  exam: "Exam",
+  assignment: "Assignment",
+  quiz: "Quiz",
+  project: "Project",
+};
 
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
