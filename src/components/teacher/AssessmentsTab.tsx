@@ -248,6 +248,16 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const getClassName = (id: string) => classes.find(c => c.id === id)?.name || "";
   const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || "";
 
+  // Online test builder view
+  if (onlineTestAssessment) {
+    return (
+      <OnlineTestBuilder
+        assessment={onlineTestAssessment}
+        onBack={() => { setOnlineTestAssessment(null); fetchAssessments(); }}
+      />
+    );
+  }
+
   if (selectedAssessment) {
     const gradedCount = results.length;
     const totalStudents = classStudents.length;
@@ -255,9 +265,14 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
 
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
-          <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
+            <PenTool className="mr-1 h-4 w-4" /> Online Questions
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
