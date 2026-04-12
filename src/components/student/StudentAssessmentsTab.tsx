@@ -163,8 +163,13 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
     const sub = getSubmission(a.id);
     const res = getResult(a.id);
     const att = getAttempt(a.id);
-    const daysLeft = a.due_date ? differenceInDays(new Date(a.due_date), new Date()) : null;
-    const isOverdue = a.due_date && isPast(new Date(a.due_date));
+    // Compare dates using date-only (strip time) to avoid off-by-one issues
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueDate = a.due_date ? new Date(a.due_date) : null;
+    const dueDateStart = dueDate ? new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()) : null;
+    const daysLeft = dueDateStart ? differenceInDays(dueDateStart, todayStart) : null;
+    const isOverdue = daysLeft !== null && daysLeft < 0;
     const hasFile = a.file_url && a.file_url.trim() !== "";
     const isOnline = a.is_online || a.assessment_type === "online_test";
 
