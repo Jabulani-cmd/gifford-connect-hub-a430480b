@@ -159,7 +159,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       const isOnline = form.assessment_type === "online_test";
       const savedTitle = form.title;
       toast({ title: isOnline ? "Online test created! Now add your MCQ questions." : "Assessment created!" });
-      setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "" });
+      setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "", time_limit_minutes: "", scheduled_start: "", scheduled_end: "" });
       setFormFile(null);
       setCreating(false);
       await fetchAssessments();
