@@ -203,6 +203,23 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     setSubmitting(false);
   };
 
+  // Upload question paper for existing assessment
+  const uploadQuestionPaperForAssessment = async (file: File) => {
+    if (!selectedAssessment) return;
+    setUploadingQuestionPaper(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const authUid = user?.id || teacherId;
+    const ext = file.name.split(".").pop();
+    const path = `assessments/${authUid}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
+    if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setUploadingQuestionPaper(false); return; }
+    const file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    await supabase.from("assessments").update({ file_url } as any).eq("id", selectedAssessment.id);
+    setSelectedAssessment({ ...selectedAssessment, file_url });
+    toast({ title: "Question paper uploaded successfully!" });
+    setUploadingQuestionPaper(false);
+  };
+
   // Upload memo for existing assessment
   const uploadMemoForAssessment = async (file: File) => {
     if (!selectedAssessment) return;
