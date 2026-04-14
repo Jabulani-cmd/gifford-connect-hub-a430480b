@@ -428,6 +428,11 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             </div>
           </TabsContent>
 
+          {/* VIEW MARKS */}
+          <TabsContent value="view-marks">
+            <TeacherMarksViewer userId={user!.id} classes={classes} subjects={subjects} />
+          </TabsContent>
+
           {/* HOMEWORK */}
           <TabsContent value="homework" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
