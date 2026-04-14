@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Printer, Search, Users, BarChart3, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { getLogoDataUrl, SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS } from "@/lib/finance/pdf";
 
 interface Props {
   userId: string;
