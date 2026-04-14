@@ -306,6 +306,60 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     toast({ title: "Assessment deleted" });
   };
 
+  // AI Question Design
+  const generateAiQuestions = async () => {
+    if (!selectedAssessment || !aiQForm.topic) {
+      toast({ title: "Enter a topic", variant: "destructive" }); return;
+    }
+    setAiQGenerating(true);
+    try {
+      const subjectName = subjects.find((s: any) => s.id === selectedAssessment.subject_id)?.name || "";
+      const { data, error } = await supabase.functions.invoke("generate-assessment-questions", {
+        body: {
+          subject: subjectName,
+          topic: aiQForm.topic,
+          numQuestions: parseInt(aiQForm.numQuestions) || 5,
+          difficulty: aiQForm.difficulty,
+          questionTypes: aiQForm.questionTypes,
+          maxMarks: selectedAssessment.max_marks || 100,
+          instructions: aiQForm.instructions,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: "AI Error", description: data.error, variant: "destructive" }); setAiQGenerating(false); return; }
+      setAiGeneratedQuestions(data.questions || []);
+      toast({ title: `${(data.questions || []).length} questions generated!` });
+    } catch (e: any) {
+      toast({ title: "Generation failed", description: e.message || "Please try again", variant: "destructive" });
+    }
+    setAiQGenerating(false);
+  };
+
+  const copyQuestionsToClipboard = () => {
+    const text = aiGeneratedQuestions.map((q: any, i: number) => {
+      let out = `Question ${q.question_number || i + 1} [${q.marks} marks] (${q.question_type.replace(/_/g, " ")})\n${q.question_text}\n`;
+      if (q.question_type === "multiple_choice") {
+        out += `A. ${q.option_a}\nB. ${q.option_b}\nC. ${q.option_c}\nD. ${q.option_d}\n`;
+      }
+      return out;
+    }).join("\n---\n\n");
+    navigator.clipboard.writeText(text);
+    toast({ title: "Questions copied to clipboard!" });
+  };
+
+  const copyMemoToClipboard = () => {
+    const text = aiGeneratedQuestions.map((q: any, i: number) => {
+      let out = `Q${q.question_number || i + 1} [${q.marks} marks]: `;
+      if (q.question_type === "multiple_choice" || q.question_type === "true_false") {
+        out += `Answer: ${q.correct_answer}\n`;
+      }
+      out += `Model Answer: ${q.model_answer}\nExplanation: ${q.explanation}`;
+      return out;
+    }).join("\n\n");
+    navigator.clipboard.writeText(text);
+    toast({ title: "Memo copied to clipboard!" });
+  };
+
   const openAssessmentDetail = async (assessment: any) => {
     setSelectedAssessment(assessment);
     setGradingStudentIdx(0);
