@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
-const materialTypes = ["document", "video", "link", "presentation"];
+const materialTypes = ["document", "past_paper", "video", "link", "presentation"];
 const typeIcons: Record<string, React.ReactNode> = {
   document: <FileText className="h-5 w-5" />,
   video: <Video className="h-5 w-5" />,
@@ -220,7 +220,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
                   <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground mt-1">{file ? file.name : "Click or drag file here"}</p>
                 </div>
-                <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.mp4,.mov" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
+                <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.mp4,.mov,.jpg,.jpeg,.png,.webp" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">

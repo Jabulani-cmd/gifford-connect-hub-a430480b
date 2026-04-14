@@ -11,6 +11,7 @@ import { format } from "date-fns";
 
 const typeIcons: Record<string, any> = {
   document: FileText,
+  past_paper: FileText,
   video: Video,
   link: LinkIcon,
   presentation: Presentation,
