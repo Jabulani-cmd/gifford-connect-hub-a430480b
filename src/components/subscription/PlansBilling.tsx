@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { Check, Star, CreditCard, Clock, Shield, Loader2, Trash2 } from "lucide-react";
 import PaynowCheckout from "./PaynowCheckout";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
 
 interface Plan {
