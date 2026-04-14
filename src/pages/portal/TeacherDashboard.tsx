@@ -35,6 +35,7 @@ import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog"
 import TeacherTermReportsTab from "@/components/teacher/TeacherTermReportsTab";
 import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 import TeacherMarksViewer from "@/components/teacher/TeacherMarksViewer";
+import TeacherRecordsTab from "@/components/teacher/TeacherRecordsTab";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -353,6 +354,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <TabsTrigger value="resources" className="text-xs sm:text-sm"><FolderOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resources</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm"><FileText className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Reports</TabsTrigger>
             <TabsTrigger value="parent-log" className="text-xs sm:text-sm"><MessageSquare className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Parents</TabsTrigger>
+            <TabsTrigger value="records" className="text-xs sm:text-sm"><Download className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Records</TabsTrigger>
             <TabsTrigger value="schedule" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Schedule</TabsTrigger>
             <TabsTrigger value="leave" className="text-xs sm:text-sm"><CalendarOff className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Leave</TabsTrigger>
           </TabsList>
