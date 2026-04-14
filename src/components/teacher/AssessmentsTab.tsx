@@ -891,14 +891,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   Cancel
                 </Button>
                 <Button className="flex-1" onClick={() => {
-                  const sub = submissions.find(s => s.id === aiMarkingSubId || true);
-                  if (aiResult && selectedAssessment) {
-                    // Find the submission that triggered this
-                    const matchingSub = submissions.find(s => 
-                      !results.find(r => r.student_id === s.student_id) || true
-                    );
-                    if (matchingSub) applyAiMarks(matchingSub.id);
-                  }
+                  if (aiMarkingSubId) applyAiMarks(aiMarkingSubId);
                 }}>
                   <CheckCircle2 className="h-4 w-4 mr-1" /> Apply Grade
                 </Button>
