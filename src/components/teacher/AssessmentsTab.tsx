@@ -513,7 +513,6 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
             <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
           </Button>
         </div>
-        </div>
 
         {/* Assessment Info Card */}
         <Card>
