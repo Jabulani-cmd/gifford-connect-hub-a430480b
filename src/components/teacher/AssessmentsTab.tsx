@@ -357,11 +357,36 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       });
     }
 
+    // Sync to master marks table for cross-portal visibility
+    if (selectedAssessment.subject_id) {
+      await supabase.rpc("sync_online_test_marks", {
+        p_student_id: currentStudent.id,
+        p_assessment_id: selectedAssessment.id,
+        p_subject_id: selectedAssessment.subject_id,
+        p_teacher_id: teacherId,
+        p_score: Math.round(marksObtained),
+        p_total_marks: maxMarks,
+        p_percentage: pct,
+        p_grade: grade,
+        p_title: selectedAssessment.title,
+      });
+    }
+
+    // Notify student
+    if (currentStudent.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: currentStudent.user_id,
+        title: "Assessment Graded",
+        message: `Your "${selectedAssessment.title}" has been graded: ${grade} (${marksObtained}/${maxMarks})`,
+        type: "assessment",
+      });
+    }
+
     // Refresh results
     const { data } = await supabase.from("assessment_results").select("*, students(full_name, admission_number)").eq("assessment_id", selectedAssessment.id);
     if (data) setResults(data);
 
-    toast({ title: `Grade saved: ${grade} (${pct.toFixed(0)}%)` });
+    toast({ title: `Grade saved & synced: ${grade} (${pct.toFixed(0)}%)` });
     setGradeLoading(false);
 
     // Auto-advance
