@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
