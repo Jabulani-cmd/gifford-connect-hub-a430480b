@@ -584,6 +584,11 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <ParentCommunicationLog userId={user!.id} students={students} />
           </TabsContent>
 
+          {/* RECORDS */}
+          <TabsContent value="records">
+            <TeacherRecordsTab userId={user!.id} classes={classes} subjects={subjects} staffId={staffInfo?.id} />
+          </TabsContent>
+
           {/* MY SCHEDULE */}
           <TabsContent value="schedule">
             <PersonalTimetableEditor />
