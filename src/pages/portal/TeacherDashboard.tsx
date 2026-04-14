@@ -418,9 +418,9 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
                   <CardContent className="overflow-x-auto">
                     {marks.length === 0 ? <p className="text-sm text-muted-foreground">No marks submitted yet.</p> : (
                       <table className="w-full text-sm">
-                        <thead className="bg-muted"><tr><th className="px-3 py-2 text-left">Subject</th><th className="px-3 py-2">Description</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Mark</th><th className="px-3 py-2">Grade</th></tr></thead>
+                        <thead className="bg-muted"><tr><th className="px-3 py-2 text-left">Student</th><th className="px-3 py-2 text-left">Subject</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Mark</th><th className="px-3 py-2">Grade</th></tr></thead>
                         <tbody>{marks.map(m => (
-                          <tr key={m.id} className="border-b"><td className="px-3 py-2">{m.subjects?.name}</td><td className="px-3 py-2 text-center">{m.description || "—"}</td><td className="px-3 py-2 text-center">{m.assessment_type}</td><td className="px-3 py-2 text-center font-bold">{m.mark}%</td><td className="px-3 py-2 text-center"><Badge>{zimGrade(m.mark)}</Badge></td></tr>
+                          <tr key={m.id} className="border-b"><td className="px-3 py-2">{m.students?.full_name || "—"}</td><td className="px-3 py-2">{m.subjects?.name}</td><td className="px-3 py-2 text-center">{m.assessment_type}</td><td className="px-3 py-2 text-center font-bold">{m.mark}%</td><td className="px-3 py-2 text-center"><Badge>{zimGrade(m.mark)}</Badge></td></tr>
                         ))}</tbody>
                       </table>
                     )}
