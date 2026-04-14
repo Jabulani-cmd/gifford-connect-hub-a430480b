@@ -233,7 +233,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       toast({ title: "AI marking failed", description: e.message || "Please try again", variant: "destructive" });
     }
     setAiMarking(false);
-    setAiMarkingSubId(null);
+    // Don't clear aiMarkingSubId here - needed by the result dialog
   };
 
   // Apply AI marks to student
