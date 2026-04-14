@@ -183,16 +183,84 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       toast({ title: isOnline ? "Online test created! Now add your MCQ questions." : "Assessment created!" });
       setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "", time_limit_minutes: "", scheduled_start: "", scheduled_end: "" });
       setFormFile(null);
+      setFormMemoFile(null);
       setCreating(false);
       await fetchAssessments();
       // Auto-open question builder for online tests
       if (isOnline) {
-        // Need to re-read state after fetchAssessments updates
         const { data: latest } = await supabase.from("assessments").select("*").eq("teacher_id", teacherId).eq("title", savedTitle).eq("is_online", true).order("created_at", { ascending: false }).limit(1).single();
         if (latest) setOnlineTestAssessment(latest);
       }
     }
     setSubmitting(false);
+  };
+
+  // Upload memo for existing assessment
+  const uploadMemoForAssessment = async (file: File) => {
+    if (!selectedAssessment) return;
+    setUploadingMemo(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const authUid = user?.id || teacherId;
+    const ext = file.name.split(".").pop();
+    const path = `assessments/${authUid}/memos/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
+    if (upErr) { toast({ title: "Memo upload failed", description: upErr.message, variant: "destructive" }); setUploadingMemo(false); return; }
+    const memo_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    await supabase.from("assessments").update({ memo_url } as any).eq("id", selectedAssessment.id);
+    setSelectedAssessment({ ...selectedAssessment, memo_url });
+    toast({ title: "Marking guide uploaded successfully!" });
+    setUploadingMemo(false);
+  };
+
+  // AI Mark submission
+  const aiMarkSubmission = async (submissionId: string) => {
+    if (!selectedAssessment) return;
+    if (!selectedAssessment.memo_url) {
+      toast({ title: "Upload a marking guide first", description: "Please upload the memo/answer key before using AI marking.", variant: "destructive" });
+      return;
+    }
+    setAiMarking(true);
+    setAiMarkingSubId(submissionId);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-mark-submission", {
+        body: { submission_id: submissionId, assessment_id: selectedAssessment.id },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: "AI Marking Error", description: data.error, variant: "destructive" }); setAiMarking(false); setAiMarkingSubId(null); return; }
+      setAiResult(data);
+      setAiResultDialog(true);
+    } catch (e: any) {
+      toast({ title: "AI marking failed", description: e.message || "Please try again", variant: "destructive" });
+    }
+    setAiMarking(false);
+    setAiMarkingSubId(null);
+  };
+
+  // Apply AI marks to student
+  const applyAiMarks = async (submissionId: string) => {
+    if (!aiResult || !selectedAssessment) return;
+    const sub = submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+    const existing = results.find(r => r.student_id === sub.student_id);
+    if (existing) {
+      await supabase.from("assessment_results").update({
+        marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
+        teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
+        graded_by: teacherId, graded_date: new Date().toISOString(),
+      }).eq("id", existing.id);
+    } else {
+      await supabase.from("assessment_results").insert({
+        assessment_id: selectedAssessment.id, student_id: sub.student_id,
+        marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
+        teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
+        graded_by: teacherId, graded_date: new Date().toISOString(),
+      });
+    }
+    const { data } = await supabase.from("assessment_results").select("*, students(full_name, admission_number)").eq("assessment_id", selectedAssessment.id);
+    if (data) setResults(data);
+    toast({ title: `AI Grade applied: ${aiResult.grade} (${aiResult.marks_obtained}/${selectedAssessment.max_marks})` });
+    setAiResultDialog(false);
+    setAiResult(null);
   };
 
   const deleteAssessment = async (id: string) => {
