@@ -13,8 +13,9 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen, Sparkles, Copy, Printer
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
