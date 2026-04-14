@@ -232,19 +232,44 @@ export default function PlansBilling() {
           <Card>
             <CardContent className="p-0">
               <div className="divide-y">
-                {payments.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-4 py-3">
-                    <div>
-                      <p className="text-sm font-medium">${p.amount_usd} {p.currency?.toUpperCase()}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge variant={p.status === "completed" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
-                      {p.status}
-                    </Badge>
-                  </div>
-                ))}
+                 {payments.map((p) => (
+                   <div key={p.id} className="flex items-center justify-between px-4 py-3">
+                     <div>
+                       <p className="text-sm font-medium">${p.amount_usd} {p.currency?.toUpperCase()}</p>
+                       <p className="text-xs text-muted-foreground">
+                         {new Date(p.created_at).toLocaleDateString()}
+                       </p>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <Badge variant={p.status === "completed" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
+                         {p.status}
+                       </Badge>
+                       {p.status === "pending" && (
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                               <Trash2 className="h-3.5 w-3.5" />
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Delete pending payment?</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 This will remove the pending payment of ${p.amount_usd} {p.currency?.toUpperCase()}. You can initiate a new payment anytime.
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction onClick={() => handleDeletePending(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                 Delete
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       )}
+                     </div>
+                   </div>
+                 ))}
               </div>
             </CardContent>
           </Card>
