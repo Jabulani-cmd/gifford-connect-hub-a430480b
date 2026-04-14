@@ -32,39 +32,104 @@ function zimGrade(mark: number): string {
   return "U";
 }
 
-function printHtmlTable(title: string, headers: string[], rows: string[][], schoolName = "Gifford High School") {
+function printHtmlTable(title: string, headers: string[], rows: string[][], logoUrl: string) {
   const win = window.open("", "_blank");
   if (!win) return;
   const now = new Date().toLocaleDateString("en-GB");
   win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { font-size: 18px; margin-bottom: 2px; }
-    h2 { font-size: 14px; color: #555; margin-top: 0; }
+    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; }
+    .header { display: flex; align-items: center; gap: 16px; border-bottom: 3px solid #800000; padding-bottom: 12px; margin-bottom: 16px; }
+    .header img { width: 70px; height: 70px; object-fit: contain; }
+    .header-text h1 { font-size: 20px; margin: 0; color: #000; }
+    .header-text p { font-size: 11px; color: #555; margin: 2px 0; }
+    .header-text .motto { font-style: italic; color: #800000; }
+    h2 { font-size: 15px; color: #333; margin: 0 0 4px; }
     .meta { font-size: 11px; color: #888; margin-bottom: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
-    th { background: #f0f0f0; font-weight: bold; }
-    tr:nth-child(even) { background: #fafafa; }
-    @media print { body { padding: 0; } }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { border: 1px solid #ccc; padding: 5px 7px; text-align: left; }
+    th { background: #800000; color: #fff; font-weight: bold; font-size: 10px; }
+    tr:nth-child(even) { background: #f9f5f5; }
+    .footer { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #888; text-align: center; }
+    @media print { body { padding: 10px; } .header { border-bottom-width: 2px; } }
   </style></head><body>
-  <h1>${schoolName}</h1><h2>${title}</h2><p class="meta">Printed on ${now}</p>
+  <div class="header">
+    <img src="${logoUrl}" alt="School Logo" />
+    <div class="header-text">
+      <h1>${SCHOOL_NAME}</h1>
+      <p class="motto">${SCHOOL_MOTTO}</p>
+      <p>${SCHOOL_ADDRESS}</p>
+    </div>
+  </div>
+  <h2>${title}</h2><p class="meta">Generated on ${now}</p>
   <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
   <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c ?? ""}</td>`).join("")}</tr>`).join("")}</tbody></table>
+  <div class="footer">${SCHOOL_NAME} · ${SCHOOL_ADDRESS} · Document generated on ${now}</div>
   </body></html>`);
   win.document.close();
   setTimeout(() => win.print(), 400);
 }
 
-function downloadCsv(title: string, headers: string[], rows: string[][]) {
-  const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${title.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+async function downloadPdf(title: string, headers: string[], rows: string[][]) {
+  const logoDataUrl = await getLogoDataUrl();
+  const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const now = new Date().toLocaleDateString("en-GB");
+
+  // Header with logo
+  try {
+    doc.addImage(logoDataUrl, "PNG", 14, 8, 18, 18);
+  } catch {}
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text(SCHOOL_NAME, 36, 16);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(128, 0, 0);
+  doc.text(SCHOOL_MOTTO, 36, 21);
+  doc.setTextColor(100);
+  doc.setFont("helvetica", "normal");
+  doc.text(SCHOOL_ADDRESS, 36, 26);
+
+  // Maroon line
+  doc.setDrawColor(128, 0, 0);
+  doc.setLineWidth(0.8);
+  doc.line(14, 30, pageWidth - 14, 30);
+
+  // Title
+  doc.setFontSize(13);
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "bold");
+  doc.text(title, 14, 38);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(120);
+  doc.text(`Generated on ${now}`, 14, 43);
+
+  // Table
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    startY: 47,
+    theme: "grid",
+    styles: { fontSize: 8, cellPadding: 3, lineColor: [200, 200, 200], lineWidth: 0.3 },
+    headStyles: { fillColor: [128, 0, 0], textColor: 255, fontStyle: "bold", fontSize: 8 },
+    alternateRowStyles: { fillColor: [249, 245, 245] },
+    margin: { left: 14, right: 14 },
+    didDrawPage: (data) => {
+      // Footer on every page
+      const pageH = doc.internal.pageSize.getHeight();
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.3);
+      doc.line(14, pageH - 14, pageWidth - 14, pageH - 14);
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.text(`${SCHOOL_NAME} · ${SCHOOL_ADDRESS}`, 14, pageH - 9);
+      doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth - 14, pageH - 9, { align: "right" });
+    },
+  });
+
+  doc.save(`${title.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 export default function TeacherRecordsTab({ userId, classes, subjects, staffId }: Props) {
