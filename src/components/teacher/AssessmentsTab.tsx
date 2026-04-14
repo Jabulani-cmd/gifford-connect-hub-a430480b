@@ -1021,6 +1021,129 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
         </DialogContent>
       </Dialog>
 
+      {/* AI Design Questions Dialog */}
+      <Dialog open={aiQDesignOpen} onOpenChange={setAiQDesignOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> AI Question Designer
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {aiGeneratedQuestions.length === 0 ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Topic / Chapter *</Label>
+                  <Input value={aiQForm.topic} onChange={e => setAiQForm(p => ({ ...p, topic: e.target.value }))} placeholder="e.g. Photosynthesis, Quadratic Equations, World War II" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Number of Questions</Label>
+                    <Input type="number" min="1" max="20" value={aiQForm.numQuestions} onChange={e => setAiQForm(p => ({ ...p, numQuestions: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Difficulty</Label>
+                    <Select value={aiQForm.difficulty} onValueChange={v => setAiQForm(p => ({ ...p, difficulty: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Easy">Easy</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Hard">Hard</SelectItem>
+                        <SelectItem value="Mixed">Mixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Question Types</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: "multiple_choice", label: "Multiple Choice" },
+                      { value: "short_answer", label: "Short Answer" },
+                      { value: "structured", label: "Structured" },
+                      { value: "essay", label: "Essay" },
+                      { value: "true_false", label: "True/False" },
+                      { value: "fill_in_blank", label: "Fill in the Blank" },
+                    ].map(qt => (
+                      <label key={qt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={aiQForm.questionTypes.includes(qt.value)}
+                          onCheckedChange={(checked) => {
+                            setAiQForm(p => ({
+                              ...p,
+                              questionTypes: checked
+                                ? [...p.questionTypes, qt.value]
+                                : p.questionTypes.filter(t => t !== qt.value),
+                            }));
+                          }}
+                        />
+                        {qt.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Additional Instructions (optional)</Label>
+                  <Textarea rows={2} value={aiQForm.instructions} onChange={e => setAiQForm(p => ({ ...p, instructions: e.target.value }))} placeholder="e.g. Focus on practical applications, include diagrams descriptions..." />
+                </div>
+                <Button onClick={generateAiQuestions} disabled={aiQGenerating || !aiQForm.topic} className="w-full">
+                  {aiQGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating Questions...</> : <><Sparkles className="h-4 w-4 mr-2" /> Generate Questions</>}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <p className="text-sm font-medium">{aiGeneratedQuestions.length} questions generated • Total: {aiGeneratedQuestions.reduce((s: number, q: any) => s + (q.marks || 0), 0)} marks</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={copyQuestionsToClipboard}>
+                      <Copy className="h-3 w-3 mr-1" /> Copy Questions
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={copyMemoToClipboard}>
+                      <BookOpen className="h-3 w-3 mr-1" /> Copy Memo
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setAiGeneratedQuestions([])}>
+                      Regenerate
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                  {aiGeneratedQuestions.map((q: any, i: number) => (
+                    <Card key={i}>
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">{(q.question_type || "").replace(/_/g, " ")}</Badge>
+                            <Badge className="text-xs">{q.marks} mark{q.marks !== 1 ? "s" : ""}</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Q{q.question_number || i + 1}</span>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap">{q.question_text}</p>
+                        {q.question_type === "multiple_choice" && (
+                          <div className="grid grid-cols-2 gap-1 text-xs">
+                            <p className={q.correct_answer === "A" ? "font-bold text-primary" : ""}>A. {q.option_a}</p>
+                            <p className={q.correct_answer === "B" ? "font-bold text-primary" : ""}>B. {q.option_b}</p>
+                            <p className={q.correct_answer === "C" ? "font-bold text-primary" : ""}>C. {q.option_c}</p>
+                            <p className={q.correct_answer === "D" ? "font-bold text-primary" : ""}>D. {q.option_d}</p>
+                          </div>
+                        )}
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-primary font-medium">View Model Answer</summary>
+                          <div className="mt-1 rounded bg-muted p-2 space-y-1">
+                            {q.correct_answer && <p><strong>Answer:</strong> {q.correct_answer}</p>}
+                            <p><strong>Model Answer:</strong> {q.model_answer}</p>
+                            {q.explanation && <p className="text-muted-foreground"><strong>Explanation:</strong> {q.explanation}</p>}
+                          </div>
+                        </details>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Assessments List */}
       {loading ? (
         <div className="flex justify-center py-8"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>
