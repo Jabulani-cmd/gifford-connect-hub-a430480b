@@ -148,6 +148,15 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
     }
 
+    let memo_url = null;
+    if (formMemoFile) {
+      const ext = formMemoFile.name.split(".").pop();
+      const path = `assessments/${authUid}/memos/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("school-media").upload(path, formMemoFile);
+      if (upErr) { toast({ title: "Memo upload failed", description: upErr.message, variant: "destructive" }); setSubmitting(false); return; }
+      memo_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    }
+
     const { error } = await supabase.from("assessments").insert({
       teacher_id: teacherId,
       title: form.title,
@@ -158,6 +167,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       due_date: form.due_date || null,
       instructions: form.instructions || null,
       file_url,
+      memo_url,
       link_url: form.link_url || null,
       is_published: form.is_published,
       is_online: form.assessment_type === "online_test",
