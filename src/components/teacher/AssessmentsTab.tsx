@@ -834,12 +834,77 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                 </Button>
               )}
             </div>
+            <div className="space-y-2">
+              <Label>Marking Guide / Memo (for AI marking)</Label>
+              <div className="rounded-lg border-2 border-dashed border-accent/50 p-3 text-center cursor-pointer hover:border-accent transition-colors" onClick={() => memoFileRef.current?.click()}>
+                <BookOpen className="mx-auto h-6 w-6 text-accent-foreground/60" />
+                <p className="text-xs text-muted-foreground mt-1">{formMemoFile ? formMemoFile.name : "Upload answer key / memorandum"}</p>
+                <p className="text-[10px] text-muted-foreground">Used by AI to mark student submissions</p>
+              </div>
+              <input ref={memoFileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt" onChange={e => { if (e.target.files?.[0]) setFormMemoFile(e.target.files[0]); }} />
+              {formMemoFile && (
+                <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => { setFormMemoFile(null); if (memoFileRef.current) memoFileRef.current.value = ""; }}>
+                  Remove memo
+                </Button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.is_published} onCheckedChange={v => setForm(p => ({ ...p, is_published: v }))} />
               <Label>Publish immediately</Label>
             </div>
             <Button onClick={createAssessment} disabled={submitting} className="w-full">{submitting ? "Creating..." : "Create Assessment"}</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Marking Result Dialog */}
+      <Dialog open={aiResultDialog} onOpenChange={setAiResultDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" /> AI Marking Result
+            </DialogTitle>
+          </DialogHeader>
+          {aiResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiResult.marks_obtained}/{selectedAssessment?.max_marks}</p>
+                  <p className="text-xs text-muted-foreground">Marks</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold">{aiResult.percentage?.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">Percentage</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiResult.grade}</p>
+                  <p className="text-xs text-muted-foreground">Grade</p>
+                </CardContent></Card>
+              </div>
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-sm font-medium">AI Feedback</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{aiResult.feedback}</p>
+              </div>
+              <p className="text-xs text-muted-foreground italic">⚠️ Review the AI marking before applying. You can adjust marks manually after applying.</p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setAiResultDialog(false); setAiResult(null); }}>
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={() => {
+                  const sub = submissions.find(s => s.id === aiMarkingSubId || true);
+                  if (aiResult && selectedAssessment) {
+                    // Find the submission that triggered this
+                    const matchingSub = submissions.find(s => 
+                      !results.find(r => r.student_id === s.student_id) || true
+                    );
+                    if (matchingSub) applyAiMarks(matchingSub.id);
+                  }
+                }}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Apply Grade
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
