@@ -490,13 +490,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
             <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
-            <PenTool className="mr-1 h-4 w-4" /> Online Questions
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
+              <Sparkles className="mr-1 h-4 w-4" /> AI Design Questions
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
+              <PenTool className="mr-1 h-4 w-4" /> Online Questions
+            </Button>
+          </div>
         </div>
 
         <Card>
