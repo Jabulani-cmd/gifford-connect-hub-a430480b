@@ -468,15 +468,12 @@ serve(async (req) => {
 
     let paynowRes: Response;
     try {
-      // Force HTTP/1.1 — Paynow runs on IIS which resets HTTP/2 connections
-      const httpClient = Deno.createHttpClient({ http1: true, http2: false });
-      paynowRes = await fetch(paynowUrl, {
+      // Force HTTP/1.1 and retry — Paynow runs on IIS which resets HTTP/2 connections
+      paynowRes = await fetchWithRetry(paynowUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formBody,
-        // @ts-ignore Deno-specific option
-        client: httpClient,
-      });
+      }, 3);
     } catch (fetchErr) {
       console.error("Payment error:", fetchErr);
 
