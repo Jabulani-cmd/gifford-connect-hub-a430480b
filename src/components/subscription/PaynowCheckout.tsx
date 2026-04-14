@@ -149,6 +149,17 @@ export default function PaynowCheckout({
         return;
       }
 
+      if (data.redirect_url) {
+        if (data.fallback && data.message) {
+          toast({
+            title: "Continue on Paynow",
+            description: data.message,
+          });
+        }
+        window.location.href = data.redirect_url;
+        return;
+      }
+
       if (method === "ecocash" || method === "onemoney") {
         // Mobile money - show polling UI
         setPollRef(data.reference);
@@ -160,12 +171,7 @@ export default function PaynowCheckout({
           description: data.message || "A payment prompt has been sent to your phone.",
         });
       } else {
-        // Web payment - redirect to Paynow
-        if (data.redirect_url) {
-          window.location.href = data.redirect_url;
-        } else {
-          throw new Error("No redirect URL received");
-        }
+        throw new Error("No redirect URL received");
       }
     } catch (err: any) {
       console.error("Payment error:", err);

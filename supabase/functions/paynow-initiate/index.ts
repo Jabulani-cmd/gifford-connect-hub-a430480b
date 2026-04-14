@@ -460,14 +460,92 @@ serve(async (req) => {
         client: httpClient,
       });
     } catch (fetchErr) {
-      const isMobileMoney = method === "ecocash" || method === "onemoney";
       console.error("Payment error:", fetchErr);
+
+      if (payment_type === "subscription" && isMobileMoney) {
+        try {
+          const webFields: Record<string, string> = {
+            id: integrationId,
+            reference,
+            amount: parseFloat(amount).toFixed(2),
+            additionalinfo: description,
+            returnurl: returnUrl,
+            resulturl: resultUrl,
+            authemail: email || merchantTestEmail || "",
+            status: "Message",
+          };
+
+          const webHashValues = [
+            webFields.id,
+            webFields.reference,
+            webFields.amount,
+            webFields.additionalinfo,
+            webFields.returnurl,
+            webFields.resulturl,
+            webFields.authemail,
+            webFields.status,
+          ];
+
+          webFields.hash = await generateHash(webHashValues, integrationKey);
+
+          const webFormBody = Object.entries(webFields)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join("&");
+
+          const fallbackClient = Deno.createHttpClient({ http1: true, http2: false });
+          const webRes = await fetch(PAYNOW_INITIATE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: webFormBody,
+            // @ts-ignore Deno-specific option
+            client: fallbackClient,
+          });
+
+          const webResponseText = await webRes.text();
+          const webParsed = parsePaynowResponse(webResponseText);
+          const webHasError = webParsed.status?.toLowerCase() === "error" || webParsed.Status?.toLowerCase() === "error";
+          const browserUrl = webParsed.browserurl || webParsed.BrowserUrl || null;
+          const pollUrl = webParsed.pollurl || webParsed.PollUrl || null;
+
+          if (!webHasError && browserUrl) {
+            await adminClient.from("paynow_transactions").insert({
+              reference,
+              poll_url: pollUrl,
+              browser_url: browserUrl,
+              payment_type,
+              subscription_id: subscription_id || null,
+              invoice_id: invoice_id || null,
+              student_id: student_id || null,
+              parent_id: userId,
+              amount: parseFloat(amount),
+              currency,
+              method: "web",
+              status: "pending",
+            });
+
+            return new Response(JSON.stringify({
+              success: true,
+              method: "web",
+              fallback: true,
+              message: "Mobile money prompt is temporarily unavailable. Continue the subscription payment on the secure Paynow checkout page.",
+              redirect_url: browserUrl,
+              reference,
+              poll_url: pollUrl,
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        } catch (fallbackErr) {
+          console.error("Paynow web fallback error:", fallbackErr);
+        }
+      }
+
       return new Response(JSON.stringify({
         error: isMobileMoney
-          ? "Paynow mobile money test mode could not be reached. If your integration is still in test mode, set PAYNOW_TEST_EMAIL to the merchant login email and use Paynow test numbers like 0771111111."
+          ? "We could not open the Paynow mobile money prompt right now. Please try again or switch to the card/web checkout option."
           : "Paynow could not be reached. Please try again shortly.",
       }), {
-        status: 502,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -479,7 +557,7 @@ serve(async (req) => {
       const errMsg = parsed.error || parsed.Error || "Payment initiation failed";
       console.error("Paynow error:", errMsg);
       return new Response(JSON.stringify({ error: errMsg }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
