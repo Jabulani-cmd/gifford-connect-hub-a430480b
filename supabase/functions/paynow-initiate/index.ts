@@ -36,6 +36,24 @@ function normalizePhoneNumber(value: string): string {
   return digits;
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        console.log(`Retry attempt ${attempt + 1} for ${url}`);
+      }
+      const response = await fetch(url, options);
+      return response;
+    } catch (err) {
+      lastError = err as Error;
+      console.error(`Fetch attempt ${attempt + 1} failed:`, err);
+    }
+  }
+  throw lastError;
+}
+
 function getPaynowTestOutcome(phone: string): { status: "completed" | "failed"; message: string } | null {
   switch (phone) {
     case "0771111111":
@@ -450,15 +468,12 @@ serve(async (req) => {
 
     let paynowRes: Response;
     try {
-      // Force HTTP/1.1 — Paynow runs on IIS which resets HTTP/2 connections
-      const httpClient = Deno.createHttpClient({ http1: true, http2: false });
-      paynowRes = await fetch(paynowUrl, {
+      // Force HTTP/1.1 and retry — Paynow runs on IIS which resets HTTP/2 connections
+      paynowRes = await fetchWithRetry(paynowUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formBody,
-        // @ts-ignore Deno-specific option
-        client: httpClient,
-      });
+      }, 3);
     } catch (fetchErr) {
       console.error("Payment error:", fetchErr);
 
@@ -492,14 +507,11 @@ serve(async (req) => {
             .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
             .join("&");
 
-          const fallbackClient = Deno.createHttpClient({ http1: true, http2: false });
-          const webRes = await fetch(PAYNOW_INITIATE_URL, {
+          const webRes = await fetchWithRetry(PAYNOW_INITIATE_URL, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: webFormBody,
-            // @ts-ignore Deno-specific option
-            client: fallbackClient,
-          });
+          }, 3);
 
           const webResponseText = await webRes.text();
           const webParsed = parsePaynowResponse(webResponseText);
