@@ -257,7 +257,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
                 <p className="text-xs text-muted-foreground">{m.classes?.name} • {m.subjects?.name}</p>
                 <div className="flex flex-wrap gap-1">
                   <Badge variant={m.is_published ? "default" : "secondary"} className="text-[10px]">{m.is_published ? "Published" : "Draft"}</Badge>
-                  <Badge variant="outline" className="text-[10px]">{m.material_type}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{typeLabels[m.material_type] || m.material_type}</Badge>
                   {m.download_count > 0 && <Badge variant="outline" className="text-[10px]">{m.download_count} downloads</Badge>}
                 </div>
                 {m.tags && m.tags.length > 0 && (
