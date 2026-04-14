@@ -1251,9 +1251,12 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openAssessmentDetail(a); }}>
                       <Upload className="mr-1 h-3 w-3" /> Upload Files & Mark
                     </Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setSelectedAssessment(a); setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
+                      <Sparkles className="mr-1 h-3 w-3" /> AI Design
+                    </Button>
                     {a.is_online && (
                       <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setOnlineTestAssessment(a); }}>
-                        <PenTool className="mr-1 h-3 w-3" /> Design Questions
+                        <PenTool className="mr-1 h-3 w-3" /> MCQ Builder
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={e => { e.stopPropagation(); deleteAssessment(a.id); }}>
