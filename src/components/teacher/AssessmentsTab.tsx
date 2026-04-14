@@ -68,7 +68,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   });
   const [formFile, setFormFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const memoFileRef = useRef<HTMLInputElement>(null);
+  const [formMemoFile, setFormMemoFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // AI Marking state
+  const [aiMarking, setAiMarking] = useState(false);
+  const [aiMarkingSubId, setAiMarkingSubId] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResultDialog, setAiResultDialog] = useState(false);
+
+  // Memo upload for existing assessment
+  const [uploadingMemo, setUploadingMemo] = useState(false);
 
   // Grading form
   const [gradeForm, setGradeForm] = useState({ marks: "", feedback: "" });
