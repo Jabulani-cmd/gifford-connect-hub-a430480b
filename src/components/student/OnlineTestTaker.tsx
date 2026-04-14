@@ -164,13 +164,15 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
 
       // Auto-sync to marks table for all portals (parent, student, teacher, admin)
       if (assessment.subject_id && assessment.teacher_id) {
+        const markPct = Math.round(pct);
         await supabase.from("marks").insert({
           student_id: studentId,
           subject_id: assessment.subject_id,
           teacher_id: assessment.teacher_id,
-          mark: score,
+          mark: markPct,
           assessment_type: "online_test",
           description: assessment.title,
+          comment: `Auto-graded: ${score}/${totalMarks}`,
           term: getCurrentTerm(),
         });
       }
