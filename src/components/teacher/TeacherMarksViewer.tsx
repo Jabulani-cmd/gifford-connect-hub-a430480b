@@ -170,13 +170,53 @@ export default function TeacherMarksViewer({ userId, classes, subjects }: Props)
     ? Math.round(studentSummaries.filter(s => s.avg !== null).reduce((a, s) => a + (s.avg || 0), 0) / studentSummaries.filter(s => s.avg !== null).length)
     : null;
 
+  const getExportData = () => {
+    const className = classes.find(c => c.id === selectedClass)?.name || "Class";
+    if (viewMode === "group") {
+      const title = `${className} — Marks Summary`;
+      const headers = ["#", "Student", "Adm #", "Tests", "Average", "Grade"];
+      const rows = studentSummaries.filter(s => s.count > 0).map((s, i) => [
+        String(i + 1), s.full_name, s.admission_number || "—", String(s.count),
+        s.avg !== null ? `${s.avg}%` : "—", s.avg !== null ? zimGrade(s.avg) : "—"
+      ]);
+      return { title, headers, rows };
+    } else {
+      const title = `${className} — Individual Marks`;
+      const headers = ["Student", "Subject", "Type", "Term", "Date", "Mark", "Grade"];
+      const rows = filtered.filter(m => {
+        if (!search) return true;
+        const st = students.find(s => s.id === m.student_id);
+        return st?.full_name?.toLowerCase().includes(search.toLowerCase()) || st?.admission_number?.toLowerCase().includes(search.toLowerCase());
+      }).map(m => {
+        const st = students.find(s => s.id === m.student_id);
+        return [
+          st?.full_name || "—", m.subjects?.name || "—", m.assessment_type, m.term,
+          new Date(m.created_at).toLocaleDateString(), `${m.mark}%`, zimGrade(m.mark)
+        ];
+      });
+      return { title, headers, rows };
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="font-heading text-lg font-bold flex items-center gap-2">
-          <BookOpen className="h-5 w-5" /> Student Marks Viewer
-        </h2>
-        <p className="text-sm text-muted-foreground">View marks for individual students or as a class group.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-lg font-bold flex items-center gap-2">
+            <BookOpen className="h-5 w-5" /> Student Marks Viewer
+          </h2>
+          <p className="text-sm text-muted-foreground">View marks for individual students or as a class group.</p>
+        </div>
+        {filtered.length > 0 && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => { const d = getExportData(); printTable(d.title, d.headers, d.rows); }}>
+              <Printer className="h-4 w-4 mr-1" /> Print
+            </Button>
+            <Button size="sm" variant="default" onClick={async () => { const d = getExportData(); await downloadPdf(d.title, d.headers, d.rows); }}>
+              <Download className="h-4 w-4 mr-1" /> Download PDF
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">
