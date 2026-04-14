@@ -4,8 +4,85 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Users, Search, BookOpen } from "lucide-react";
+import { Users, Search, BookOpen, Printer, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+const SCHOOL_NAME = "Gifford High School";
+const SCHOOL_MOTTO = "Hinc Orior — From Here I Arise";
+
+async function getLogoDataUrl(): Promise<string | null> {
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/lovable-uploads/a77a73a5-59e1-4ad5-85eb-e513569ad7ae.png";
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+    const c = document.createElement("canvas");
+    c.width = img.width; c.height = img.height;
+    c.getContext("2d")!.drawImage(img, 0, 0);
+    return c.toDataURL("image/png");
+  } catch { return null; }
+}
+
+function printTable(title: string, headers: string[], rows: string[][]) {
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(`<html><head><title>${title}</title><style>
+    body{font-family:Arial,sans-serif;padding:20px}
+    .header{text-align:center;margin-bottom:20px}
+    .header img{height:60px;margin-bottom:6px}
+    .header h1{margin:0;font-size:18px;color:#800000}
+    .header p{margin:2px 0;font-size:12px;color:#555}
+    table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+    th{background:#800000;color:#fff;padding:8px 6px;text-align:left}
+    td{padding:6px;border-bottom:1px solid #ddd}
+    tr:nth-child(even){background:#f9f5f5}
+    .footer{margin-top:20px;text-align:center;font-size:10px;color:#999}
+    @media print{.no-print{display:none}}
+  </style></head><body>
+  <div class="header">
+    <img src="/lovable-uploads/a77a73a5-59e1-4ad5-85eb-e513569ad7ae.png" />
+    <h1>${SCHOOL_NAME}</h1>
+    <p>${SCHOOL_MOTTO}</p>
+    <p style="font-weight:bold;margin-top:8px">${title}</p>
+    <p>Generated: ${new Date().toLocaleDateString()}</p>
+  </div>
+  <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+  <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>
+  <div class="footer">© ${new Date().getFullYear()} ${SCHOOL_NAME}</div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+async function downloadPdf(title: string, headers: string[], rows: string[][]) {
+  const logo = await getLogoDataUrl();
+  const doc = new jsPDF({ orientation: headers.length > 6 ? "landscape" : "portrait" });
+  const pw = doc.internal.pageSize.getWidth();
+  let y = 15;
+  if (logo) { doc.addImage(logo, "PNG", pw / 2 - 10, y, 20, 20); y += 24; }
+  doc.setFontSize(16); doc.setTextColor(128, 0, 0);
+  doc.text(SCHOOL_NAME, pw / 2, y, { align: "center" }); y += 6;
+  doc.setFontSize(9); doc.setTextColor(100);
+  doc.text(SCHOOL_MOTTO, pw / 2, y, { align: "center" }); y += 8;
+  doc.setFontSize(12); doc.setTextColor(0);
+  doc.text(title, pw / 2, y, { align: "center" }); y += 4;
+  doc.setDrawColor(128, 0, 0); doc.setLineWidth(0.5);
+  doc.line(14, y, pw - 14, y); y += 4;
+  autoTable(doc, {
+    startY: y, head: [headers], body: rows, theme: "grid",
+    headStyles: { fillColor: [128, 0, 0], fontSize: 9 },
+    bodyStyles: { fontSize: 8 },
+    alternateRowStyles: { fillColor: [249, 245, 245] },
+    didDrawPage: (data) => {
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pw / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+    }
+  });
+  doc.save(`${title.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
+}
 
 interface Props {
   userId: string;
