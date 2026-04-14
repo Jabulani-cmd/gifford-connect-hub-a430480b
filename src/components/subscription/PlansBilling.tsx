@@ -61,6 +61,18 @@ export default function PlansBilling() {
     setLoading(false);
   };
 
+  const handleDeletePending = async (paymentId: string) => {
+    const { error } = await supabase.from("portal_payments").delete().eq("id", paymentId).eq("status", "pending");
+    // Also clean up any related paynow_transactions
+    await supabase.from("paynow_transactions").delete().eq("status", "pending").eq("parent_id", user!.id);
+    if (error) {
+      toast({ title: "Error", description: "Could not delete payment. Please try again.", variant: "destructive" });
+    } else {
+      toast({ title: "Deleted", description: "Pending payment has been removed." });
+      fetchData();
+    }
+  };
+
   const handleSelectPlan = (plan: Plan, sub: Subscription) => {
     setSelectedPlan(plan);
     setSelectedSub(sub);
