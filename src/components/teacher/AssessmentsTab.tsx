@@ -528,6 +528,13 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                               </a>
                             </div>
                           )}
+                          <Button variant="outline" size="sm" className="h-7 text-xs" disabled={aiMarking && aiMarkingSubId === sub.id} onClick={() => aiMarkSubmission(sub.id)}>
+                            {aiMarking && aiMarkingSubId === sub.id ? (
+                              <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> AI Marking...</>
+                            ) : (
+                              <><Bot className="h-3 w-3 mr-1" /> AI Mark</>
+                            )}
+                          </Button>
                           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
                             const idx = classStudents.findIndex(s => s.id === sub.student_id);
                             if (idx >= 0) { setGradingStudentIdx(idx); }
