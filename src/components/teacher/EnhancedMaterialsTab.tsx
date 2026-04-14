@@ -17,9 +17,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
-const materialTypes = ["document", "video", "link", "presentation"];
+const materialTypes = ["document", "past_paper", "video", "link", "presentation"];
+const typeLabels: Record<string, string> = {
+  document: "Document", past_paper: "Past Paper", video: "Video", link: "Link", presentation: "Presentation",
+};
 const typeIcons: Record<string, React.ReactNode> = {
   document: <FileText className="h-5 w-5" />,
+  past_paper: <FileText className="h-5 w-5" />,
   video: <Video className="h-5 w-5" />,
   link: <Link2 className="h-5 w-5" />,
   presentation: <Presentation className="h-5 w-5" />,
@@ -167,7 +171,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
         </Select>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-32"><SelectValue placeholder="Type" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Types</SelectItem>{materialTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+          <SelectContent><SelectItem value="all">All Types</SelectItem>{materialTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
@@ -208,7 +212,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
             <div className="space-y-2"><Label>Type</Label>
               <Select value={form.material_type} onValueChange={v => setForm(p => ({ ...p, material_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{materialTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+                <SelectContent>{materialTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {form.material_type === "link" ? (
@@ -220,7 +224,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
                   <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground mt-1">{file ? file.name : "Click or drag file here"}</p>
                 </div>
-                <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.mp4,.mov" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
+                <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.mp4,.mov,.jpg,.jpeg,.png,.webp" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -253,7 +257,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
                 <p className="text-xs text-muted-foreground">{m.classes?.name} • {m.subjects?.name}</p>
                 <div className="flex flex-wrap gap-1">
                   <Badge variant={m.is_published ? "default" : "secondary"} className="text-[10px]">{m.is_published ? "Published" : "Draft"}</Badge>
-                  <Badge variant="outline" className="text-[10px]">{m.material_type}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{typeLabels[m.material_type] || m.material_type}</Badge>
                   {m.download_count > 0 && <Badge variant="outline" className="text-[10px]">{m.download_count} downloads</Badge>}
                 </div>
                 {m.tags && m.tags.length > 0 && (
