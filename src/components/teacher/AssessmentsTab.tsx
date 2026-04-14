@@ -79,6 +79,12 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const [aiResult, setAiResult] = useState<any>(null);
   const [aiResultDialog, setAiResultDialog] = useState(false);
 
+  // AI Question Design state
+  const [aiQDesignOpen, setAiQDesignOpen] = useState(false);
+  const [aiQGenerating, setAiQGenerating] = useState(false);
+  const [aiQForm, setAiQForm] = useState({ topic: "", numQuestions: "5", difficulty: "Medium", questionTypes: ["multiple_choice", "short_answer", "structured"] as string[], instructions: "" });
+  const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<any[]>([]);
+
   // Memo upload for existing assessment
   const [uploadingMemo, setUploadingMemo] = useState(false);
 
