@@ -105,10 +105,37 @@ serve(async (req) => {
       });
     }
 
-    const integrationId = Deno.env.get("PAYNOW_INTEGRATION_ID");
-    const integrationKey = Deno.env.get("PAYNOW_INTEGRATION_KEY");
+    // Developer keys (for subscriptions)
+    const devIntegrationId = Deno.env.get("PAYNOW_INTEGRATION_ID");
+    const devIntegrationKey = Deno.env.get("PAYNOW_INTEGRATION_KEY");
+    // School keys (for school fees) - to be added later
+    const schoolIntegrationId = Deno.env.get("PAYNOW_SCHOOL_INTEGRATION_ID");
+    const schoolIntegrationKey = Deno.env.get("PAYNOW_SCHOOL_INTEGRATION_KEY");
     const merchantTestEmail = Deno.env.get("PAYNOW_TEST_EMAIL")?.trim() || "";
+
+    // Route credentials based on payment type
+    let integrationId: string | undefined;
+    let integrationKey: string | undefined;
+    if (payment_type === "fees") {
+      integrationId = schoolIntegrationId;
+      integrationKey = schoolIntegrationKey;
+    } else {
+      integrationId = devIntegrationId;
+      integrationKey = devIntegrationKey;
+    }
+
     const isDemoMode = !integrationId || !integrationKey;
+
+    // If school fees and no school keys configured, return informative error
+    if (payment_type === "fees" && isDemoMode && (devIntegrationId && devIntegrationKey)) {
+      return new Response(JSON.stringify({
+        error: "School fee payments via Paynow are not yet available. The school's payment account is being set up. Please use bank transfer or visit the bursar in the meantime.",
+        school_fees_unavailable: true,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
