@@ -236,7 +236,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     // Don't clear aiMarkingSubId here - needed by the result dialog
   };
 
-  // Apply AI marks to student
+  // Apply AI marks to student and sync across all portals
   const applyAiMarks = async (submissionId: string) => {
     if (!aiResult || !selectedAssessment) return;
     const sub = submissions.find(s => s.id === submissionId);
@@ -246,19 +246,48 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       await supabase.from("assessment_results").update({
         marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
         teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
-        graded_by: teacherId, graded_date: new Date().toISOString(),
+        graded_by: teacherId, graded_date: new Date().toISOString(), is_published: true,
       }).eq("id", existing.id);
     } else {
       await supabase.from("assessment_results").insert({
         assessment_id: selectedAssessment.id, student_id: sub.student_id,
         marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
         teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
-        graded_by: teacherId, graded_date: new Date().toISOString(),
+        graded_by: teacherId, graded_date: new Date().toISOString(), is_published: true,
       });
     }
+
+    // Sync to master marks table so it's visible on student & parent portals
+    if (selectedAssessment.subject_id) {
+      await supabase.rpc("sync_online_test_marks", {
+        p_student_id: sub.student_id,
+        p_assessment_id: selectedAssessment.id,
+        p_subject_id: selectedAssessment.subject_id,
+        p_teacher_id: teacherId,
+        p_score: Math.round(aiResult.marks_obtained),
+        p_total_marks: selectedAssessment.max_marks || 100,
+        p_percentage: aiResult.percentage,
+        p_grade: aiResult.grade,
+        p_title: `[AI] ${selectedAssessment.title}`,
+      });
+    }
+
+    // Send notification to student
+    if (sub.students?.full_name) {
+      const studentRecord = students.find(s => s.id === sub.student_id);
+      if (studentRecord?.user_id) {
+        await supabase.from("notifications").insert({
+          user_id: studentRecord.user_id,
+          title: "Assessment Graded",
+          message: `Your submission for "${selectedAssessment.title}" has been graded: ${aiResult.grade} (${aiResult.marks_obtained}/${selectedAssessment.max_marks})`,
+          type: "assessment",
+        });
+      }
+    }
+
     const { data } = await supabase.from("assessment_results").select("*, students(full_name, admission_number)").eq("assessment_id", selectedAssessment.id);
     if (data) setResults(data);
-    toast({ title: `AI Grade applied: ${aiResult.grade} (${aiResult.marks_obtained}/${selectedAssessment.max_marks})` });
+    toast({ title: `AI Grade applied & synced: ${aiResult.grade} (${aiResult.marks_obtained}/${selectedAssessment.max_marks})` });
     setAiResultDialog(false);
     setAiResult(null);
   };
