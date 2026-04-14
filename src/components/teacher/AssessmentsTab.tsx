@@ -931,10 +931,30 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       {a.time_limit_minutes && ` • ⏱ ${a.time_limit_minutes} min`}
                       {a.scheduled_start && ` • Opens: ${format(new Date(a.scheduled_start), "MMM d, h:mm a")}`}
                     </p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {a.file_url ? (
+                        <a href={a.file_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <FileText className="h-3 w-3" /> Question Paper ✓
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">No question paper</span>
+                      )}
+                      <span className="text-muted-foreground">•</span>
+                      {(a as any).memo_url ? (
+                        <a href={(a as any).memo_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <BookOpen className="h-3 w-3" /> Memo ✓
+                        </a>
+                      ) : (
+                        <span className="text-xs text-orange-500 italic">No memo uploaded</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openAssessmentDetail(a); }}>
+                      <Upload className="mr-1 h-3 w-3" /> Upload Files & Mark
+                    </Button>
                     {a.is_online && (
-                      <Button variant="outline" size="sm" className="text-xs" onClick={e => { e.stopPropagation(); setOnlineTestAssessment(a); }}>
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setOnlineTestAssessment(a); }}>
                         <PenTool className="mr-1 h-3 w-3" /> Design Questions
                       </Button>
                     )}
