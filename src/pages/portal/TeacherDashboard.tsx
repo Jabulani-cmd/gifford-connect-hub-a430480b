@@ -339,6 +339,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <TabsTrigger value="assessments" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Assessments</TabsTrigger>
             <TabsTrigger value="exam-results" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Results</TabsTrigger>
             <TabsTrigger value="marks" className="text-xs sm:text-sm"><BarChart3 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Marks</TabsTrigger>
+            <TabsTrigger value="view-marks" className="text-xs sm:text-sm"><Users className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> View Marks</TabsTrigger>
             <TabsTrigger value="homework" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Homework</TabsTrigger>
             <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
             <TabsTrigger value="announcements" className="text-xs sm:text-sm"><Bell className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Notices</TabsTrigger>
