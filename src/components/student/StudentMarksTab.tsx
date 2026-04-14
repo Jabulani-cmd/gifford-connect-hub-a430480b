@@ -96,6 +96,7 @@ export default function StudentMarksTab({ studentId }: Props) {
                     <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Comment</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground">Type</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground">Term</th>
+                    <th className="px-3 py-2.5 text-center font-medium text-muted-foreground">Date</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground">Mark</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground">Grade</th>
                   </tr>
@@ -109,6 +110,7 @@ export default function StudentMarksTab({ studentId }: Props) {
                         <td className="px-3 py-3 text-muted-foreground">{m.comment || "—"}</td>
                         <td className="px-3 py-3 text-center capitalize">{m.assessment_type}</td>
                         <td className="px-3 py-3 text-center">{m.term}</td>
+                        <td className="px-3 py-3 text-center text-muted-foreground text-xs">{new Date(m.created_at).toLocaleDateString()}</td>
                         <td className="px-3 py-3 text-center font-bold">{m.mark}%</td>
                         <td className="px-3 py-3 text-center">
                           <Badge className={`text-xs ${getGradeColor(grade)}`} variant="outline">{grade}</Badge>

@@ -223,6 +223,7 @@ export default function TeacherMarksViewer({ userId, classes, subjects }: Props)
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground">Description</th>
                           <th className="px-3 py-2 text-center font-medium text-muted-foreground">Type</th>
                           <th className="px-3 py-2 text-center font-medium text-muted-foreground">Term</th>
+                          <th className="px-3 py-2 text-center font-medium text-muted-foreground">Date</th>
                           <th className="px-3 py-2 text-center font-medium text-muted-foreground">Mark</th>
                           <th className="px-3 py-2 text-center font-medium text-muted-foreground">Grade</th>
                         </tr>
@@ -236,6 +237,7 @@ export default function TeacherMarksViewer({ userId, classes, subjects }: Props)
                               <td className="px-3 py-2 text-muted-foreground">{m.description || m.comment || "—"}</td>
                               <td className="px-3 py-2 text-center capitalize">{m.assessment_type}</td>
                               <td className="px-3 py-2 text-center">{m.term}</td>
+                              <td className="px-3 py-2 text-center text-muted-foreground text-xs">{new Date(m.created_at).toLocaleDateString()}</td>
                               <td className="px-3 py-2 text-center font-bold">{m.mark}%</td>
                               <td className="px-3 py-2 text-center"><Badge className={`text-xs ${gradeColor(g)}`} variant="outline">{g}</Badge></td>
                             </tr>
