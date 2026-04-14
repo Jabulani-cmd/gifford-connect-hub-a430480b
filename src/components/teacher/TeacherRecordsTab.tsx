@@ -287,14 +287,17 @@ export default function TeacherRecordsTab({ userId, classes, subjects, staffId }
     t.room || ""
   ]);
 
+  const [logoUrl, setLogoUrl] = useState("");
+  useEffect(() => { getLogoDataUrl().then(setLogoUrl); }, []);
+
   const ActionButtons = ({ title, headers, rows, count }: { title: string; headers: string[]; rows: string[][]; count: number }) => (
     <div className="flex gap-2 flex-wrap">
       <Badge variant="secondary">{count} records</Badge>
-      <Button variant="outline" size="sm" onClick={() => printHtmlTable(title, headers, rows)} disabled={count === 0}>
+      <Button variant="outline" size="sm" onClick={() => printHtmlTable(title, headers, rows, logoUrl)} disabled={count === 0}>
         <Printer className="h-3.5 w-3.5 mr-1" /> Print
       </Button>
-      <Button variant="outline" size="sm" onClick={() => downloadCsv(title, headers, rows)} disabled={count === 0}>
-        <Download className="h-3.5 w-3.5 mr-1" /> Download CSV
+      <Button variant="outline" size="sm" onClick={() => downloadPdf(title, headers, rows)} disabled={count === 0}>
+        <Download className="h-3.5 w-3.5 mr-1" /> Download PDF
       </Button>
     </div>
   );
