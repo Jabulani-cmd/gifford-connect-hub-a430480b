@@ -36,6 +36,24 @@ function normalizePhoneNumber(value: string): string {
   return digits;
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        console.log(`Retry attempt ${attempt + 1} for ${url}`);
+      }
+      const response = await fetch(url, options);
+      return response;
+    } catch (err) {
+      lastError = err as Error;
+      console.error(`Fetch attempt ${attempt + 1} failed:`, err);
+    }
+  }
+  throw lastError;
+}
+
 function getPaynowTestOutcome(phone: string): { status: "completed" | "failed"; message: string } | null {
   switch (phone) {
     case "0771111111":
