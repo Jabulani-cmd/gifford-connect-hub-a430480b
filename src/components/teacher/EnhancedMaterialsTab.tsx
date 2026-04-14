@@ -18,8 +18,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
 const materialTypes = ["document", "past_paper", "video", "link", "presentation"];
+const typeLabels: Record<string, string> = {
+  document: "Document", past_paper: "Past Paper", video: "Video", link: "Link", presentation: "Presentation",
+};
 const typeIcons: Record<string, React.ReactNode> = {
   document: <FileText className="h-5 w-5" />,
+  past_paper: <FileText className="h-5 w-5" />,
   video: <Video className="h-5 w-5" />,
   link: <Link2 className="h-5 w-5" />,
   presentation: <Presentation className="h-5 w-5" />,
