@@ -85,8 +85,9 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   const [aiQForm, setAiQForm] = useState({ topic: "", numQuestions: "5", difficulty: "Medium", questionTypes: ["multiple_choice", "short_answer", "structured"] as string[], instructions: "" });
   const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<any[]>([]);
 
-  // Memo upload for existing assessment
+  // File upload for existing assessment
   const [uploadingMemo, setUploadingMemo] = useState(false);
+  const [uploadingQuestionPaper, setUploadingQuestionPaper] = useState(false);
 
   // Grading form
   const [gradeForm, setGradeForm] = useState({ marks: "", feedback: "" });
@@ -200,6 +201,23 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       }
     }
     setSubmitting(false);
+  };
+
+  // Upload question paper for existing assessment
+  const uploadQuestionPaperForAssessment = async (file: File) => {
+    if (!selectedAssessment) return;
+    setUploadingQuestionPaper(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const authUid = user?.id || teacherId;
+    const ext = file.name.split(".").pop();
+    const path = `assessments/${authUid}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
+    if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setUploadingQuestionPaper(false); return; }
+    const file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    await supabase.from("assessments").update({ file_url } as any).eq("id", selectedAssessment.id);
+    setSelectedAssessment({ ...selectedAssessment, file_url });
+    toast({ title: "Question paper uploaded successfully!" });
+    setUploadingQuestionPaper(false);
   };
 
   // Upload memo for existing assessment
@@ -494,16 +512,9 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
             <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
           </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
-              <Sparkles className="mr-1 h-4 w-4" /> AI Design Questions
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
-              <PenTool className="mr-1 h-4 w-4" /> Online Questions
-            </Button>
-          </div>
         </div>
 
+        {/* Assessment Info Card */}
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -522,31 +533,56 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
               </div>
             </div>
           </CardHeader>
-          {(selectedAssessment.instructions || selectedAssessment.file_url || selectedAssessment.link_url) && (
-            <CardContent className="space-y-3">
-              {selectedAssessment.instructions && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedAssessment.instructions}</p>}
-              {(selectedAssessment.file_url || selectedAssessment.link_url) && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedAssessment.file_url && (
-                    <a href={selectedAssessment.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
-                      <FileText className="h-3.5 w-3.5" /> View Attachment
-                    </a>
-                  )}
-                  {selectedAssessment.link_url && (
-                    <a href={selectedAssessment.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
-                      <ExternalLink className="h-3.5 w-3.5" /> Open Link
-                    </a>
-                  )}
-                </div>
-              )}
+          {selectedAssessment.instructions && (
+            <CardContent>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedAssessment.instructions}</p>
             </CardContent>
           )}
         </Card>
 
-        {/* Memo / Marking Guide Section */}
-        <Card className="border-accent/40">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        {/* File Uploads & AI Tools Section */}
+        <Card className="border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="h-4 w-4 text-primary" /> Files & AI Tools
+            </CardTitle>
+            <CardDescription>Upload question papers, memos, and use AI to design or mark</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Question Paper Upload */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Question Paper / Assignment</span>
+                {selectedAssessment.file_url ? (
+                  <Badge variant="default" className="text-xs">Uploaded ✓</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Not uploaded</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedAssessment.file_url && (
+                  <a href={selectedAssessment.file_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Eye className="h-3 w-3 mr-1" /> View
+                    </Button>
+                  </a>
+                )}
+                <Button variant="outline" size="sm" className="h-7 text-xs" disabled={uploadingQuestionPaper} onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp";
+                  input.onchange = (e: any) => { if (e.target.files?.[0]) uploadQuestionPaperForAssessment(e.target.files[0]); };
+                  input.click();
+                }}>
+                  {uploadingQuestionPaper ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                  {selectedAssessment.file_url ? "Replace" : "Upload Question Paper"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Memo / Marking Guide Upload */}
+            <div className="flex items-center justify-between rounded-lg border border-accent/40 p-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-accent-foreground" />
                 <span className="text-sm font-medium">Marking Guide / Memo</span>
@@ -577,8 +613,27 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
               </div>
             </div>
             {!selectedAssessment.memo_url && (
-              <p className="text-xs text-muted-foreground mt-2">Upload the answer key / memorandum to enable AI-powered marking of student submissions.</p>
+              <p className="text-xs text-muted-foreground">⚠️ Upload the answer key / memorandum to enable AI-powered marking of student submissions.</p>
             )}
+
+            {/* AI Tools Buttons */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button variant="default" size="sm" onClick={() => { setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
+                <Sparkles className="mr-1 h-4 w-4" /> AI Design Questions
+              </Button>
+              {selectedAssessment.is_online && (
+                <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
+                  <PenTool className="mr-1 h-4 w-4" /> Online MCQ Builder
+                </Button>
+              )}
+              {selectedAssessment.link_url && (
+                <a href={selectedAssessment.link_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm">
+                    <ExternalLink className="mr-1 h-3.5 w-3.5" /> Open Link
+                  </Button>
+                </a>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -1196,9 +1251,12 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openAssessmentDetail(a); }}>
                       <Upload className="mr-1 h-3 w-3" /> Upload Files & Mark
                     </Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setSelectedAssessment(a); setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
+                      <Sparkles className="mr-1 h-3 w-3" /> AI Design
+                    </Button>
                     {a.is_online && (
                       <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setOnlineTestAssessment(a); }}>
-                        <PenTool className="mr-1 h-3 w-3" /> Design Questions
+                        <PenTool className="mr-1 h-3 w-3" /> MCQ Builder
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={e => { e.stopPropagation(); deleteAssessment(a.id); }}>
