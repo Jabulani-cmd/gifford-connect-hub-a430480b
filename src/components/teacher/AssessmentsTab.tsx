@@ -512,14 +512,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
             <ChevronLeft className="mr-1 h-4 w-4" /> Back to Assessments
           </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
-              <Sparkles className="mr-1 h-4 w-4" /> AI Design Questions
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setOnlineTestAssessment(selectedAssessment)}>
-              <PenTool className="mr-1 h-4 w-4" /> Online Questions
-            </Button>
-          </div>
+        </div>
         </div>
 
         {/* Assessment Info Card */}
