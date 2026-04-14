@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Bell, BarChart3, Calendar, CalendarDays, ClipboardList,
   FileText, Users, CheckCircle2, Clock, GraduationCap, AlertCircle, CalendarOff,
-  TrendingUp, FolderOpen, MessageSquare
+  TrendingUp, FolderOpen, MessageSquare, Download
 } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
