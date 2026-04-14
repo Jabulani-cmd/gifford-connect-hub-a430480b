@@ -3806,6 +3806,20 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      sync_online_test_marks: {
+        Args: {
+          p_assessment_id: string
+          p_grade: string
+          p_percentage: number
+          p_score: number
+          p_student_id: string
+          p_subject_id: string
+          p_teacher_id: string
+          p_title: string
+          p_total_marks: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
