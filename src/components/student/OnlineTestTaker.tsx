@@ -150,30 +150,18 @@ export default function OnlineTestTaker({ assessment, studentId, onBack, onCompl
     if (error) {
       toast({ title: "Error submitting test", description: error.message, variant: "destructive" });
     } else {
-      // Save to assessment_results for the teacher's grading view
-      await supabase.from("assessment_results").insert({
-        assessment_id: assessment.id,
-        student_id: studentId,
-        marks_obtained: score,
-        percentage: pct,
-        grade,
-        teacher_feedback: `Auto-graded online test: ${score}/${totalMarks}`,
-        graded_date: new Date().toISOString(),
-        is_published: true,
-      });
-
-      // Auto-sync to marks table for all portals (parent, student, teacher, admin)
+      // Use secure server-side function to sync marks across all portals
       if (assessment.subject_id && assessment.teacher_id) {
-        const markPct = Math.round(pct);
-        await supabase.from("marks").insert({
-          student_id: studentId,
-          subject_id: assessment.subject_id,
-          teacher_id: assessment.teacher_id,
-          mark: markPct,
-          assessment_type: "online_test",
-          description: assessment.title,
-          comment: `Auto-graded: ${score}/${totalMarks}`,
-          term: getCurrentTerm(),
+        await supabase.rpc("sync_online_test_marks", {
+          p_student_id: studentId,
+          p_assessment_id: assessment.id,
+          p_subject_id: assessment.subject_id,
+          p_teacher_id: assessment.teacher_id,
+          p_score: score,
+          p_total_marks: totalMarks,
+          p_percentage: pct,
+          p_grade: grade,
+          p_title: assessment.title,
         });
       }
 
