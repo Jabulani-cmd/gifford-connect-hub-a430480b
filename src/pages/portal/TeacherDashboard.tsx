@@ -34,6 +34,7 @@ import ResourceLibraryTab from "@/components/teacher/ResourceLibraryTab";
 import ParentCommunicationLog from "@/components/teacher/ParentCommunicationLog";
 import TeacherTermReportsTab from "@/components/teacher/TeacherTermReportsTab";
 import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
+import TeacherMarksViewer from "@/components/teacher/TeacherMarksViewer";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -142,7 +143,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
     const { data: mats } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").in("teacher_id", [user!.id, staffRes.data?.id].filter(Boolean)).order("created_at", { ascending: false });
     if (mats) setMyMaterials(mats);
 
-    const { data: marksData } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+    const teacherIds = [user!.id, staffRes.data?.id].filter(Boolean);
+    const { data: marksData } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
     if (marksData) setMarks(marksData);
 
     const { data: hwData } = await supabase.from("homework").select("*, subjects(name), classes:class_id(name)").eq("teacher_id", user!.id).order("due_date", { ascending: false }).limit(50);
@@ -211,7 +213,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
       toast({ title: `Mark submitted — Grade: ${zimGrade(parseInt(mark))}` });
       await supabase.from("notifications").insert({ user_id: user!.id, title: "Mark Recorded", message: `Grade ${zimGrade(parseInt(mark))} recorded for ${assessment_type}.`, type: "mark" });
       setMarkForm({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", description: "", comment: "" });
-      const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+      const teacherIds = [user!.id, staffInfo?.id].filter(Boolean);
+      const { data } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
       if (data) setMarks(data);
     }
     setMarkLoading(false);
@@ -260,7 +263,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
   };
 
   const refreshMarks = async () => {
-    const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+    const teacherIds = [user!.id, staffInfo?.id].filter(Boolean);
+    const { data } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
     if (data) setMarks(data);
   };
 
@@ -338,6 +342,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
             <TabsTrigger value="assessments" className="text-xs sm:text-sm"><ClipboardList className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Assessments</TabsTrigger>
             <TabsTrigger value="exam-results" className="text-xs sm:text-sm"><GraduationCap className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Results</TabsTrigger>
             <TabsTrigger value="marks" className="text-xs sm:text-sm"><BarChart3 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Marks</TabsTrigger>
+            <TabsTrigger value="view-marks" className="text-xs sm:text-sm"><Users className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> View Marks</TabsTrigger>
             <TabsTrigger value="homework" className="text-xs sm:text-sm"><BookOpen className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Homework</TabsTrigger>
             <TabsTrigger value="attendance" className="text-xs sm:text-sm"><CheckCircle2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Attendance</TabsTrigger>
             <TabsTrigger value="announcements" className="text-xs sm:text-sm"><Bell className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Notices</TabsTrigger>
@@ -413,9 +418,9 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
                   <CardContent className="overflow-x-auto">
                     {marks.length === 0 ? <p className="text-sm text-muted-foreground">No marks submitted yet.</p> : (
                       <table className="w-full text-sm">
-                        <thead className="bg-muted"><tr><th className="px-3 py-2 text-left">Subject</th><th className="px-3 py-2">Description</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Mark</th><th className="px-3 py-2">Grade</th></tr></thead>
+                        <thead className="bg-muted"><tr><th className="px-3 py-2 text-left">Student</th><th className="px-3 py-2 text-left">Subject</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Mark</th><th className="px-3 py-2">Grade</th></tr></thead>
                         <tbody>{marks.map(m => (
-                          <tr key={m.id} className="border-b"><td className="px-3 py-2">{m.subjects?.name}</td><td className="px-3 py-2 text-center">{m.description || "—"}</td><td className="px-3 py-2 text-center">{m.assessment_type}</td><td className="px-3 py-2 text-center font-bold">{m.mark}%</td><td className="px-3 py-2 text-center"><Badge>{zimGrade(m.mark)}</Badge></td></tr>
+                          <tr key={m.id} className="border-b"><td className="px-3 py-2">{m.students?.full_name || "—"}</td><td className="px-3 py-2">{m.subjects?.name}</td><td className="px-3 py-2 text-center">{m.assessment_type}</td><td className="px-3 py-2 text-center font-bold">{m.mark}%</td><td className="px-3 py-2 text-center"><Badge>{zimGrade(m.mark)}</Badge></td></tr>
                         ))}</tbody>
                       </table>
                     )}
@@ -424,6 +429,11 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
                 <BulkMarksUpload userId={user!.id} classes={classes} subjects={subjects} students={students} onMarksUploaded={refreshMarks} />
               </div>
             </div>
+          </TabsContent>
+
+          {/* VIEW MARKS */}
+          <TabsContent value="view-marks">
+            <TeacherMarksViewer userId={user!.id} classes={classes} subjects={subjects} />
           </TabsContent>
 
           {/* HOMEWORK */}
