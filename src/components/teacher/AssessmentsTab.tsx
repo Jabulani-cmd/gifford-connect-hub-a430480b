@@ -674,49 +674,56 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   {submissions.map(sub => {
                     const hasResult = results.find(r => r.student_id === sub.student_id);
                     return (
-                      <div key={sub.id} className="flex items-center justify-between rounded-lg border p-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm">{sub.students?.full_name || "Unknown Student"}</p>
-                          <p className="text-xs text-muted-foreground">{sub.students?.admission_number}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Submitted: {format(new Date(sub.created_at), "MMM d, yyyy 'at' h:mm a")}
-                          </p>
-                          {sub.comments && <p className="text-xs text-muted-foreground mt-1 italic">"{sub.comments}"</p>}
-                        </div>
-                        <div className="flex items-center gap-2">
+                      <div key={sub.id} className="rounded-lg border p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm">{sub.students?.full_name || "Unknown Student"}</p>
+                            <p className="text-xs text-muted-foreground">{sub.students?.admission_number}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Submitted: {format(new Date(sub.created_at), "MMM d, yyyy 'at' h:mm a")}
+                            </p>
+                            {sub.comments && <p className="text-xs text-muted-foreground mt-1 italic">"{sub.comments}"</p>}
+                          </div>
                           {hasResult ? (
                             <Badge variant="default">{hasResult.grade} ({hasResult.marks_obtained}/{selectedAssessment.max_marks})</Badge>
                           ) : (
                             <Badge variant="secondary">Not Graded</Badge>
                           )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t">
                           {sub.file_url && (
-                            <div className="flex items-center gap-1">
+                            <>
                               <a href={sub.file_url} target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="sm" className="h-7 text-xs">
-                                  <Eye className="h-3 w-3 mr-1" /> View
+                                <Button variant="outline" size="sm" className="h-8 text-xs">
+                                  <Eye className="h-3 w-3 mr-1" /> View Work
                                 </Button>
                               </a>
                               <a href={sub.file_url} download>
-                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <Button variant="outline" size="sm" className="h-8 text-xs">
                                   <Download className="h-3 w-3 mr-1" /> Download
                                 </Button>
                               </a>
-                            </div>
+                            </>
                           )}
-                          <Button variant="outline" size="sm" className="h-7 text-xs" disabled={aiMarking && aiMarkingSubId === sub.id} onClick={() => aiMarkSubmission(sub.id)}>
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                            disabled={aiMarking && aiMarkingSubId === sub.id}
+                            onClick={() => aiMarkSubmission(sub.id)}
+                          >
                             {aiMarking && aiMarkingSubId === sub.id ? (
                               <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> AI Marking...</>
                             ) : (
                               <><Bot className="h-3 w-3 mr-1" /> AI Mark</>
                             )}
                           </Button>
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
+                          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
                             const idx = classStudents.findIndex(s => s.id === sub.student_id);
                             if (idx >= 0) { setGradingStudentIdx(idx); }
                             const tabsEl = document.querySelector('[data-state="active"][value="grade"], [value="grade"]');
                             if (tabsEl) (tabsEl as HTMLElement).click();
                           }}>
-                            Grade
+                            Grade Manually
                           </Button>
                         </div>
                       </div>
