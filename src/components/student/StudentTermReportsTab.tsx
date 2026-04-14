@@ -31,7 +31,11 @@ interface TermReport {
 
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 
-export default function StudentTermReportsTab() {
+interface Props {
+  studentId?: string;
+}
+
+export default function StudentTermReportsTab({ studentId: propStudentId }: Props = {}) {
   const { user } = useAuth();
   const [reports, setReports] = useState<TermReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +45,26 @@ export default function StudentTermReportsTab() {
 
   useEffect(() => {
     fetchStudentInfo();
-  }, [user]);
+  }, [user, propStudentId]);
 
   async function fetchStudentInfo() {
+    if (propStudentId) {
+      // Parent portal: fetch student by ID directly
+      const { data: student } = await supabase
+        .from("students")
+        .select("id, full_name, admission_number, form, stream")
+        .eq("id", propStudentId)
+        .single();
+
+      if (student) {
+        setStudentInfo(student);
+        fetchReports(student.id);
+      } else {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!user?.id) return;
     
     const { data: student } = await supabase
