@@ -143,7 +143,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
     const { data: mats } = await supabase.from("study_materials").select("*, classes(name), subjects(name)").in("teacher_id", [user!.id, staffRes.data?.id].filter(Boolean)).order("created_at", { ascending: false });
     if (mats) setMyMaterials(mats);
 
-    const { data: marksData } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+    const teacherIds = [user!.id, staffRes.data?.id].filter(Boolean);
+    const { data: marksData } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
     if (marksData) setMarks(marksData);
 
     const { data: hwData } = await supabase.from("homework").select("*, subjects(name), classes:class_id(name)").eq("teacher_id", user!.id).order("due_date", { ascending: false }).limit(50);
@@ -212,7 +213,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
       toast({ title: `Mark submitted — Grade: ${zimGrade(parseInt(mark))}` });
       await supabase.from("notifications").insert({ user_id: user!.id, title: "Mark Recorded", message: `Grade ${zimGrade(parseInt(mark))} recorded for ${assessment_type}.`, type: "mark" });
       setMarkForm({ student_id: "", subject_id: "", mark: "", term: "Term 1", assessment_type: "test", description: "", comment: "" });
-      const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+      const teacherIds = [user!.id, staffInfo?.id].filter(Boolean);
+      const { data } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
       if (data) setMarks(data);
     }
     setMarkLoading(false);
@@ -261,7 +263,8 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
   };
 
   const refreshMarks = async () => {
-    const { data } = await supabase.from("marks").select("*, subjects(name)").eq("teacher_id", user!.id).order("created_at", { ascending: false }).limit(50);
+    const teacherIds = [user!.id, staffInfo?.id].filter(Boolean);
+    const { data } = await supabase.from("marks").select("*, subjects(name), students(full_name, admission_number)").in("teacher_id", teacherIds).order("created_at", { ascending: false }).limit(50);
     if (data) setMarks(data);
   };
 
