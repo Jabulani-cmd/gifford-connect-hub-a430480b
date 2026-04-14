@@ -507,14 +507,11 @@ serve(async (req) => {
             .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
             .join("&");
 
-          const fallbackClient = Deno.createHttpClient({ http1: true, http2: false });
-          const webRes = await fetch(PAYNOW_INITIATE_URL, {
+          const webRes = await fetchWithRetry(PAYNOW_INITIATE_URL, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: webFormBody,
-            // @ts-ignore Deno-specific option
-            client: fallbackClient,
-          });
+          }, 3);
 
           const webResponseText = await webRes.text();
           const webParsed = parsePaynowResponse(webResponseText);
