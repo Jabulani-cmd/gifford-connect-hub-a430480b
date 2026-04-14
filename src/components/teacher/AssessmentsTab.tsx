@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +68,18 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   });
   const [formFile, setFormFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const memoFileRef = useRef<HTMLInputElement>(null);
+  const [formMemoFile, setFormMemoFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // AI Marking state
+  const [aiMarking, setAiMarking] = useState(false);
+  const [aiMarkingSubId, setAiMarkingSubId] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResultDialog, setAiResultDialog] = useState(false);
+
+  // Memo upload for existing assessment
+  const [uploadingMemo, setUploadingMemo] = useState(false);
 
   // Grading form
   const [gradeForm, setGradeForm] = useState({ marks: "", feedback: "" });
@@ -136,6 +148,15 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
     }
 
+    let memo_url = null;
+    if (formMemoFile) {
+      const ext = formMemoFile.name.split(".").pop();
+      const path = `assessments/${authUid}/memos/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("school-media").upload(path, formMemoFile);
+      if (upErr) { toast({ title: "Memo upload failed", description: upErr.message, variant: "destructive" }); setSubmitting(false); return; }
+      memo_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    }
+
     const { error } = await supabase.from("assessments").insert({
       teacher_id: teacherId,
       title: form.title,
@@ -146,6 +167,7 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       due_date: form.due_date || null,
       instructions: form.instructions || null,
       file_url,
+      memo_url,
       link_url: form.link_url || null,
       is_published: form.is_published,
       is_online: form.assessment_type === "online_test",
@@ -161,16 +183,84 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
       toast({ title: isOnline ? "Online test created! Now add your MCQ questions." : "Assessment created!" });
       setForm({ title: "", assessment_type: "test", class_id: "", subject_id: "", max_marks: "100", due_date: "", instructions: "", is_published: true, link_url: "", time_limit_minutes: "", scheduled_start: "", scheduled_end: "" });
       setFormFile(null);
+      setFormMemoFile(null);
       setCreating(false);
       await fetchAssessments();
       // Auto-open question builder for online tests
       if (isOnline) {
-        // Need to re-read state after fetchAssessments updates
         const { data: latest } = await supabase.from("assessments").select("*").eq("teacher_id", teacherId).eq("title", savedTitle).eq("is_online", true).order("created_at", { ascending: false }).limit(1).single();
         if (latest) setOnlineTestAssessment(latest);
       }
     }
     setSubmitting(false);
+  };
+
+  // Upload memo for existing assessment
+  const uploadMemoForAssessment = async (file: File) => {
+    if (!selectedAssessment) return;
+    setUploadingMemo(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const authUid = user?.id || teacherId;
+    const ext = file.name.split(".").pop();
+    const path = `assessments/${authUid}/memos/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
+    if (upErr) { toast({ title: "Memo upload failed", description: upErr.message, variant: "destructive" }); setUploadingMemo(false); return; }
+    const memo_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+    await supabase.from("assessments").update({ memo_url } as any).eq("id", selectedAssessment.id);
+    setSelectedAssessment({ ...selectedAssessment, memo_url });
+    toast({ title: "Marking guide uploaded successfully!" });
+    setUploadingMemo(false);
+  };
+
+  // AI Mark submission
+  const aiMarkSubmission = async (submissionId: string) => {
+    if (!selectedAssessment) return;
+    if (!selectedAssessment.memo_url) {
+      toast({ title: "Upload a marking guide first", description: "Please upload the memo/answer key before using AI marking.", variant: "destructive" });
+      return;
+    }
+    setAiMarking(true);
+    setAiMarkingSubId(submissionId);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-mark-submission", {
+        body: { submission_id: submissionId, assessment_id: selectedAssessment.id },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: "AI Marking Error", description: data.error, variant: "destructive" }); setAiMarking(false); setAiMarkingSubId(null); return; }
+      setAiResult(data);
+      setAiResultDialog(true);
+    } catch (e: any) {
+      toast({ title: "AI marking failed", description: e.message || "Please try again", variant: "destructive" });
+    }
+    setAiMarking(false);
+    // Don't clear aiMarkingSubId here - needed by the result dialog
+  };
+
+  // Apply AI marks to student
+  const applyAiMarks = async (submissionId: string) => {
+    if (!aiResult || !selectedAssessment) return;
+    const sub = submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+    const existing = results.find(r => r.student_id === sub.student_id);
+    if (existing) {
+      await supabase.from("assessment_results").update({
+        marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
+        teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
+        graded_by: teacherId, graded_date: new Date().toISOString(),
+      }).eq("id", existing.id);
+    } else {
+      await supabase.from("assessment_results").insert({
+        assessment_id: selectedAssessment.id, student_id: sub.student_id,
+        marks_obtained: aiResult.marks_obtained, percentage: aiResult.percentage, grade: aiResult.grade,
+        teacher_feedback: `[AI-Marked] ${aiResult.feedback}`,
+        graded_by: teacherId, graded_date: new Date().toISOString(),
+      });
+    }
+    const { data } = await supabase.from("assessment_results").select("*, students(full_name, admission_number)").eq("assessment_id", selectedAssessment.id);
+    if (data) setResults(data);
+    toast({ title: `AI Grade applied: ${aiResult.grade} (${aiResult.marks_obtained}/${selectedAssessment.max_marks})` });
+    setAiResultDialog(false);
+    setAiResult(null);
   };
 
   const deleteAssessment = async (id: string) => {
@@ -333,6 +423,45 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           )}
         </Card>
 
+        {/* Memo / Marking Guide Section */}
+        <Card className="border-accent/40">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-accent-foreground" />
+                <span className="text-sm font-medium">Marking Guide / Memo</span>
+                {selectedAssessment.memo_url ? (
+                  <Badge variant="default" className="text-xs">Uploaded ✓</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Not uploaded</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedAssessment.memo_url && (
+                  <a href={selectedAssessment.memo_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Eye className="h-3 w-3 mr-1" /> View Memo
+                    </Button>
+                  </a>
+                )}
+                <Button variant="outline" size="sm" className="h-7 text-xs" disabled={uploadingMemo} onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt";
+                  input.onchange = (e: any) => { if (e.target.files?.[0]) uploadMemoForAssessment(e.target.files[0]); };
+                  input.click();
+                }}>
+                  {uploadingMemo ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                  {selectedAssessment.memo_url ? "Replace Memo" : "Upload Memo"}
+                </Button>
+              </div>
+            </div>
+            {!selectedAssessment.memo_url && (
+              <p className="text-xs text-muted-foreground mt-2">Upload the answer key / memorandum to enable AI-powered marking of student submissions.</p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Grading Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card><CardContent className="p-4 text-center">
@@ -399,6 +528,13 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                               </a>
                             </div>
                           )}
+                          <Button variant="outline" size="sm" className="h-7 text-xs" disabled={aiMarking && aiMarkingSubId === sub.id} onClick={() => aiMarkSubmission(sub.id)}>
+                            {aiMarking && aiMarkingSubId === sub.id ? (
+                              <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> AI Marking...</>
+                            ) : (
+                              <><Bot className="h-3 w-3 mr-1" /> AI Mark</>
+                            )}
+                          </Button>
                           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
                             const idx = classStudents.findIndex(s => s.id === sub.student_id);
                             if (idx >= 0) { setGradingStudentIdx(idx); }
@@ -698,12 +834,70 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                 </Button>
               )}
             </div>
+            <div className="space-y-2">
+              <Label>Marking Guide / Memo (for AI marking)</Label>
+              <div className="rounded-lg border-2 border-dashed border-accent/50 p-3 text-center cursor-pointer hover:border-accent transition-colors" onClick={() => memoFileRef.current?.click()}>
+                <BookOpen className="mx-auto h-6 w-6 text-accent-foreground/60" />
+                <p className="text-xs text-muted-foreground mt-1">{formMemoFile ? formMemoFile.name : "Upload answer key / memorandum"}</p>
+                <p className="text-[10px] text-muted-foreground">Used by AI to mark student submissions</p>
+              </div>
+              <input ref={memoFileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt" onChange={e => { if (e.target.files?.[0]) setFormMemoFile(e.target.files[0]); }} />
+              {formMemoFile && (
+                <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => { setFormMemoFile(null); if (memoFileRef.current) memoFileRef.current.value = ""; }}>
+                  Remove memo
+                </Button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.is_published} onCheckedChange={v => setForm(p => ({ ...p, is_published: v }))} />
               <Label>Publish immediately</Label>
             </div>
             <Button onClick={createAssessment} disabled={submitting} className="w-full">{submitting ? "Creating..." : "Create Assessment"}</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Marking Result Dialog */}
+      <Dialog open={aiResultDialog} onOpenChange={setAiResultDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" /> AI Marking Result
+            </DialogTitle>
+          </DialogHeader>
+          {aiResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiResult.marks_obtained}/{selectedAssessment?.max_marks}</p>
+                  <p className="text-xs text-muted-foreground">Marks</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold">{aiResult.percentage?.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">Percentage</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiResult.grade}</p>
+                  <p className="text-xs text-muted-foreground">Grade</p>
+                </CardContent></Card>
+              </div>
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-sm font-medium">AI Feedback</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{aiResult.feedback}</p>
+              </div>
+              <p className="text-xs text-muted-foreground italic">⚠️ Review the AI marking before applying. You can adjust marks manually after applying.</p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setAiResultDialog(false); setAiResult(null); }}>
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={() => {
+                  if (aiMarkingSubId) applyAiMarks(aiMarkingSubId);
+                }}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Apply Grade
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

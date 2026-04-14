@@ -332,6 +332,7 @@ export type Database = {
           is_published: boolean | null
           link_url: string | null
           max_marks: number | null
+          memo_url: string | null
           scheduled_end: string | null
           scheduled_start: string | null
           subject_id: string | null
@@ -351,6 +352,7 @@ export type Database = {
           is_published?: boolean | null
           link_url?: string | null
           max_marks?: number | null
+          memo_url?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           subject_id?: string | null
@@ -370,6 +372,7 @@ export type Database = {
           is_published?: boolean | null
           link_url?: string | null
           max_marks?: number | null
+          memo_url?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           subject_id?: string | null
