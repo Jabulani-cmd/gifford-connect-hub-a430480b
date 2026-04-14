@@ -423,6 +423,45 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           )}
         </Card>
 
+        {/* Memo / Marking Guide Section */}
+        <Card className="border-accent/40">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-accent-foreground" />
+                <span className="text-sm font-medium">Marking Guide / Memo</span>
+                {selectedAssessment.memo_url ? (
+                  <Badge variant="default" className="text-xs">Uploaded ✓</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Not uploaded</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedAssessment.memo_url && (
+                  <a href={selectedAssessment.memo_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Eye className="h-3 w-3 mr-1" /> View Memo
+                    </Button>
+                  </a>
+                )}
+                <Button variant="outline" size="sm" className="h-7 text-xs" disabled={uploadingMemo} onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt";
+                  input.onchange = (e: any) => { if (e.target.files?.[0]) uploadMemoForAssessment(e.target.files[0]); };
+                  input.click();
+                }}>
+                  {uploadingMemo ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                  {selectedAssessment.memo_url ? "Replace Memo" : "Upload Memo"}
+                </Button>
+              </div>
+            </div>
+            {!selectedAssessment.memo_url && (
+              <p className="text-xs text-muted-foreground mt-2">Upload the answer key / memorandum to enable AI-powered marking of student submissions.</p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Grading Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card><CardContent className="p-4 text-center">
