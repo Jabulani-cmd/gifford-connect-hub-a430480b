@@ -171,7 +171,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
         </Select>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-32"><SelectValue placeholder="Type" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Types</SelectItem>{materialTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+          <SelectContent><SelectItem value="all">All Types</SelectItem>{materialTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
@@ -212,7 +212,7 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
             <div className="space-y-2"><Label>Type</Label>
               <Select value={form.material_type} onValueChange={v => setForm(p => ({ ...p, material_type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{materialTypes.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+                <SelectContent>{materialTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {form.material_type === "link" ? (
