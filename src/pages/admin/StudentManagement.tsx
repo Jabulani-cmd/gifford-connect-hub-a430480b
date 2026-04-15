@@ -170,20 +170,14 @@ function BulkGenerateCodes() {
     setGenerating(false);
   };
 
-  const exportCSV = () => {
+  const exportPDF = async () => {
     if (!results) return;
-    const header = "Admission Number,Student Name,Form,Stream,Verification Code";
+    const headers = ["Admission #", "Student Name", "Form", "Stream", "Verification Code"];
     const rows = results
       .filter((r: any) => r.code)
-      .map((r: any) => `${r.admission_number},"${r.full_name}",${r.form},${r.stream || ""},${r.code}`);
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `verification-codes-${formFilter === "all" ? "all" : formFilter.replace(" ", "-")}-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      .map((r: any) => [r.admission_number, r.full_name, r.form, r.stream || "", r.code]);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Verification Codes", headers, rows);
   };
 
   return (
@@ -218,8 +212,8 @@ function BulkGenerateCodes() {
             <div className="space-y-3 mt-2">
               <div className="flex items-center justify-between">
                 <Badge variant="default" className="text-xs">{results.filter((r: any) => r.code).length} codes generated</Badge>
-                <Button variant="outline" size="sm" onClick={exportCSV}>
-                  <Download className="mr-1 h-4 w-4" /> Export CSV
+                <Button variant="outline" size="sm" onClick={exportPDF}>
+                  <Download className="mr-1 h-4 w-4" /> Download PDF
                 </Button>
               </div>
               <div className="max-h-60 overflow-y-auto rounded border">
@@ -600,15 +594,11 @@ export default function StudentManagement() {
     printWindow.document.close();
   };
 
-  const exportCSV = () => {
+  const exportPDF = async () => {
     const headers = ["Admission #", "Full Name", "Form", "Stream", "Gender", "Guardian Phone", "Status"];
     const rows = filtered.map(s => [s.admission_number, s.full_name, s.form, s.stream || "", s.gender || "", s.guardian_phone || "", s.status]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "students.csv"; a.click();
-    URL.revokeObjectURL(url);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Student List", headers, rows);
   };
 
   const updateField = (key: string, value: any) => {
@@ -682,7 +672,7 @@ export default function StudentManagement() {
         <div className="flex flex-wrap gap-2">
           <BulkGenerateCodes />
           <Button onClick={printStudents} variant="outline" size="sm"><Printer className="mr-1 h-4 w-4" /> Print</Button>
-          <Button onClick={exportCSV} variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Export CSV</Button>
+          <Button onClick={exportPDF} variant="outline" size="sm"><Download className="mr-1 h-4 w-4" /> Download PDF</Button>
           <Button type="button" onClick={() => openAdd()} className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="mr-1 h-4 w-4" /> Add Student</Button>
         </div>
       </div>

@@ -99,23 +99,19 @@ export default function AuditLogs() {
     );
   });
 
-  const exportCSV = () => {
-    const wb = XLSX.utils.book_new();
-    const wsData = [
-      ["Timestamp", "User", "Action", "Table", "Record ID", "IP Address"],
-      ...filteredLogs.map(l => [
-        new Date(l.created_at).toLocaleString(),
-        l.user_id ? (profiles[l.user_id] || l.user_id) : "System",
-        l.action,
-        l.table_name || "",
-        l.record_id || "",
-        l.ip_address || "",
-      ]),
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
-    XLSX.writeFile(wb, `audit_logs_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast({ title: "Audit log exported" });
+  const exportPDF = async () => {
+    const headers = ["Timestamp", "User", "Action", "Table", "Record ID", "IP Address"];
+    const rows = filteredLogs.map(l => [
+      new Date(l.created_at).toLocaleString(),
+      l.user_id ? (profiles[l.user_id] || l.user_id) : "System",
+      l.action,
+      l.table_name || "",
+      l.record_id || "",
+      l.ip_address || "",
+    ]);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Audit Logs", headers, rows);
+    toast({ title: "Audit log exported as PDF" });
   };
 
   const logAuditAction = async (action: string, tableName?: string, recordId?: string, oldData?: any, newData?: any) => {
@@ -143,8 +139,8 @@ export default function AuditLogs() {
           <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
             <RefreshCw className={`mr-1 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button size="sm" onClick={exportCSV}>
-            <Download className="mr-1 h-4 w-4" /> Export
+          <Button size="sm" onClick={exportPDF}>
+            <Download className="mr-1 h-4 w-4" /> Download PDF
           </Button>
         </div>
       </div>
