@@ -2,7 +2,8 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Trophy, Printer, Download } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
+import { printBrandedHtml, downloadBrandedPdf } from "@/lib/export-pdf";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -34,6 +36,8 @@ interface Props {
   loading?: boolean;
   noClassMessage?: string;
   hasClass?: boolean;
+  showPrintDownload?: boolean;
+  printTitle?: string;
 }
 
 export default function FullWeekTimetable({
@@ -44,6 +48,8 @@ export default function FullWeekTimetable({
   loading = false,
   noClassMessage = "No class assignment found.",
   hasClass = true,
+  showPrintDownload = true,
+  printTitle,
 }: Props) {
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
   const { timeSlots, loading: slotsLoading } = useTimeSlots();
@@ -51,7 +57,6 @@ export default function FullWeekTimetable({
 
   const getCell = useMemo(() => {
     return (startTime: string, dayIndex: number) => {
-      // Try both 0-indexed and 1-indexed day_of_week conventions
       const entry = entries.find(
         (t) =>
           t.start_time === startTime &&
@@ -71,6 +76,71 @@ export default function FullWeekTimetable({
       return entry;
     };
   }, [sportsSchedule]);
+
+  const buildTimetableHtml = () => {
+    let html = `<table style="font-size:11px"><thead><tr><th style="width:100px">Time</th>`;
+    days.forEach(d => { html += `<th style="text-align:center">${d}</th>`; });
+    html += `</tr></thead><tbody>`;
+    timeSlots.forEach(slot => {
+      const isBreak = slot.slot_type === "break";
+      const isSports = slot.slot_type === "sports";
+      html += `<tr${isBreak ? ' style="background:#f5f5f5"' : ''}>`;
+      html += `<td style="font-weight:600;white-space:nowrap">${slot.start_time}–${slot.end_time}${isBreak ? '<br><em style="font-size:9px;color:#888">' + (slot.label || 'Break') + '</em>' : ''}${isSports ? '<br><em style="font-size:9px;color:#888">Sports/Clubs</em>' : ''}</td>`;
+      if (isBreak) {
+        html += `<td colspan="5" style="text-align:center;font-style:italic;color:#888">${slot.label || "Break"}</td>`;
+      } else {
+        days.forEach((_, di) => {
+          const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
+          if (entry) {
+            html += `<td style="text-align:center"><strong>${entry.subjects?.name || entry.activity_name || "—"}</strong>`;
+            if (entry.staff?.full_name) html += `<br><span style="font-size:9px;color:#666">${entry.staff.full_name}</span>`;
+            if (entry.room || entry.venue) html += `<br><span style="font-size:8px;background:#f0f0f0;padding:1px 4px;border-radius:3px">${entry.room || entry.venue}</span>`;
+            html += `</td>`;
+          } else {
+            html += `<td style="text-align:center;color:#ccc">—</td>`;
+          }
+        });
+      }
+      html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    if (sportsActivities.length > 0) {
+      html += `<div style="margin-top:16px"><strong>Sports & Activities:</strong> ${sportsActivities.join(", ")}</div>`;
+    }
+    return html;
+  };
+
+  const handlePrint = () => {
+    const html = buildTimetableHtml();
+    printBrandedHtml(printTitle || title, html, { landscape: true });
+  };
+
+  const handleDownload = async () => {
+    const headers = ["Time", ...days];
+    const rows: string[][] = [];
+    timeSlots.forEach(slot => {
+      const isBreak = slot.slot_type === "break";
+      const isSports = slot.slot_type === "sports";
+      const row: string[] = [`${slot.start_time}–${slot.end_time}`];
+      if (isBreak) {
+        days.forEach(() => row.push(slot.label || "Break"));
+      } else {
+        days.forEach((_, di) => {
+          const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
+          if (entry) {
+            let cell = entry.subjects?.name || entry.activity_name || "—";
+            if (entry.staff?.full_name) cell += ` (${entry.staff.full_name})`;
+            if (entry.room || entry.venue) cell += ` [${entry.room || entry.venue}]`;
+            row.push(cell);
+          } else {
+            row.push("—");
+          }
+        });
+      }
+      rows.push(row);
+    });
+    await downloadBrandedPdf(printTitle || title, headers, rows, `${(printTitle || title).replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
+  };
 
   if (loading || slotsLoading) {
     return (
@@ -97,10 +167,22 @@ export default function FullWeekTimetable({
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-heading">
-            <Calendar className="h-5 w-5" />
-            {title}
-          </CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-heading">
+              <Calendar className="h-5 w-5" />
+              {title}
+            </CardTitle>
+            {showPrintDownload && entries.length > 0 && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="mr-1 h-4 w-4" /> Print
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="mr-1 h-4 w-4" /> Download PDF
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
           <Table>
