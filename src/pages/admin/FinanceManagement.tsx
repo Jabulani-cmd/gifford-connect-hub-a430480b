@@ -72,6 +72,7 @@ import {
 } from "lucide-react";
 import { safeHtml } from "@/lib/utils";
 import BankReconciliation from "@/components/admin/BankReconciliation";
+import { printBrandedHtml } from "@/lib/export-pdf";
 import IncomeExpenditureReport from "@/components/admin/IncomeExpenditureReport";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
@@ -878,7 +879,6 @@ export default function FinanceManagement() {
       debtorsFormFilter === "all" ? debtors : debtors.filter((d) => d.students?.form === debtorsFormFilter);
     const totalUsd = filtered.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
     const totalZig = filtered.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
-    const { printBrandedHtml } = require("@/lib/export-pdf");
     const tableHtml = `
       <table><thead><tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr></thead>
       <tbody>
