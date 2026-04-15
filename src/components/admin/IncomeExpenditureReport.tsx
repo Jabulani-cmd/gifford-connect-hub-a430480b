@@ -120,40 +120,30 @@ export default function IncomeExpenditureReport() {
   }, [searchedExpenses]);
 
   function printReport() {
-    const printWin = window.open("", "_blank");
-    if (!printWin) return;
     const title = `Income & Expenditure Report — ${months[Number(selectedMonth)]} ${selectedYear}`;
-    printWin.document.write(`<html><head><title>${title}</title><style>body{font-family:sans-serif;padding:20px}
-    .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
-    .school-header img{width:60px;height:60px;object-fit:contain}
-    .school-header .info h1{font-size:18px;margin:0;color:#800000}
-    .school-header .info p{font-size:10px;color:#555;margin:2px 0}
-    .school-header .info .motto{font-style:italic;color:#800000}
-    table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:12px}th{background:#800000;color:#fff}.right{text-align:right}.green{color:green}.red{color:red}h3{margin-top:20px}
-    @media print{body{padding:10px}}</style></head><body>`);
-    printWin.document.write(`<div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>`);
-    printWin.document.write(`<h2>${title}</h2><p>Generated: ${new Date().toLocaleString()}</p>`);
-    printWin.document.write(`<h3>Summary</h3><table><tr><th>Item</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-    printWin.document.write(`<tr><td>Total Income</td><td class="right green">${fmt(totalIncomeUsd)}</td><td class="right">${fmt(totalIncomeZig)}</td></tr>`);
-    printWin.document.write(`<tr><td>Total Expenses</td><td class="right red">${fmt(totalExpensesUsd)}</td><td class="right">${fmt(totalExpensesZig)}</td></tr>`);
-    printWin.document.write(`<tr><td>Supplier Payments</td><td class="right red">${fmt(totalSupplierUsd)}</td><td class="right">${fmt(totalSupplierZig)}</td></tr>`);
-    printWin.document.write(`<tr style="font-weight:bold"><td>Net</td><td class="right ${netUsd >= 0 ? "green" : "red"}">${fmt(netUsd)}</td><td class="right">${fmt(netZig)}</td></tr></table>`);
+    const { printBrandedHtml } = require("@/lib/export-pdf");
+    let bodyContent = `
+      <h3>Summary</h3>
+      <table><thead><tr><th>Item</th><th class="right">USD</th><th class="right">ZiG</th></tr></thead><tbody>
+      <tr><td>Total Income</td><td class="right mono green">${fmt(totalIncomeUsd)}</td><td class="right mono">${fmt(totalIncomeZig)}</td></tr>
+      <tr><td>Total Expenses</td><td class="right mono red">${fmt(totalExpensesUsd)}</td><td class="right mono">${fmt(totalExpensesZig)}</td></tr>
+      <tr><td>Supplier Payments</td><td class="right mono red">${fmt(totalSupplierUsd)}</td><td class="right mono">${fmt(totalSupplierZig)}</td></tr>
+      <tr class="total-row"><td><strong>Net</strong></td><td class="right mono ${netUsd >= 0 ? "green" : "red"}"><strong>${fmt(netUsd)}</strong></td><td class="right mono"><strong>${fmt(netZig)}</strong></td></tr>
+      </tbody></table>`;
 
     if (searchedPayments.length > 0) {
-      printWin.document.write(`<h3>Income (${searchedPayments.length} transactions)</h3><table><tr><th>Date</th><th>Receipt</th><th>Student</th><th>Method</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-      searchedPayments.forEach(p => printWin.document.write(`<tr><td>${safeHtml(p.payment_date)}</td><td>${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.students?.full_name || "—")}</td><td>${safeHtml(p.payment_method)}</td><td class="right">${fmt(p.amount_usd)}</td><td class="right">${fmt(p.amount_zig)}</td></tr>`));
-      printWin.document.write(`</table>`);
+      bodyContent += `<h3>Income (${searchedPayments.length} transactions)</h3><table><thead><tr><th>Date</th><th>Receipt</th><th>Student</th><th>Method</th><th class="right">USD</th><th class="right">ZiG</th></tr></thead><tbody>`;
+      searchedPayments.forEach(p => bodyContent += `<tr><td>${safeHtml(p.payment_date)}</td><td class="mono">${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.students?.full_name || "—")}</td><td>${safeHtml(p.payment_method)}</td><td class="right mono green">${fmt(p.amount_usd)}</td><td class="right mono">${fmt(p.amount_zig)}</td></tr>`);
+      bodyContent += `</tbody></table>`;
     }
 
     if (searchedExpenses.length > 0) {
-      printWin.document.write(`<h3>Expenses (${searchedExpenses.length} transactions)</h3><table><tr><th>Date</th><th>Category</th><th>Description</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
-      searchedExpenses.forEach(e => printWin.document.write(`<tr><td>${safeHtml(e.expense_date)}</td><td>${safeHtml(e.category)}</td><td>${safeHtml(e.description)}</td><td class="right">${fmt(e.amount_usd)}</td><td class="right">${fmt(e.amount_zig)}</td></tr>`));
-      printWin.document.write(`</table>`);
+      bodyContent += `<h3>Expenses (${searchedExpenses.length} transactions)</h3><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="right">USD</th><th class="right">ZiG</th></tr></thead><tbody>`;
+      searchedExpenses.forEach(e => bodyContent += `<tr><td>${safeHtml(e.expense_date)}</td><td>${safeHtml(e.category)}</td><td>${safeHtml(e.description)}</td><td class="right mono red">${fmt(e.amount_usd)}</td><td class="right mono">${fmt(e.amount_zig)}</td></tr>`);
+      bodyContent += `</tbody></table>`;
     }
 
-    printWin.document.write(`</body></html>`);
-    printWin.document.close();
-    printWin.print();
+    printBrandedHtml(title, bodyContent, { subtitle: `Generated: ${new Date().toLocaleString()}` });
   }
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;

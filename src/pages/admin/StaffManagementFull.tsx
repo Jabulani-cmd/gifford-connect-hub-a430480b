@@ -539,12 +539,11 @@ export default function StaffManagementFull() {
   };
 
   const printStaff = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    const rows = filtered.map(s => `<tr><td>${s.staff_number || "—"}</td><td>${s.full_name}</td><td>${(s.role || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td><td>${s.department || "—"}</td><td>${s.phone || "—"}</td><td>${s.status || "—"}</td></tr>`).join("");
-    const title = filterRole !== "all" ? `${filterRole.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} Staff` : "All Staff";
-    printWindow.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:11px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>${title} — ${new Date().toLocaleDateString()}</h2><p>Total: ${filtered.length} staff members</p><table><thead><tr><th>Staff #</th><th>Name</th><th>Role</th><th>Department</th><th>Phone</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
-    printWindow.document.close();
+    const title = filterRole !== "all" ? `${filterRole.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} Staff` : "All Staff";
+    const headers = ["Staff #", "Name", "Role", "Department", "Phone", "Status"];
+    const rows = filtered.map(s => [s.staff_number || "—", s.full_name, (s.role || "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()), s.department || "—", s.phone || "—", s.status || "—"]);
+    const { printBrandedTable } = require("@/lib/export-pdf");
+    printBrandedTable(title, headers, rows);
   };
 
   const exportPDF = async () => {

@@ -277,11 +277,10 @@ export default function BoardingManagement() {
   });
 
   const printBoarders = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    const rows = boarders.map(b => `<tr><td>${b.student?.admission_number}</td><td>${b.student?.full_name}</td><td>${b.student?.form}</td><td>${b.hostel?.name || "Not Allocated"}</td><td>${b.room?.room_number || "—"}</td><td>${b.bed_number || "—"}</td><td>${b.student?.emergency_contact || "—"}</td></tr>`).join("");
-    printWindow.document.write(`<html><head><title>Boarders List</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5;font-weight:bold}h2{margin:0}@media print{button{display:none}}</style></head><body><h2>Boarders List — ${new Date().toLocaleDateString()}</h2><p>Total: ${boarders.length} boarders</p><table><thead><tr><th>Adm #</th><th>Name</th><th>Form</th><th>Hostel</th><th>Room</th><th>Bed</th><th>Emergency</th></tr></thead><tbody>${rows}</tbody></table><br/><button onclick="window.print()">Print</button></body></html>`);
-    printWindow.document.close();
+    const headers = ["Adm #", "Name", "Form", "Hostel", "Room", "Bed", "Emergency"];
+    const rows = boarders.map(b => [b.student?.admission_number || "", b.student?.full_name || "", b.student?.form || "", b.hostel?.name || "Not Allocated", b.room?.room_number || "—", b.bed_number || "—", b.student?.emergency_contact || "—"]);
+    const { printBrandedTable } = require("@/lib/export-pdf");
+    printBrandedTable("Boarders List", headers, rows);
   };
 
   const exportBoarders = async () => {
