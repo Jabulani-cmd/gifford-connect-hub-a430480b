@@ -14,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { getLogoDataUrl, SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS } from "@/lib/finance/pdf";
 
 const FORM_LEVELS = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const CHART_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
@@ -160,25 +161,38 @@ export default function EMISReports() {
     setInventorySummary(Object.entries(catSummary).map(([name, qty]) => ({ name, quantity: qty })));
   };
 
-  const generatePDF = (reportType: string) => {
+  const generatePDF = async (reportType: string) => {
+    const logoDataUrl = await getLogoDataUrl();
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Logo
+    try { doc.addImage(logoDataUrl, "PNG", 14, 8, 22, 22); } catch {}
 
     // Header
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("MINISTRY OF PRIMARY AND SECONDARY EDUCATION", pageWidth / 2, 15, { align: "center" });
-    doc.setFontSize(11);
-    doc.text("GIFFORD HIGH SCHOOL", pageWidth / 2, 22, { align: "center" });
+    doc.text("MINISTRY OF PRIMARY AND SECONDARY EDUCATION", pageWidth / 2, 12, { align: "center" });
+    doc.setFontSize(12);
+    doc.setTextColor(128, 0, 0);
+    doc.text(SCHOOL_NAME.toUpperCase(), pageWidth / 2, 19, { align: "center" });
     doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100);
+    doc.text(SCHOOL_MOTTO, pageWidth / 2, 24, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.text(`EMIS ${reportType} Report — Academic Year ${academicYear}`, pageWidth / 2, 28, { align: "center" });
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 33, { align: "center" });
-    doc.line(14, 36, pageWidth - 14, 36);
+    doc.setFontSize(8);
+    doc.text(SCHOOL_ADDRESS, pageWidth / 2, 29, { align: "center" });
+    doc.setTextColor(0);
+    doc.setFontSize(9);
+    doc.text(`EMIS ${reportType} Report — Academic Year ${academicYear}`, pageWidth / 2, 35, { align: "center" });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 40, { align: "center" });
+    doc.setDrawColor(128, 0, 0); doc.setLineWidth(0.8);
+    doc.line(14, 43, pageWidth - 14, 43);
 
     if (reportType === "Student Enrollment") {
       autoTable(doc, {
-        startY: 42,
+        startY: 48,
         head: [["Form Level", "Male", "Female", "Total"]],
         body: [
           ...enrollmentData.map(r => [r.form, r.male, r.female, r.total]),
@@ -190,7 +204,7 @@ export default function EMISReports() {
       });
     } else if (reportType === "Staff Returns") {
       autoTable(doc, {
-        startY: 42,
+        startY: 48,
         head: [["Category", "Count", "Qualified", "% Qualified"]],
         body: [
           ...staffData.map(r => [r.category, r.count, r.qualified, r.count > 0 ? `${Math.round((r.qualified / r.count) * 100)}%` : "0%"]),
@@ -205,7 +219,7 @@ export default function EMISReports() {
       doc.text(`Teacher-Student Ratio: 1:${staffSummary.teaching > 0 ? Math.round(totalStudents / staffSummary.teaching) : "N/A"}`, 14, finalY + 10);
     } else if (reportType === "Infrastructure") {
       autoTable(doc, {
-        startY: 42,
+        startY: 48,
         head: [["Facility", "Count/Quantity"]],
         body: [
           ["Classrooms", infraData.classrooms],

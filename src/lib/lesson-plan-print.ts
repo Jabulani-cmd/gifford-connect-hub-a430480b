@@ -1,3 +1,5 @@
+import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
+
 export interface LessonPlanPrintData {
   title: string;
   date: string;
@@ -34,8 +36,13 @@ export function buildLessonPlanHtml(plan: LessonPlanPrintData): string {
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-  .header { border-bottom: 3px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
-  .header h1 { font-size: 22px; color: #1e3a5f; margin-bottom: 6px; }
+  .school-header { display: flex; align-items: center; gap: 14px; border-bottom: 3px solid #800000; padding-bottom: 12px; margin-bottom: 20px; }
+  .school-header img { width: 60px; height: 60px; object-fit: contain; }
+  .school-header .info h1 { font-size: 18px; margin: 0; color: #800000; }
+  .school-header .info p { font-size: 10px; color: #555; margin: 2px 0; }
+  .school-header .info .motto { font-style: italic; color: #800000; }
+  .header { border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+  .header h2 { font-size: 20px; color: #1e3a5f; margin-bottom: 6px; }
   .meta { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: #555; }
   .meta span { background: #f0f4f8; padding: 3px 10px; border-radius: 4px; }
   .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
@@ -47,8 +54,16 @@ export function buildLessonPlanHtml(plan: LessonPlanPrintData): string {
   .section p { font-size: 14px; white-space: pre-wrap; word-wrap: break-word; }
   @media print { body { padding: 20px; } }
 </style></head><body>
+<div class="school-header">
+  <img src="${SCHOOL_LOGO_URL}" alt="School Logo" />
+  <div class="info">
+    <h1>${SCHOOL_NAME}</h1>
+    <p class="motto">${SCHOOL_MOTTO}</p>
+    <p>${SCHOOL_ADDRESS}</p>
+  </div>
+</div>
 <div class="header">
-  <h1>${escapeHtml(plan.title)}</h1>
+  <h2>${escapeHtml(plan.title)}</h2>
   <div class="meta">
     <span>📅 ${dateStr}</span>
     ${plan.subjectName ? `<span>📘 ${escapeHtml(plan.subjectName)}</span>` : ""}
