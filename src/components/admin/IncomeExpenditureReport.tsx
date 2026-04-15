@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { safeHtml } from "@/lib/utils";
+import { printBrandedHtml } from "@/lib/export-pdf";
 import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -121,7 +122,7 @@ export default function IncomeExpenditureReport() {
 
   function printReport() {
     const title = `Income & Expenditure Report — ${months[Number(selectedMonth)]} ${selectedYear}`;
-    const { printBrandedHtml } = require("@/lib/export-pdf");
+    
     let bodyContent = `
       <h3>Summary</h3>
       <table><thead><tr><th>Item</th><th class="right">USD</th><th class="right">ZiG</th></tr></thead><tbody>

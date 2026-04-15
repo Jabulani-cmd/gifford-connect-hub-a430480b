@@ -851,7 +851,7 @@ export default function FinanceManagement() {
     const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
     const balUsd = totalInvoicedUsd - totalPaidUsd;
     const balZig = totalInvoicedZig - totalPaidZig;
-    const { printBrandedHtml } = require("@/lib/export-pdf");
+    
     const bodyContent = `
       <p><strong>Student:</strong> ${safeHtml(stmtStudent.full_name)} &nbsp;|&nbsp; <strong>Adm #:</strong> ${safeHtml(stmtStudent.admission_number)} &nbsp;|&nbsp; <strong>Form:</strong> ${safeHtml(stmtStudent.form)}</p>
       <h3>Invoices</h3>

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { printBrandedTable } from "@/lib/export-pdf";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -279,7 +280,6 @@ export default function BoardingManagement() {
   const printBoarders = () => {
     const headers = ["Adm #", "Name", "Form", "Hostel", "Room", "Bed", "Emergency"];
     const rows = boarders.map(b => [b.student?.admission_number || "", b.student?.full_name || "", b.student?.form || "", b.hostel?.name || "Not Allocated", b.room?.room_number || "—", b.bed_number || "—", b.student?.emergency_contact || "—"]);
-    const { printBrandedTable } = require("@/lib/export-pdf");
     printBrandedTable("Boarders List", headers, rows);
   };
 

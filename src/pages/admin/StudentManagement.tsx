@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { printBrandedTable } from "@/lib/export-pdf";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -589,7 +590,6 @@ export default function StudentManagement() {
     const title = filterForm !== "all" ? `${filterForm} Students` : "All Students";
     const headers = ["Adm #", "Name", "Form/Stream", "Gender", "Boarding", "Guardian Phone", "Status"];
     const rows = filtered.map(s => [s.admission_number, s.full_name, `${s.form}${s.stream ? ` / ${s.stream}` : ""}`, s.gender || "—", (s as any).boarding_status === "boarder" ? "Boarder" : "Day", s.guardian_phone || "—", s.status]);
-    const { printBrandedTable } = require("@/lib/export-pdf");
     printBrandedTable(title, headers, rows);
   };
 
