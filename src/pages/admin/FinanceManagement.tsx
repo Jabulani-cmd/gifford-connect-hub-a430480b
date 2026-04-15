@@ -844,75 +844,52 @@ export default function FinanceManagement() {
   }
 
   function printStudentStatement() {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
     const totalInvoicedUsd = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_usd), 0);
     const totalInvoicedZig = stmtInvoices.reduce((s, i) => s + parseFloat(i.total_zig), 0);
     const totalPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
     const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${safeHtml(stmtStudent.full_name)}</title>
-      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}
-      .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
-      .school-header img{width:60px;height:60px;object-fit:contain}
-      .school-header .info h1{font-size:18px;margin:0;color:#800000}
-      .school-header .info p{font-size:10px;color:#555;margin:2px 0}
-      .school-header .info .motto{font-style:italic;color:#800000}
-      h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#800000;color:#fff;font-weight:600}
-      .right{text-align:right}.mono{font-family:monospace}.summary{margin-top:16px;padding:12px;border:2px solid #333;display:inline-block}
-      .red{color:#c00}.green{color:#060}@media print{body{padding:15px}}</style></head><body>
-      <div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>
-      <p><strong>Student Financial Statement</strong></p>
-      <p>Student: <strong>${safeHtml(stmtStudent.full_name)}</strong> | Adm #: <strong>${safeHtml(stmtStudent.admission_number)}</strong> | Form: <strong>${safeHtml(stmtStudent.form)}</strong></p>
-      <p>Date: ${new Date().toLocaleDateString()}</p>
-      <h2>Invoices</h2>
-       table<thead> th<th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th> </thead>
+    const balUsd = totalInvoicedUsd - totalPaidUsd;
+    const balZig = totalInvoicedZig - totalPaidZig;
+    const { printBrandedHtml } = require("@/lib/export-pdf");
+    const bodyContent = `
+      <p><strong>Student:</strong> ${safeHtml(stmtStudent.full_name)} &nbsp;|&nbsp; <strong>Adm #:</strong> ${safeHtml(stmtStudent.admission_number)} &nbsp;|&nbsp; <strong>Form:</strong> ${safeHtml(stmtStudent.form)}</p>
+      <h3>Invoices</h3>
+      <table><thead><tr><th>Invoice #</th><th>Term</th><th>Year</th><th class="right">Total USD</th><th class="right">Total ZiG</th><th class="right">Paid USD</th><th class="right">Paid ZiG</th><th>Status</th></tr></thead>
       <tbody>
-      ${stmtInvoices.map((i) => `     <tr><td class="mono">${safeHtml(i.invoice_number)}</td><td>${safeHtml(i.term)}</td><td>${safeHtml(i.academic_year)}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${safeHtml(i.status)}</td></tr>`).join("")}
-      </tbody>   </table>
-      <h2>Payments</h2>
-       table<thead>   <tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr> </thead>
+      ${stmtInvoices.map((i) => `<tr><td class="mono">${safeHtml(i.invoice_number)}</td><td>${safeHtml(i.term)}</td><td>${safeHtml(i.academic_year)}</td><td class="right mono">${fmt(parseFloat(i.total_usd))}</td><td class="right mono">${fmt(parseFloat(i.total_zig))}</td><td class="right mono">${fmt(parseFloat(i.paid_usd))}</td><td class="right mono">${fmt(parseFloat(i.paid_zig))}</td><td>${safeHtml(i.status)}</td></tr>`).join("")}
+      </tbody></table>
+      <h3>Payments</h3>
+      <table><thead><tr><th>Receipt #</th><th>Date</th><th>Invoice</th><th class="right">USD</th><th class="right">ZiG</th><th>Method</th></tr></thead>
       <tbody>
-      ${stmtPayments.map((p) => `     <tr><td class="mono">${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.payment_date)}</td><td class="mono">${safeHtml(p.invoices?.invoice_number || "—")}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${safeHtml(p.payment_method)}</td></tr>`).join("")}
-      </tbody>   </table>
-      <div class="summary">
+      ${stmtPayments.map((p) => `<tr><td class="mono">${safeHtml(p.receipt_number)}</td><td>${safeHtml(p.payment_date)}</td><td class="mono">${safeHtml(p.invoices?.invoice_number || "—")}</td><td class="right mono">${fmt(parseFloat(p.amount_usd))}</td><td class="right mono">${fmt(parseFloat(p.amount_zig))}</td><td>${safeHtml(p.payment_method)}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="summary-box">
         <p><strong>Total Invoiced:</strong> USD ${fmt(totalInvoicedUsd)} / ZiG ${fmt(totalInvoicedZig)}</p>
         <p><strong>Total Paid:</strong> USD ${fmt(totalPaidUsd)} / ZiG ${fmt(totalPaidZig)}</p>
-        <p class="${totalInvoicedUsd - totalPaidUsd > 0 ? "red" : "green"}"><strong>${totalInvoicedUsd - totalPaidUsd < 0 ? "Credit Balance" : "Balance"}:</strong> USD ${totalInvoicedUsd - totalPaidUsd < 0 ? "+" + fmt(Math.abs(totalInvoicedUsd - totalPaidUsd)) : fmt(totalInvoicedUsd - totalPaidUsd)} / ZiG ${totalInvoicedZig - totalPaidZig < 0 ? "+" + fmt(Math.abs(totalInvoicedZig - totalPaidZig)) : fmt(totalInvoicedZig - totalPaidZig)}</p>
-      </div>
-      </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
+        <p class="${balUsd > 0 ? "red" : "green"}"><strong>${balUsd < 0 ? "Credit Balance" : "Balance Due"}:</strong> USD ${balUsd < 0 ? "+" + fmt(Math.abs(balUsd)) : fmt(balUsd)} / ZiG ${balZig < 0 ? "+" + fmt(Math.abs(balZig)) : fmt(balZig)}</p>
+      </div>`;
+    printBrandedHtml("Student Financial Statement", bodyContent, {
+      subtitle: `Date: ${new Date().toLocaleDateString("en-GB")}`
+    });
   }
 
   function printDebtorsList() {
     const filtered =
       debtorsFormFilter === "all" ? debtors : debtors.filter((d) => d.students?.form === debtorsFormFilter);
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
     const totalUsd = filtered.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
     const totalZig = filtered.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Debtors List</title>
-      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}
-      .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
-      .school-header img{width:60px;height:60px;object-fit:contain}
-      .school-header .info h1{font-size:18px;margin:0;color:#800000}
-      .school-header .info p{font-size:10px;color:#555;margin:2px 0}
-      .school-header .info .motto{font-style:italic;color:#800000}
-      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#800000;color:#fff;font-weight:600}
-      .right{text-align:right}.mono{font-family:monospace}.red{color:#c00}.total{font-weight:bold;background:#fef2f2}
-      @media print{body{padding:15px}}</style></head><body>
-      <div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>
-      <h2>Debtors List</h2>
-      <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
-       table<thead>   <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
+    const { printBrandedHtml } = require("@/lib/export-pdf");
+    const tableHtml = `
+      <table><thead><tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr></thead>
       <tbody>
-      ${filtered.map((d, i) => `     <tr><td>${i + 1}</td><td>${safeHtml(d.students?.full_name || "—")}</td><td>${safeHtml(d.students?.admission_number || "—")}</td><td>${safeHtml(d.students?.form || "—")}</td><td class="mono">${safeHtml(d.invoice_number)}</td><td>${safeHtml(d.term)}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${statusBadge(d.status)}</td></tr>`).join("")}
-      <tr class="total"><td colspan="6">TOTAL</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
-      </tbody>   </table>
-      </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
+      ${filtered.map((d, i) => `<tr><td>${i + 1}</td><td>${safeHtml(d.students?.full_name || "—")}</td><td>${safeHtml(d.students?.admission_number || "—")}</td><td>${safeHtml(d.students?.form || "—")}</td><td class="mono">${safeHtml(d.invoice_number)}</td><td>${safeHtml(d.term)}</td><td class="right mono red">${fmt(parseFloat(d.total_usd) - parseFloat(d.paid_usd))}</td><td class="right mono red">${fmt(parseFloat(d.total_zig) - parseFloat(d.paid_zig))}</td><td>${safeHtml(d.status)}</td></tr>`).join("")}
+      <tr class="total-row"><td colspan="6" style="text-align:right;font-weight:bold">TOTAL OWED</td><td class="right mono red">USD ${fmt(totalUsd)}</td><td class="right mono red">ZiG ${fmt(totalZig)}</td><td></td></tr>
+      </tbody></table>
+      <p style="font-size:11px;color:#666;margin-top:8px">Total debtors: ${filtered.length}</p>`;
+    printBrandedHtml("Debtors List", tableHtml, {
+      subtitle: `Date: ${new Date().toLocaleDateString("en-GB")}  |  Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter}  |  Total: ${filtered.length} student(s)`,
+      landscape: true
+    });
   }
 
   // ═══ INVOICE GENERATION (UPDATED) ═══

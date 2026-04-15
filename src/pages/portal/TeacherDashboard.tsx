@@ -550,6 +550,7 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
                 hasClass={!!selectedTTClass}
                 loading={false}
                 noClassMessage="Select a class to view the timetable."
+                printTitle={`Class Timetable — ${classes.find(c => c.id === selectedTTClass)?.name || ""}`}
               />
             </div>
           </TabsContent>
