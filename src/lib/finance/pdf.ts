@@ -60,7 +60,11 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
 
   if (input.logoDataUrl) {
     try {
-      doc.addImage(input.logoDataUrl, "PNG", logoX, logoY, logoSize, logoSize);
+      const props = doc.getImageProperties(input.logoDataUrl);
+      const aspect = props.width / props.height;
+      const logoW = logoSize * aspect;
+      const logoH = logoSize;
+      doc.addImage(input.logoDataUrl, "PNG", logoX, logoY, logoW, logoH);
     } catch {
       // Ignore logo rendering errors
     }
