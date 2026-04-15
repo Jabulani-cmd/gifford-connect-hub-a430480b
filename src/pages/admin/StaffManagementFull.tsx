@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { printBrandedTable } from "@/lib/export-pdf";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -542,7 +543,6 @@ export default function StaffManagementFull() {
     const title = filterRole !== "all" ? `${filterRole.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} Staff` : "All Staff";
     const headers = ["Staff #", "Name", "Role", "Department", "Phone", "Status"];
     const rows = filtered.map(s => [s.staff_number || "—", s.full_name, (s.role || "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()), s.department || "—", s.phone || "—", s.status || "—"]);
-    const { printBrandedTable } = require("@/lib/export-pdf");
     printBrandedTable(title, headers, rows);
   };
 
