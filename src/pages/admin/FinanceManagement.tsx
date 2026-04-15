@@ -36,6 +36,9 @@ import {
   buildStatementHtml,
   buildReceiptHtml,
   SCHOOL_LOGO_URL,
+  SCHOOL_NAME,
+  SCHOOL_MOTTO,
+  SCHOOL_ADDRESS,
   getLogoDataUrl,
 } from "@/lib/finance/pdf";
 import ReceiptSearchTab from "@/components/finance/ReceiptSearchTab";
@@ -848,11 +851,17 @@ export default function FinanceManagement() {
     const totalPaidUsd = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_usd), 0);
     const totalPaidZig = stmtPayments.reduce((s, p) => s + parseFloat(p.amount_zig), 0);
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Statement - ${safeHtml(stmtStudent.full_name)}</title>
-      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}
+      .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
+      .school-header img{width:60px;height:60px;object-fit:contain}
+      .school-header .info h1{font-size:18px;margin:0;color:#800000}
+      .school-header .info p{font-size:10px;color:#555;margin:2px 0}
+      .school-header .info .motto{font-style:italic;color:#800000}
+      h2{font-size:14px;margin-top:20px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#800000;color:#fff;font-weight:600}
       .right{text-align:right}.mono{font-family:monospace}.summary{margin-top:16px;padding:12px;border:2px solid #333;display:inline-block}
       .red{color:#c00}.green{color:#060}@media print{body{padding:15px}}</style></head><body>
-      <h1>Gifford High School</h1>
+      <div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>
       <p><strong>Student Financial Statement</strong></p>
       <p>Student: <strong>${safeHtml(stmtStudent.full_name)}</strong> | Adm #: <strong>${safeHtml(stmtStudent.admission_number)}</strong> | Form: <strong>${safeHtml(stmtStudent.form)}</strong></p>
       <p>Date: ${new Date().toLocaleDateString()}</p>
@@ -884,11 +893,17 @@ export default function FinanceManagement() {
     const totalUsd = filtered.reduce((s, d) => s + (parseFloat(d.total_usd) - parseFloat(d.paid_usd)), 0);
     const totalZig = filtered.reduce((s, d) => s + (parseFloat(d.total_zig) - parseFloat(d.paid_zig)), 0);
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Debtors List</title>
-      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}h1{font-size:18px;margin-bottom:4px}
-      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}
+      <style>body{font-family:Arial,sans-serif;padding:30px;font-size:12px}
+      .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
+      .school-header img{width:60px;height:60px;object-fit:contain}
+      .school-header .info h1{font-size:18px;margin:0;color:#800000}
+      .school-header .info p{font-size:10px;color:#555;margin:2px 0}
+      .school-header .info .motto{font-style:italic;color:#800000}
+      table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#800000;color:#fff;font-weight:600}
       .right{text-align:right}.mono{font-family:monospace}.red{color:#c00}.total{font-weight:bold;background:#fef2f2}
       @media print{body{padding:15px}}</style></head><body>
-      <h1>Gifford High School — Debtors List</h1>
+      <div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>
+      <h2>Debtors List</h2>
       <p>Date: ${new Date().toLocaleDateString()} | Filter: ${debtorsFormFilter === "all" ? "All Forms" : debtorsFormFilter} | Total: ${filtered.length} student(s)</p>
        table<thead>   <tr><th>#</th><th>Student</th><th>Adm #</th><th>Form</th><th>Invoice</th><th>Term</th><th class="right">Owed USD</th><th class="right">Owed ZiG</th><th>Status</th></tr> </thead>
       <tbody>

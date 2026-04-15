@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { safeHtml } from "@/lib/utils";
+import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -122,7 +123,15 @@ export default function IncomeExpenditureReport() {
     const printWin = window.open("", "_blank");
     if (!printWin) return;
     const title = `Income & Expenditure Report — ${months[Number(selectedMonth)]} ${selectedYear}`;
-    printWin.document.write(`<html><head><title>${title}</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:12px}th{background:#f5f5f5}.right{text-align:right}.green{color:green}.red{color:red}h3{margin-top:20px}</style></head><body>`);
+    printWin.document.write(`<html><head><title>${title}</title><style>body{font-family:sans-serif;padding:20px}
+    .school-header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #800000;padding-bottom:10px;margin-bottom:14px}
+    .school-header img{width:60px;height:60px;object-fit:contain}
+    .school-header .info h1{font-size:18px;margin:0;color:#800000}
+    .school-header .info p{font-size:10px;color:#555;margin:2px 0}
+    .school-header .info .motto{font-style:italic;color:#800000}
+    table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:12px}th{background:#800000;color:#fff}.right{text-align:right}.green{color:green}.red{color:red}h3{margin-top:20px}
+    @media print{body{padding:10px}}</style></head><body>`);
+    printWin.document.write(`<div class="school-header"><img src="${SCHOOL_LOGO_URL}" alt="Logo" /><div class="info"><h1>${SCHOOL_NAME}</h1><p class="motto">${SCHOOL_MOTTO}</p><p>${SCHOOL_ADDRESS}</p></div></div>`);
     printWin.document.write(`<h2>${title}</h2><p>Generated: ${new Date().toLocaleString()}</p>`);
     printWin.document.write(`<h3>Summary</h3><table><tr><th>Item</th><th class="right">USD</th><th class="right">ZiG</th></tr>`);
     printWin.document.write(`<tr><td>Total Income</td><td class="right green">${fmt(totalIncomeUsd)}</td><td class="right">${fmt(totalIncomeZig)}</td></tr>`);
