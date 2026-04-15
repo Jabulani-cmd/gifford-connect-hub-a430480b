@@ -129,20 +129,23 @@ export default function VerificationCodesManager() {
     toast({ title: "Code copied to clipboard" });
   };
 
-  const exportCSV = (data: any[], filename: string) => {
-    const header = "Admission Number,Student Name,Form,Stream,Verification Code,Status,Created,Expires";
+  const exportPDF = async (data: any[]) => {
+    const headers = ["Admission #", "Student Name", "Form", "Stream", "Code", "Status", "Created", "Expires"];
     const rows = data.map((r) => {
       const status = r.code ? (r.used_at ? "Used" : new Date(r.expires_at) < new Date() ? "Expired" : "Active") : "Error";
-      return `${r.student?.admission_number || r.admission_number},"${r.student?.full_name || r.full_name}",${r.student?.form || r.form},${r.student?.stream || r.stream || ""},${r.code || ""},${status},${r.created_at ? format(new Date(r.created_at), "yyyy-MM-dd") : ""},${r.expires_at ? format(new Date(r.expires_at), "yyyy-MM-dd") : ""}`;
+      return [
+        r.student?.admission_number || r.admission_number || "",
+        r.student?.full_name || r.full_name || "",
+        r.student?.form || r.form || "",
+        r.student?.stream || r.stream || "",
+        r.code || "",
+        status,
+        r.created_at ? format(new Date(r.created_at), "yyyy-MM-dd") : "",
+        r.expires_at ? format(new Date(r.expires_at), "yyyy-MM-dd") : "",
+      ];
     });
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Verification Codes", headers, rows);
   };
 
   const printCodes = () => {
@@ -261,8 +264,8 @@ export default function VerificationCodesManager() {
           <Button variant="outline" size="sm" onClick={printCodes}>
             <Printer className="mr-1 h-4 w-4" /> Print
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportCSV(filtered, `verification-codes-${format(new Date(), "yyyy-MM-dd")}.csv`)}>
-            <Download className="mr-1 h-4 w-4" /> Export CSV
+          <Button variant="outline" size="sm" onClick={() => exportPDF(filtered)}>
+            <Download className="mr-1 h-4 w-4" /> Download PDF
           </Button>
           <Button variant="ghost" size="sm" onClick={fetchCodes}>
             <RefreshCw className="h-4 w-4" />

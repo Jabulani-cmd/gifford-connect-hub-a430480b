@@ -85,20 +85,19 @@ export default function AdminAttendanceViewer() {
     }
   };
 
-  const exportCSV = () => {
+  const exportPDF = async () => {
     if (filtered.length === 0) return;
     const className = classes.find(c => c.id === selectedClass)?.name || "class";
-    const header = "Student Name,Admission No,Date,Status,Notes\n";
-    const rows = filtered.map(r =>
-      `"${r.students?.full_name || ""}","${r.students?.admission_number || ""}","${r.attendance_date}","${r.status}","${r.notes || ""}"`
-    ).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `attendance_${className}_${dateFrom}_to_${dateTo}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const headers = ["Student Name", "Admission No", "Date", "Status", "Notes"];
+    const rows = filtered.map(r => [
+      r.students?.full_name || "—",
+      r.students?.admission_number || "—",
+      new Date(r.attendance_date).toLocaleDateString(),
+      r.status,
+      r.notes || "—",
+    ]);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf(`Attendance — ${className} (${dateFrom} to ${dateTo})`, headers, rows);
   };
 
   return (
@@ -150,8 +149,8 @@ export default function AdminAttendanceViewer() {
               {loading ? "Loading..." : "View Attendance"}
             </Button>
             {records.length > 0 && (
-              <Button variant="outline" onClick={exportCSV}>
-                <Download className="mr-1 h-4 w-4" /> Export CSV
+              <Button variant="outline" onClick={exportPDF}>
+                <Download className="mr-1 h-4 w-4" /> Download PDF
               </Button>
             )}
           </div>

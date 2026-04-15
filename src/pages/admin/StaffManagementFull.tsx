@@ -547,24 +547,13 @@ export default function StaffManagementFull() {
     printWindow.document.close();
   };
 
-  const exportCSV = () => {
+  const exportPDF = async () => {
     const headers = ["Staff #", "Full Name", "Role", "Department", "Phone", "Status"];
     const rows = filtered.map((s) => [
-      s.staff_number || "",
-      s.full_name,
-      s.role || "",
-      s.department || "",
-      s.phone || "",
-      s.status || "",
+      s.staff_number || "", s.full_name, s.role || "", s.department || "", s.phone || "", s.status || "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "staff.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Staff List", headers, rows);
   };
 
   const updateField = (key: string, value: any) => {
@@ -597,8 +586,8 @@ export default function StaffManagementFull() {
           <Button onClick={printStaff} variant="outline" size="sm">
             <Printer className="mr-1 h-4 w-4" /> Print
           </Button>
-          <Button onClick={exportCSV} variant="outline" size="sm">
-            <Download className="mr-1 h-4 w-4" /> Export CSV
+          <Button onClick={exportPDF} variant="outline" size="sm">
+            <Download className="mr-1 h-4 w-4" /> Download PDF
           </Button>
           <Button onClick={openAdd} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
             <Plus className="mr-1 h-4 w-4" /> Add Staff

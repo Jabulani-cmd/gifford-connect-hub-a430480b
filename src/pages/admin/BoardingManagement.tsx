@@ -284,14 +284,15 @@ export default function BoardingManagement() {
     printWindow.document.close();
   };
 
-  const exportBoarders = () => {
-    const header = "Admission #,Name,Form,Hostel,Room,Bed,Status,Guardian Phone,Emergency Contact";
-    const rows = boarders.map(b => `${b.student?.admission_number},"${b.student?.full_name}",${b.student?.form},${b.hostel?.name || "Not Allocated"},${b.room?.room_number || ""},${b.bed_number || ""},${b.allocation ? "Allocated" : "Unallocated"},${b.student?.guardian_phone || ""},${b.student?.emergency_contact || ""}`);
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `boarders-${new Date().toISOString().split("T")[0]}.csv`; a.click();
-    URL.revokeObjectURL(url);
+  const exportBoarders = async () => {
+    const headers = ["Admission #", "Name", "Form", "Hostel", "Room", "Bed", "Status", "Guardian Phone", "Emergency"];
+    const rows = boarders.map(b => [
+      b.student?.admission_number || "", b.student?.full_name || "", b.student?.form || "",
+      b.hostel?.name || "Not Allocated", b.room?.room_number || "—", b.bed_number || "—",
+      b.allocation ? "Allocated" : "Unallocated", b.student?.guardian_phone || "—", b.student?.emergency_contact || "—",
+    ]);
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf("Boarders List", headers, rows);
   };
 
   const detailHostel = hostelDetailId ? hostels.find(h => h.id === hostelDetailId) : null;
