@@ -52,14 +52,15 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
   const motto = input.motto || SCHOOL_MOTTO;
 
   // ─── Header with logo ───
+  const logoSize = 22; // mm — compact, professional
+  const logoX = 14;
+  const logoY = 10;
+  const textStartX = logoX + logoSize + 6; // text starts right of logo
   const topY = 14;
+
   if (input.logoDataUrl) {
     try {
-      const props = doc.getImageProperties(input.logoDataUrl);
-      const aspectRatio = props.width && props.height ? props.width / props.height : 0.75;
-      const logoHeight = 65;
-      const logoWidth = logoHeight * aspectRatio;
-      doc.addImage(input.logoDataUrl, "PNG", 14, 8, logoWidth, logoHeight);
+      doc.addImage(input.logoDataUrl, "PNG", logoX, logoY, logoSize, logoSize);
     } catch {
       // Ignore logo rendering errors
     }
@@ -67,20 +68,20 @@ export function buildInvoicePdf(input: InvoicePdfInput): jsPDF {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(name, pageWidth / 2, topY, { align: "center" });
+  doc.text(name, textStartX, topY);
 
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  doc.text(`"${motto}"`, pageWidth / 2, topY + 6, { align: "center" });
+  doc.text(`"${motto}"`, textStartX, topY + 6);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(SCHOOL_ADDRESS, pageWidth / 2, topY + 11, { align: "center" });
-  doc.text(`Tel: ${SCHOOL_PHONE}  |  Email: ${SCHOOL_EMAIL}`, pageWidth / 2, topY + 15, { align: "center" });
+  doc.text(SCHOOL_ADDRESS, textStartX, topY + 11);
+  doc.text(`Tel: ${SCHOOL_PHONE}  |  Email: ${SCHOOL_EMAIL}`, textStartX, topY + 15);
 
   // Title
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(14);
   doc.text("INVOICE", pageWidth / 2, topY + 24, { align: "center" });
 
   // Decorative line
