@@ -119,9 +119,10 @@ export default function StudentFeeTab({ studentId }: Props) {
     </Badge>
   );
 
-  if (loading) {
+  if (offline.loading) {
     return (
       <div className="space-y-3">
+        <OfflineStatusBadge {...offline} />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
         ))}
@@ -131,6 +132,8 @@ export default function StudentFeeTab({ studentId }: Props) {
 
   return (
     <div className="space-y-4">
+      <OfflineStatusBadge {...offline} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
         <div>
