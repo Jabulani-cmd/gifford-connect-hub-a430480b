@@ -150,9 +150,10 @@ export default function StudentExamResultsTab({ studentId, studentName, admissio
     setResultsLoading(false);
   };
 
-  if (loading) {
+  if (examsOffline.loading) {
     return (
       <div className="space-y-3">
+        <OfflineStatusBadge {...examsOffline} />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
         ))}
@@ -162,13 +163,16 @@ export default function StudentExamResultsTab({ studentId, studentName, admissio
 
   if (exams.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <Award className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No published exam results yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Results will appear here once they are released.</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <OfflineStatusBadge {...examsOffline} />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Award className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No published exam results yet.</p>
+            <p className="text-xs text-muted-foreground mt-1">Results will appear here once they are released.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -180,7 +184,8 @@ export default function StudentExamResultsTab({ studentId, studentName, admissio
 
   return (
     <div className="space-y-4">
-      {/* Exam Selector */}
+      <OfflineStatusBadge {...examsOffline} />
+
       <Select value={selectedExamId || ""} onValueChange={setSelectedExamId}>
         <SelectTrigger>
           <SelectValue placeholder="Select an exam" />
