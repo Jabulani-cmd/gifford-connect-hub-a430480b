@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Video, Link as LinkIcon, Presentation, Download, Search, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineSection } from "@/hooks/useOfflineSection";
+import OfflineStatusBadge from "@/components/offline/OfflineStatusBadge";
 import { format } from "date-fns";
 
 const typeIcons: Record<string, any> = {
@@ -22,38 +25,37 @@ interface Props {
 }
 
 export default function StudentMaterialsTab({ studentClassId }: Props) {
+  const { user } = useAuth();
   const [materials, setMaterials] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
 
-  useEffect(() => {
-    fetchMaterials();
-    fetchSubjects();
-  }, [studentClassId]);
-
-  const fetchMaterials = async () => {
-    setLoading(true);
-    let query = supabase
-      .from("study_materials")
-      .select("*, subjects(name), classes(name)")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false });
-
-    if (studentClassId) {
-      query = query.eq("class_id", studentClassId);
-    }
-
-    const { data } = await query;
-    setMaterials(data || []);
-    setLoading(false);
-  };
-
-  const fetchSubjects = async () => {
-    const { data } = await supabase.from("subjects").select("id, name").order("name");
-    setSubjects(data || []);
-  };
+  const offline = useOfflineSection<{ materials: any[]; subjects: any[] }>({
+    section: `student.materials.${studentClassId ?? "no-class"}`,
+    userId: user?.id,
+    deps: [studentClassId],
+    fetcher: async () => {
+      let q = supabase
+        .from("study_materials")
+        .select("*, subjects(name), classes(name)")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      if (studentClassId) q = q.eq("class_id", studentClassId);
+      const [{ data: m }, { data: s }] = await Promise.all([
+        q,
+        supabase.from("subjects").select("id, name").order("name"),
+      ]);
+      const payload = { materials: m || [], subjects: s || [] };
+      setMaterials(payload.materials);
+      setSubjects(payload.subjects);
+      return payload;
+    },
+    restore: (cached) => {
+      setMaterials(cached?.materials || []);
+      setSubjects(cached?.subjects || []);
+    },
+  });
 
   const filtered = materials.filter((m) => {
     const matchSearch = !search || m.title.toLowerCase().includes(search.toLowerCase());
@@ -64,13 +66,13 @@ export default function StudentMaterialsTab({ studentClassId }: Props) {
   const handleDownload = (m: any) => {
     const url = m.file_url || m.link_url;
     if (url) window.open(url, "_blank");
-    // Increment download count
     supabase.from("study_materials").update({ download_count: (m.download_count || 0) + 1 }).eq("id", m.id).then();
   };
 
-  if (loading) {
+  if (offline.loading) {
     return (
       <div className="space-y-3">
+        <OfflineStatusBadge {...offline} />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
         ))}
@@ -80,7 +82,8 @@ export default function StudentMaterialsTab({ studentClassId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Search & Filter */}
+      <OfflineStatusBadge {...offline} />
+
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -104,7 +107,6 @@ export default function StudentMaterialsTab({ studentClassId }: Props) {
         </Select>
       </div>
 
-      {/* Materials List */}
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -146,6 +148,7 @@ export default function StudentMaterialsTab({ studentClassId }: Props) {
                       size="icon"
                       className="h-9 w-9"
                       title="Open / View"
+                      disabled={!offline.online && !!m.link_url && !m.file_url}
                       onClick={() => {
                         const url = m.file_url || m.link_url;
                         if (url) window.open(url, "_blank");

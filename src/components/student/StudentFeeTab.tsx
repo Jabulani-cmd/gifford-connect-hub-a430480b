@@ -6,12 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, Printer, FileText, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineSection } from "@/hooks/useOfflineSection";
+import OfflineStatusBadge from "@/components/offline/OfflineStatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { buildStatementHtml, SCHOOL_LOGO_URL } from "@/lib/finance/pdf";
 import { openPrintWindow } from "@/lib/finance/print";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useIsMobile } from "@/hooks/use-mobile";
+
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -21,43 +25,45 @@ interface Props {
 
 export default function StudentFeeTab({ studentId }: Props) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { rate, usdToZig } = useExchangeRate();
   const isMobile = useIsMobile();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (studentId) fetchData();
-    else setLoading(false);
-  }, [studentId]);
+  const offline = useOfflineSection<{ invoices: any[]; payments: any[] }>({
+    section: "student.fees",
+    userId: user?.id ?? studentId,
+    deps: [studentId],
+    fetcher: async () => {
+      if (!studentId) {
+        setInvoices([]);
+        setPayments([]);
+        return { invoices: [], payments: [] };
+      }
+      const [invRes, payRes] = await Promise.all([
+        supabase
+          .from("invoices")
+          .select("*, students(full_name, admission_number, form)")
+          .eq("student_id", studentId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("payments")
+          .select("*, invoices(invoice_number)")
+          .eq("student_id", studentId)
+          .order("payment_date", { ascending: false }),
+      ]);
+      const payload = { invoices: invRes.data || [], payments: payRes.data || [] };
+      setInvoices(payload.invoices);
+      setPayments(payload.payments);
+      return payload;
+    },
+    restore: (cached) => {
+      setInvoices(cached?.invoices || []);
+      setPayments(cached?.payments || []);
+    },
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [invRes, payRes] = await Promise.all([
-      supabase
-        .from("invoices")
-        .select("*, students(full_name, admission_number, form)")
-        .eq("student_id", studentId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("payments")
-        .select("*, invoices(invoice_number)")
-        .eq("student_id", studentId)
-        .order("payment_date", { ascending: false }),
-    ]);
-    if (invRes.error) {
-      toast({ title: "Error", description: invRes.error.message, variant: "destructive" });
-    } else {
-      setInvoices(invRes.data || []);
-    }
-    if (payRes.error) {
-      toast({ title: "Error", description: payRes.error.message, variant: "destructive" });
-    } else {
-      setPayments(payRes.data || []);
-    }
-    setLoading(false);
-  };
 
   const totalInvoicedUsd = invoices.reduce((sum, i) => sum + parseFloat(i.total_usd || 0), 0);
   const totalPaidUsd = invoices.reduce((sum, i) => sum + parseFloat(i.paid_usd || 0), 0);
@@ -113,9 +119,10 @@ export default function StudentFeeTab({ studentId }: Props) {
     </Badge>
   );
 
-  if (loading) {
+  if (offline.loading) {
     return (
       <div className="space-y-3">
+        <OfflineStatusBadge {...offline} />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
         ))}
@@ -125,6 +132,8 @@ export default function StudentFeeTab({ studentId }: Props) {
 
   return (
     <div className="space-y-4">
+      <OfflineStatusBadge {...offline} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
         <div>
