@@ -77,8 +77,10 @@ export default function StudentMarksTab({ studentId }: Props) {
 
   return (
     <div className="space-y-4">
+      <OfflineStatusBadge {...offline} />
       <Select value={selectedTerm} onValueChange={setSelectedTerm}>
         <SelectTrigger className="w-[140px]">
+
           <SelectValue placeholder="Filter by term" />
         </SelectTrigger>
         <SelectContent>
