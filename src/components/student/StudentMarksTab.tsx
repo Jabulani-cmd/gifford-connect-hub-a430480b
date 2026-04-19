@@ -5,10 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineSection } from "@/hooks/useOfflineSection";
+import OfflineStatusBadge from "@/components/offline/OfflineStatusBadge";
 
 interface Props {
   studentId: string | null;
 }
+
 
 function getZIMSECGrade(mark: number): string {
   if (mark >= 90) return "A*";
