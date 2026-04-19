@@ -10,7 +10,7 @@ interface ParentPaywallProps {
   reason?: string;
 }
 
-export default function ParentPaywall({ subscriptionId, studentName, amount = 10, reason }: ParentPaywallProps) {
+export default function ParentPaywall({ subscriptionId, studentName, amount = 25, reason }: ParentPaywallProps) {
   // If we have a subscription ID, show the checkout
   if (subscriptionId) {
     return (

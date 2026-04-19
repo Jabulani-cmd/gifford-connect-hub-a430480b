@@ -10,7 +10,7 @@ interface SubscribeButtonProps {
   className?: string;
 }
 
-export default function SubscribeButton({ subscriptionId, amount = 10, className }: SubscribeButtonProps) {
+export default function SubscribeButton({ subscriptionId, amount = 25, className }: SubscribeButtonProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
