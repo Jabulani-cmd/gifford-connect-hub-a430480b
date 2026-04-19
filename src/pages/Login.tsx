@@ -11,6 +11,7 @@ import { Lock, Home, Eye, EyeOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import OfflineWelcomeBanner from "@/components/offline/OfflineWelcomeBanner";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -89,7 +90,8 @@ export default function Login() {
   return (
     <Layout>
       <section className="flex min-h-[70vh] items-center justify-center bg-section-warm py-16">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md px-4">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md px-4 space-y-4">
+          <OfflineWelcomeBanner />
           <Card className="shadow-maroon">
             <CardHeader className="text-center">
               <img src={schoolLogo} alt="Gifford High School crest" className="mx-auto mb-2 h-32 w-32 object-contain" />
