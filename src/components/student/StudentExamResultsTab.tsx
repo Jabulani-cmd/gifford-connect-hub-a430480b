@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trophy, Award, TrendingUp, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineSection } from "@/hooks/useOfflineSection";
+import OfflineStatusBadge from "@/components/offline/OfflineStatusBadge";
 import ReportCardDownloadButton from "./ReportCardPDF";
 
 interface Props {
@@ -66,37 +69,41 @@ function getMarkBarColor(mark: number): string {
 }
 
 export default function StudentExamResultsTab({ studentId, studentName, admissionNumber, form, stream }: Props) {
+  const { user } = useAuth();
   const [exams, setExams] = useState<ExamOption[]>([]);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [results, setResults] = useState<ResultRow[]>([]);
   const [overallRank, setOverallRank] = useState<{ rank: number; total: number } | null>(null);
-  const [loading, setLoading] = useState(true);
   const [resultsLoading, setResultsLoading] = useState(false);
 
-  useEffect(() => {
-    if (studentId) fetchExams();
-  }, [studentId]);
+  const examsOffline = useOfflineSection<ExamOption[]>({
+    section: "student.exams.list",
+    userId: user?.id ?? studentId,
+    deps: [studentId],
+    fetcher: async () => {
+      if (!studentId) return [];
+      const { data } = await supabase
+        .from("exams")
+        .select("id, name, term, academic_year, form_level, exam_type")
+        .eq("is_published", true)
+        .order("academic_year", { ascending: false })
+        .order("term", { ascending: false });
+      const list = (data || []) as ExamOption[];
+      setExams(list);
+      if (list.length > 0 && !selectedExamId) setSelectedExamId(list[0].id);
+      return list;
+    },
+    restore: (cached) => {
+      const list = cached || [];
+      setExams(list);
+      if (list.length > 0 && !selectedExamId) setSelectedExamId(list[0].id);
+    },
+  });
 
   useEffect(() => {
     if (selectedExamId && studentId) fetchResults();
   }, [selectedExamId]);
 
-  const fetchExams = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("exams")
-      .select("id, name, term, academic_year, form_level, exam_type")
-      .eq("is_published", true)
-      .order("academic_year", { ascending: false })
-      .order("term", { ascending: false });
-
-    const examList = (data || []) as ExamOption[];
-    setExams(examList);
-    if (examList.length > 0) {
-      setSelectedExamId(examList[0].id);
-    }
-    setLoading(false);
-  };
 
   const fetchResults = async () => {
     if (!selectedExamId || !studentId) return;
