@@ -1,11 +1,14 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarCheck, CalendarX, Clock, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineSection } from "@/hooks/useOfflineSection";
+import OfflineStatusBadge from "@/components/offline/OfflineStatusBadge";
+import { format } from "date-fns";
 
 interface Props {
   studentId: string | null;
@@ -19,28 +22,30 @@ const statusConfig: Record<string, { color: string; bg: string; icon: any }> = {
 };
 
 export default function StudentAttendanceTab({ studentId }: Props) {
+  const { user } = useAuth();
   const [attendance, setAttendance] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [monthFilter, setMonthFilter] = useState("all");
 
-  useEffect(() => {
-    if (studentId) {
-      fetchAttendance();
-    } else {
-      setLoading(false);
-    }
-  }, [studentId]);
-
-  const fetchAttendance = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("attendance")
-      .select("*, classes(name)")
-      .eq("student_id", studentId!)
-      .order("attendance_date", { ascending: false });
-    setAttendance(data || []);
-    setLoading(false);
-  };
+  const offline = useOfflineSection<any[]>({
+    section: "student.attendance",
+    userId: user?.id ?? studentId,
+    deps: [studentId],
+    fetcher: async () => {
+      if (!studentId) {
+        setAttendance([]);
+        return [];
+      }
+      const { data } = await supabase
+        .from("attendance")
+        .select("*, classes(name)")
+        .eq("student_id", studentId)
+        .order("attendance_date", { ascending: false });
+      const rows = data || [];
+      setAttendance(rows);
+      return rows;
+    },
+    restore: (cached) => setAttendance(cached || []),
+  });
 
   const totalDays = attendance.length;
   const presentDays = attendance.filter((a) => a.status === "present" || a.status === "late").length;
@@ -48,19 +53,25 @@ export default function StudentAttendanceTab({ studentId }: Props) {
   const lateDays = attendance.filter((a) => a.status === "late").length;
   const percent = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
-  // Generate month options from attendance data
   const months = [...new Set(attendance.map((a) => format(new Date(a.attendance_date), "yyyy-MM")))];
 
   const filtered = monthFilter === "all"
     ? attendance
     : attendance.filter((a) => format(new Date(a.attendance_date), "yyyy-MM") === monthFilter);
 
-  if (loading) {
-    return <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />)}</div>;
+  if (offline.loading) {
+    return (
+      <div className="space-y-3">
+        <OfflineStatusBadge {...offline} />
+        {[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />)}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
+      <OfflineStatusBadge {...offline} />
+
       {/* Summary */}
       <Card className="border-none shadow-sm bg-gradient-to-r from-secondary/10 to-secondary/5">
         <CardContent className="p-4">
@@ -89,7 +100,6 @@ export default function StudentAttendanceTab({ studentId }: Props) {
         </CardContent>
       </Card>
 
-      {/* Filter */}
       <Select value={monthFilter} onValueChange={setMonthFilter}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Filter by month" />
@@ -104,7 +114,6 @@ export default function StudentAttendanceTab({ studentId }: Props) {
         </SelectContent>
       </Select>
 
-      {/* Detail List */}
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
