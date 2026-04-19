@@ -40,29 +40,34 @@ function getGradeColor(grade: string): string {
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 
 export default function StudentMarksTab({ studentId }: Props) {
+  const { user } = useAuth();
   const [marks, setMarks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedTerm, setSelectedTerm] = useState("all");
 
-  useEffect(() => {
-    if (studentId) fetchMarks();
-    else setLoading(false);
-  }, [studentId]);
-
-  const fetchMarks = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("marks")
-      .select("*, subjects(name)")
-      .eq("student_id", studentId)
-      .order("created_at", { ascending: false });
-    if (data) setMarks(data);
-    setLoading(false);
-  };
+  const offline = useOfflineSection<any[]>({
+    section: "student.marks",
+    userId: user?.id ?? studentId,
+    deps: [studentId],
+    fetcher: async () => {
+      if (!studentId) {
+        setMarks([]);
+        return [];
+      }
+      const { data } = await supabase
+        .from("marks")
+        .select("*, subjects(name)")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false });
+      const rows = data || [];
+      setMarks(rows);
+      return rows;
+    },
+    restore: (cached) => setMarks(cached || []),
+  });
 
   const filtered = marks.filter(m => selectedTerm === "all" || m.term === selectedTerm);
 
-  if (loading) {
+  if (offline.loading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => <div key={i} className="h-14 animate-pulse rounded-lg bg-muted" />)}
