@@ -36,6 +36,8 @@ import TeacherTermReportsTab from "@/components/teacher/TeacherTermReportsTab";
 import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 import TeacherMarksViewer from "@/components/teacher/TeacherMarksViewer";
 import TeacherRecordsTab from "@/components/teacher/TeacherRecordsTab";
+import AttendanceReports from "@/components/teacher/AttendanceReports";
+import ClassRosterPrint from "@/components/teacher/ClassRosterPrint";
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
