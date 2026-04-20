@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Star } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
-import zimbabweFlag from "@/assets/zimbabwe-flag.jpg";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,16 +26,12 @@ const navLinks: NavItem[] = [
   {
     label: "Academics",
     path: "/academics",
-    children: [
-      { label: "Downloads", path: "/downloads" },
-    ],
+    children: [{ label: "Downloads", path: "/downloads" }],
   },
   {
     label: "Admissions",
     path: "/admissions",
-    children: [
-      { label: "Fees", path: "/fees" },
-    ],
+    children: [{ label: "Fees", path: "/fees" }],
   },
   {
     label: "Sports & Culture",
@@ -49,21 +44,37 @@ const navLinks: NavItem[] = [
   {
     label: "Staff",
     path: "/staff",
-    children: [
-      { label: "Vacancies", path: "/vacancies" },
-    ],
+    children: [{ label: "Vacancies", path: "/vacancies" }],
   },
   { label: "Alumni", path: "/alumni" },
   { label: "Contact Us", path: "/contact" },
 ];
 
+function NavLinkItem({ to, label, active }: { to: string; label: string; active: boolean }) {
+  return (
+    <Link
+      to={to}
+      className={`group relative px-5 py-3 font-body text-sm font-medium tracking-wide transition-all duration-300 ease-out motion-reduce:transition-none ${
+        active ? "text-[hsl(var(--hero-gold))]" : "text-cream"
+      }`}
+    >
+      {label}
+      <span
+        className={`pointer-events-none absolute bottom-2 left-5 h-[2px] bg-[hsl(var(--hero-gold))] transition-all duration-300 ease-out motion-reduce:transition-none ${
+          active ? "w-[calc(100%-40px)]" : "w-0 group-hover:w-[calc(100%-40px)] group-focus:w-[calc(100%-40px)]"
+        }`}
+      />
+    </Link>
+  );
+}
+
 function DesktopDropdown({ item }: { item: NavItem }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const timeout = useRef<ReturnType<typeof setTimeout>>();
 
-  const isActive = location.pathname === item.path ||
+  const isActive =
+    location.pathname === item.path ||
     item.children?.some((c) => location.pathname === c.path);
 
   const handleEnter = () => {
@@ -77,15 +88,20 @@ function DesktopDropdown({ item }: { item: NavItem }) {
   useEffect(() => () => clearTimeout(timeout.current), []);
 
   return (
-    <div ref={ref} className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
+    <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <Link
         to={item.path}
-        className={`flex items-center gap-1 px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors hover:text-secondary ${
-          isActive ? "text-white" : "text-white/80"
+        className={`group relative flex items-center gap-1 px-5 py-3 font-body text-sm font-medium tracking-wide transition-all duration-300 ease-out motion-reduce:transition-none ${
+          isActive ? "text-[hsl(var(--hero-gold))]" : "text-cream"
         }`}
       >
         {item.label}
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span
+          className={`pointer-events-none absolute bottom-2 left-5 h-[2px] bg-[hsl(var(--hero-gold))] transition-all duration-300 ease-out motion-reduce:transition-none ${
+            isActive ? "w-[calc(100%-40px)]" : "w-0 group-hover:w-[calc(100%-40px)]"
+          }`}
+        />
       </Link>
       <AnimatePresence>
         {open && (
@@ -94,16 +110,14 @@ function DesktopDropdown({ item }: { item: NavItem }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full z-50 mt-1 min-w-[180px] rounded-md border border-border bg-popover p-1 shadow-lg"
+            className="absolute left-0 top-full z-50 mt-1 min-w-[200px] rounded-md border border-[hsl(var(--hero-gold)/0.25)] bg-navy p-1 shadow-xl"
           >
             {item.children!.map((child) => (
               <Link
                 key={child.path}
                 to={child.path}
                 onClick={() => setOpen(false)}
-                className={`block rounded-sm px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  location.pathname === child.path ? "font-semibold text-foreground" : "text-muted-foreground"
-                }`}
+                className="block rounded-sm px-3 py-2 font-body text-sm text-cream/80 transition-colors hover:bg-[hsl(var(--hero-gold)/0.15)] hover:text-[hsl(var(--hero-gold))]"
               >
                 {child.label}
               </Link>
@@ -117,23 +131,19 @@ function DesktopDropdown({ item }: { item: NavItem }) {
 
 function MobileAccordion({ item, onClose }: { item: NavItem; onClose: () => void }) {
   const [open, setOpen] = useState(false);
-  const location = useLocation();
-
   return (
     <div>
       <div className="flex items-center">
         <Link
           to={item.path}
           onClick={onClose}
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
-            location.pathname === item.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
-          }`}
+          className="flex-1 rounded-md px-3 py-2 font-body text-sm font-medium text-cream hover:bg-cream/10"
         >
           {item.label}
         </Link>
         <button
           onClick={() => setOpen(!open)}
-          className="rounded-md p-2 text-primary-foreground/70 hover:bg-primary-foreground/10"
+          className="rounded-md p-2 text-cream/70 hover:bg-cream/10"
           aria-label={`Expand ${item.label}`}
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -152,9 +162,7 @@ function MobileAccordion({ item, onClose }: { item: NavItem; onClose: () => void
                 key={child.path}
                 to={child.path}
                 onClick={onClose}
-                className={`block rounded-md px-3 py-2 text-sm transition-colors hover:bg-primary-foreground/10 ${
-                  location.pathname === child.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
-                }`}
+                className="block rounded-md px-3 py-2 font-body text-sm text-cream/80 hover:bg-cream/10 hover:text-[hsl(var(--hero-gold))]"
               >
                 {child.label}
               </Link>
@@ -168,83 +176,60 @@ function MobileAccordion({ item, onClose }: { item: NavItem; onClose: () => void
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const isHome = location.pathname === "/";
-
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
-
-  // On homepage: transparent overlay navbar that becomes solid on scroll
-  // On other pages: always solid black
-  const navBg = !isHome || scrolled
-    ? "bg-primary shadow-lg"
-    : "bg-gradient-to-b from-black/70 to-transparent";
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
-      {/* Top utility bar — only visible on non-home or scrolled */}
-
-      <div className="container flex items-center justify-between py-2 pr-2 md:py-4">
-        <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0 flex-shrink-0">
-          <img
-            src={schoolLogo}
-            alt="Gifford High School crest"
-            className="h-16 w-16 flex-shrink-0 object-contain md:h-20 md:w-20 lg:h-28 lg:w-28"
-          />
-          <div className="flex flex-col justify-center leading-tight">
-            <span className="block font-heading text-lg font-bold tracking-tight text-white md:text-xl lg:text-2xl whitespace-nowrap">
-              Gifford High School
-            </span>
-            <span className="block text-[10px] italic text-white/60 md:text-xs lg:text-sm">
-              Hinc Orior — From Here I Arise
-            </span>
-          </div>
+    <header
+      className="absolute left-0 right-0 top-0 z-30 w-full border-b border-[hsl(var(--hero-gold)/0.25)]"
+      style={{
+        background:
+          "linear-gradient(90deg, hsl(var(--navy)) 0%, hsl(var(--navy-deep)) 100%)",
+      }}
+    >
+      <div className="mx-auto flex min-h-[88px] max-w-[1400px] items-center justify-between px-6 md:px-10">
+        {/* Brand */}
+        <Link to="/" className="flex items-center gap-4">
+          <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain md:h-12 md:w-12" />
+          <span
+            className="hidden font-heading font-semibold uppercase text-cream sm:block"
+            style={{ fontSize: "20px", letterSpacing: "4px" }}
+          >
+            Gifford High
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-0 lg:flex">
+        <nav className="hidden items-center gap-2 lg:flex">
           {navLinks.map((item) =>
             item.children ? (
               <DesktopDropdown key={item.path} item={item} />
             ) : (
-              <Link
+              <NavLinkItem
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors hover:text-secondary ${
-                  location.pathname === item.path ? "text-white" : "text-white/80"
-                }`}
-              >
-                {item.label}
-              </Link>
-            )
+                label={item.label}
+                active={location.pathname === item.path}
+              />
+            ),
           )}
-          <Link to="/login">
-            <Button size="sm" className="ml-3 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs uppercase tracking-wider font-semibold">
+          <Link to="/login" className="ml-3">
+            <Button
+              size="sm"
+              className="bg-[hsl(var(--hero-gold))] font-body font-semibold tracking-wide text-navy hover:bg-[hsl(var(--hero-gold-muted))] hover:text-navy"
+            >
               Portal Login
             </Button>
           </Link>
-        </div>
+        </nav>
 
-        <div className="ml-2 flex flex-shrink-0 items-center gap-2">
-          <img
-            src={zimbabweFlag}
-            alt="Flag of Zimbabwe"
-            className="h-6 w-10 rounded object-cover shadow-md sm:h-7 sm:w-12 lg:h-8 lg:w-14"
-          />
-
-          {/* Mobile toggle */}
-          <button
-            className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/90 lg:hidden"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
-          </button>
-        </div>
+        {/* Mobile toggle */}
+        <button
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-cream/30 text-cream lg:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
 
       {/* Mobile menu */}
@@ -254,9 +239,9 @@ export default function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-white/10 bg-primary lg:hidden"
+            className="overflow-hidden border-t border-[hsl(var(--hero-gold)/0.25)] bg-navy lg:hidden"
           >
-            <div className="container flex flex-col gap-1 py-4">
+            <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-6 py-4">
               {navLinks.map((item) =>
                 item.children ? (
                   <MobileAccordion key={item.path} item={item} onClose={() => setMobileOpen(false)} />
@@ -265,21 +250,24 @@ export default function Navbar() {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileOpen(false)}
-                    className={`rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary-foreground/10 ${
-                      location.pathname === item.path ? "text-primary-foreground font-semibold" : "text-primary-foreground/70"
-                    }`}
+                    className="rounded-md px-3 py-2 font-body text-sm font-medium text-cream hover:bg-cream/10"
                   >
                     {item.label}
                   </Link>
-                )
+                ),
               )}
               <Link to="/login" onClick={() => setMobileOpen(false)}>
-                <Button size="sm" className="mt-2 w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">Portal Login</Button>
+                <Button
+                  size="sm"
+                  className="mt-2 w-full bg-[hsl(var(--hero-gold))] font-semibold text-navy hover:bg-[hsl(var(--hero-gold-muted))]"
+                >
+                  Portal Login
+                </Button>
               </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </header>
   );
 }
