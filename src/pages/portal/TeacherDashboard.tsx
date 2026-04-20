@@ -533,6 +533,12 @@ export default function TeacherDashboard({ embedded = false }: TeacherDashboardP
                 {attClass && attStudents.length === 0 && <p className="text-sm text-muted-foreground">No students found for this class.</p>}
               </CardContent>
             </Card>
+
+            {/* PRINTABLE ATTENDANCE REPORTS */}
+            <AttendanceReports classes={attendanceClasses} />
+
+            {/* PRINTABLE CLASS ROSTER */}
+            <ClassRosterPrint classes={attendanceClasses} />
           </TabsContent>
 
           {/* ANNOUNCEMENTS - Enhanced */}
