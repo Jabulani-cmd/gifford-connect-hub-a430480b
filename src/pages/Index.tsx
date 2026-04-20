@@ -6,7 +6,7 @@ import { ArrowRight, BookOpen, Users, Trophy, GraduationCap, MapPin, Phone } fro
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
-import HeroLanding from "@/components/HeroLanding";
+import HeroCarousel from "@/components/HeroCarousel";
 import classroomImg from "@/assets/classroom.png";
 import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
@@ -127,7 +127,7 @@ export default function Home() {
   return (
     <Layout>
       {/* ===== FULL-SCREEN HERO ===== */}
-      <HeroLanding />
+      <HeroCarousel />
 
       {/* ===== TAGLINE + QUICK LINKS (Woodberry: "A Brotherhood" section) ===== */}
       <section className="bg-primary py-16 md:py-24">

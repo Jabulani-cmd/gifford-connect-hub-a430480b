@@ -52,14 +52,6 @@
     --silver-light: 0 0% 92%;
     --gold: 42 80% 50%;
     --gold-light: 42 60% 85%;
-
-    /* Hilton-inspired hero palette */
-    --navy: 215 60% 10%;          /* #0A1628 */
-    --navy-deep: 215 65% 7%;      /* #07101E */
-    --cream: 36 38% 93%;          /* #F5F0E8 */
-    --cream-soft: 36 35% 90%;     /* #EFE7DA */
-    --hero-gold: 46 88% 38%;      /* #B8960C */
-    --hero-gold-muted: 46 92% 28%;/* #8C6F05 */
   }
 
   .dark {
@@ -99,9 +91,7 @@
   }
 
   body {
-    @apply text-foreground font-body antialiased;
-    background: linear-gradient(180deg, hsl(var(--cream)) 0%, hsl(var(--cream-soft)) 100%);
-    background-attachment: fixed;
+    @apply bg-background text-foreground font-body antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {

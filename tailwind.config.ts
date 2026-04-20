@@ -74,18 +74,6 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           light: "hsl(var(--gold-light))",
         },
-        navy: {
-          DEFAULT: "hsl(var(--navy))",
-          deep: "hsl(var(--navy-deep))",
-        },
-        cream: {
-          DEFAULT: "hsl(var(--cream))",
-          soft: "hsl(var(--cream-soft))",
-        },
-        "hero-gold": {
-          DEFAULT: "hsl(var(--hero-gold))",
-          muted: "hsl(var(--hero-gold-muted))",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
