@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Black & Maroon School Palette */
-    --background: 345 35% 94%;
+    --background: 345 45% 82%;
     --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
@@ -120,8 +120,8 @@
   .bg-section-warm {
     background: linear-gradient(
       180deg,
-      hsl(345 35% 92%) 0%,
-      hsl(345 30% 88%) 100%
+      hsl(345 45% 78%) 0%,
+      hsl(345 50% 72%) 100%
     );
   }
 
