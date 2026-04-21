@@ -166,7 +166,7 @@ export default function Home() {
               <motion.div key={ql.label} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <Link to={ql.path} className="group block">
                   <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-6 py-8 transition-all hover:border-secondary/50 hover:bg-white/10">
-                    <img src={schoolLogo} alt="Gifford High School crest" className="h-10 w-10 object-contain" />
+                    <img src={schoolLogo} alt="Gifford High School crest" className="h-16 w-16 object-contain" />
                     <span className="font-heading text-sm font-bold uppercase tracking-wider text-white">{ql.label}</span>
                     <span className="text-xs text-white/50">{ql.desc}</span>
                   </div>
@@ -279,8 +279,8 @@ export default function Home() {
             {highlights.map((h, i) => (
               <motion.div key={h.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="group flex flex-col items-center text-center">
-                  <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-full border-2 border-secondary/20 transition-colors group-hover:border-secondary/60">
-                    <img src={schoolLogo} alt="Gifford High School" className="h-14 w-14 object-contain" />
+                  <div className="mb-5 flex h-32 w-32 items-center justify-center rounded-full border-2 border-secondary/20 transition-colors group-hover:border-secondary/60">
+                    <img src={schoolLogo} alt="Gifford High School" className="h-20 w-20 object-contain" />
                   </div>
                   <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{h.title}</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">{h.desc}</p>

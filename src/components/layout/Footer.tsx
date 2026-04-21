@@ -72,11 +72,11 @@ export default function Footer() {
                 key={a.name}
                 className="group relative flex flex-col items-center gap-3 rounded-xl border border-primary-foreground/10 bg-primary-foreground/[0.04] px-4 py-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-secondary/40 hover:bg-primary-foreground/[0.07] hover:shadow-[0_10px_30px_-10px_hsla(45,75%,55%,0.25)]"
               >
-                <div className="flex h-20 items-center justify-center">
+                <div className="flex h-28 items-center justify-center">
                   <img
                     src={a.src}
                     alt={a.alt}
-                    className="max-h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="max-h-28 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
                 <div className="text-center">
