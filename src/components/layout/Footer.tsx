@@ -54,23 +54,37 @@ export default function Footer() {
         </div>
 
         {/* Affiliations strip */}
-        <div className="mt-10 border-t border-primary-foreground/20 pt-8">
-          <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground/50">
-            Affiliated With
-          </p>
-          <div className="flex items-end justify-between">
-            <div className="flex flex-col items-center gap-1">
-              <img src={cambridgeLogo} alt="University of Cambridge" className="h-24 w-24 object-contain sm:h-[7.5rem] sm:w-[7.5rem] lg:h-36 lg:w-36" />
-              <span className="text-[10px] text-primary-foreground/50 sm:text-xs">Cambridge</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <img src={moeLogo} alt="Ministry of Primary and Secondary Education" className="h-16 w-16 object-contain sm:h-20 sm:w-20 lg:h-24 lg:w-24" />
-              <span className="max-w-[120px] text-center text-[10px] leading-tight text-primary-foreground/50 sm:max-w-none sm:text-xs">Ministry of Primary and Secondary Education</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <img src={zimsecLogo} alt="ZIMSEC" className="h-24 w-24 object-contain sm:h-[7.5rem] sm:w-[7.5rem] lg:h-36 lg:w-36" />
-              <span className="text-[10px] text-primary-foreground/50 sm:text-xs">ZIMSEC</span>
-            </div>
+        <div className="mt-12">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-secondary/40 to-transparent" />
+            <p className="relative bg-primary px-6 text-center font-heading text-[11px] font-semibold uppercase tracking-[0.4em] text-secondary">
+              Affiliated With
+            </p>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { src: cambridgeLogo, alt: "University of Cambridge", name: "Cambridge Assessment", sub: "International Education" },
+              { src: moeLogo, alt: "Ministry of Primary and Secondary Education", name: "Ministry of Education", sub: "Primary & Secondary — Zimbabwe" },
+              { src: zimsecLogo, alt: "ZIMSEC", name: "ZIMSEC", sub: "Zimbabwe Schools Examinations Council" },
+            ].map((a) => (
+              <div
+                key={a.name}
+                className="group relative flex flex-col items-center gap-3 rounded-xl border border-primary-foreground/10 bg-primary-foreground/[0.04] px-4 py-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-secondary/40 hover:bg-primary-foreground/[0.07] hover:shadow-[0_10px_30px_-10px_hsla(45,75%,55%,0.25)]"
+              >
+                <div className="flex h-20 items-center justify-center">
+                  <img
+                    src={a.src}
+                    alt={a.alt}
+                    className="max-h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="font-heading text-sm font-semibold text-primary-foreground">{a.name}</p>
+                  <p className="mt-0.5 text-[11px] uppercase tracking-wider text-primary-foreground/60">{a.sub}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
