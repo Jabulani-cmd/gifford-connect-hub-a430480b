@@ -7,14 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, CheckCircle2, XCircle, Clock, AlertCircle, Users, Calendar, Download } from "lucide-react";
+import { Search, CheckCircle2, XCircle, Clock, AlertCircle, Users, Calendar, Download, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminAttendanceViewer() {
   const { toast } = useToast();
   const [classes, setClasses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("all");
   const [dateFrom, setDateFrom] = useState(new Date().toISOString().split("T")[0]);
   const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,19 +30,40 @@ export default function AdminAttendanceViewer() {
     });
   }, []);
 
+  // Load students when class changes
+  useEffect(() => {
+    setSelectedStudent("all");
+    if (!selectedClass) { setStudents([]); return; }
+    supabase
+      .from("student_classes")
+      .select("students:student_id(id, full_name, admission_number)")
+      .eq("class_id", selectedClass)
+      .then(({ data }) => {
+        const list = (data || []).map((r: any) => r.students).filter(Boolean);
+        list.sort((a: any, b: any) => (a.full_name || "").localeCompare(b.full_name || ""));
+        setStudents(list);
+      });
+  }, [selectedClass]);
+
   const fetchAttendance = async () => {
     if (!selectedClass) {
       toast({ title: "Please select a class", variant: "destructive" });
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("attendance")
       .select("*, students:student_id(id, full_name, admission_number)")
       .eq("class_id", selectedClass)
       .gte("attendance_date", dateFrom)
       .lte("attendance_date", dateTo)
       .order("attendance_date", { ascending: false });
+
+    if (selectedStudent !== "all") {
+      query = query.eq("student_id", selectedStudent);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({ title: "Error fetching attendance", description: error.message, variant: "destructive" });
@@ -65,6 +88,26 @@ export default function AdminAttendanceViewer() {
     );
   });
 
+  // Per-student statistics across the filtered set
+  const perStudentStats = (() => {
+    const map = new Map<string, any>();
+    for (const r of filtered) {
+      const id = r.students?.id || r.student_id;
+      if (!id) continue;
+      if (!map.has(id)) {
+        map.set(id, {
+          name: r.students?.full_name || "—",
+          admission: r.students?.admission_number || "—",
+          total: 0, present: 0, absent: 0, late: 0, excused: 0,
+        });
+      }
+      const s = map.get(id);
+      s.total += 1;
+      if (s[r.status] !== undefined) s[r.status] += 1;
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
   const statusIcon = (status: string) => {
     switch (status) {
       case "present": return <CheckCircle2 className="h-4 w-4 text-green-600" />;
@@ -85,9 +128,12 @@ export default function AdminAttendanceViewer() {
     }
   };
 
-  const exportPDF = async () => {
-    if (filtered.length === 0) return;
+  const buildExport = () => {
     const className = classes.find(c => c.id === selectedClass)?.name || "class";
+    const studentLabel = selectedStudent === "all"
+      ? "All Students"
+      : students.find(s => s.id === selectedStudent)?.full_name || "Student";
+    const title = `Attendance — ${className} — ${studentLabel} (${dateFrom} to ${dateTo})`;
     const headers = ["Student Name", "Admission No", "Date", "Status", "Notes"];
     const rows = filtered.map(r => [
       r.students?.full_name || "—",
@@ -96,8 +142,47 @@ export default function AdminAttendanceViewer() {
       r.status,
       r.notes || "—",
     ]);
+    return { title, headers, rows };
+  };
+
+  const exportPDF = async () => {
+    if (filtered.length === 0) return;
+    const { title, headers, rows } = buildExport();
     const { downloadBrandedPdf } = await import("@/lib/export-pdf");
-    await downloadBrandedPdf(`Attendance — ${className} (${dateFrom} to ${dateTo})`, headers, rows);
+    await downloadBrandedPdf(title, headers, rows);
+  };
+
+  const printRegister = async () => {
+    if (filtered.length === 0) return;
+    const { title, headers, rows } = buildExport();
+    const { printBrandedTable } = await import("@/lib/export-pdf");
+    printBrandedTable(title, headers, rows);
+  };
+
+  const printStats = async () => {
+    if (perStudentStats.length === 0) return;
+    const className = classes.find(c => c.id === selectedClass)?.name || "class";
+    const title = `Attendance Statistics — ${className} (${dateFrom} to ${dateTo})`;
+    const headers = ["Student", "Admission No", "Total", "Present", "Absent", "Late", "Excused", "Attendance %"];
+    const rows = perStudentStats.map(s => {
+      const pct = s.total > 0 ? (((s.present + s.late) / s.total) * 100).toFixed(1) + "%" : "—";
+      return [s.name, s.admission, String(s.total), String(s.present), String(s.absent), String(s.late), String(s.excused), pct];
+    });
+    const { printBrandedTable } = await import("@/lib/export-pdf");
+    printBrandedTable(title, headers, rows);
+  };
+
+  const downloadStatsPDF = async () => {
+    if (perStudentStats.length === 0) return;
+    const className = classes.find(c => c.id === selectedClass)?.name || "class";
+    const title = `Attendance Statistics — ${className} (${dateFrom} to ${dateTo})`;
+    const headers = ["Student", "Admission No", "Total", "Present", "Absent", "Late", "Excused", "Attendance %"];
+    const rows = perStudentStats.map(s => {
+      const pct = s.total > 0 ? (((s.present + s.late) / s.total) * 100).toFixed(1) + "%" : "—";
+      return [s.name, s.admission, String(s.total), String(s.present), String(s.absent), String(s.late), String(s.excused), pct];
+    });
+    const { downloadBrandedPdf } = await import("@/lib/export-pdf");
+    await downloadBrandedPdf(title, headers, rows);
   };
 
   return (
@@ -107,11 +192,11 @@ export default function AdminAttendanceViewer() {
           <CardTitle className="font-heading flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" /> Attendance Register
           </CardTitle>
-          <CardDescription>View and search attendance records by class, date range, and student name.</CardDescription>
+          <CardDescription>Filter by class, student, and date range. Print register or per-student statistics.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filters */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <Label>Class *</Label>
               <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -119,6 +204,18 @@ export default function AdminAttendanceViewer() {
                 <SelectContent>
                   {classes.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Student</Label>
+              <Select value={selectedStudent} onValueChange={setSelectedStudent} disabled={!selectedClass}>
+                <SelectTrigger><SelectValue placeholder="All students" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All students</SelectItem>
+                  {students.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.admission_number})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -132,26 +229,37 @@ export default function AdminAttendanceViewer() {
               <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Search Student</Label>
+              <Label>Search</Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Name or admission no..."
+                  placeholder="Name or adm no..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={fetchAttendance} disabled={loading}>
               {loading ? "Loading..." : "View Attendance"}
             </Button>
             {records.length > 0 && (
-              <Button variant="outline" onClick={exportPDF}>
-                <Download className="mr-1 h-4 w-4" /> Download PDF
-              </Button>
+              <>
+                <Button variant="outline" onClick={printRegister}>
+                  <Printer className="mr-1 h-4 w-4" /> Print Register
+                </Button>
+                <Button variant="outline" onClick={exportPDF}>
+                  <Download className="mr-1 h-4 w-4" /> Download Register PDF
+                </Button>
+                <Button variant="outline" onClick={printStats}>
+                  <Printer className="mr-1 h-4 w-4" /> Print Statistics
+                </Button>
+                <Button variant="outline" onClick={downloadStatsPDF}>
+                  <Download className="mr-1 h-4 w-4" /> Download Stats PDF
+                </Button>
+              </>
             )}
           </div>
         </CardContent>
@@ -181,6 +289,54 @@ export default function AdminAttendanceViewer() {
             <p className="text-xs text-muted-foreground">Excused</p>
           </CardContent></Card>
         </div>
+      )}
+
+      {/* Per-student statistics */}
+      {perStudentStats.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading text-base">Per-Student Statistics ({perStudentStats.length})</CardTitle>
+            <CardDescription>Attendance % counts present + late as attended.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Admission No</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
+                    <TableHead className="text-center">Present</TableHead>
+                    <TableHead className="text-center">Absent</TableHead>
+                    <TableHead className="text-center">Late</TableHead>
+                    <TableHead className="text-center">Excused</TableHead>
+                    <TableHead className="text-center">Attendance %</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {perStudentStats.map(s => {
+                    const pct = s.total > 0 ? ((s.present + s.late) / s.total) * 100 : 0;
+                    const pctColor = pct >= 90 ? "text-green-600" : pct >= 75 ? "text-yellow-600" : "text-destructive";
+                    return (
+                      <TableRow key={s.admission}>
+                        <TableCell className="font-medium">{s.name}</TableCell>
+                        <TableCell>{s.admission}</TableCell>
+                        <TableCell className="text-center">{s.total}</TableCell>
+                        <TableCell className="text-center text-green-600">{s.present}</TableCell>
+                        <TableCell className="text-center text-destructive">{s.absent}</TableCell>
+                        <TableCell className="text-center text-yellow-600">{s.late}</TableCell>
+                        <TableCell className="text-center text-blue-600">{s.excused}</TableCell>
+                        <TableCell className={`text-center font-bold ${pctColor}`}>
+                          {s.total > 0 ? pct.toFixed(1) + "%" : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Results table */}
@@ -237,7 +393,7 @@ export default function AdminAttendanceViewer() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Calendar className="mx-auto mb-3 h-10 w-10 opacity-40" />
-            <p>Select a class and date range, then click "View Attendance" to see records.</p>
+            <p>Select a class (and optionally a student) and date range, then click "View Attendance".</p>
           </CardContent>
         </Card>
       )}
