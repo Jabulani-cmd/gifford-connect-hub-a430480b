@@ -13,6 +13,8 @@ const fallbackBySlot: Record<string, string> = {
 };
 
 export default function Footer() {
+  const { logos: affiliates } = useSiteLogos("affiliated");
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container py-12">
