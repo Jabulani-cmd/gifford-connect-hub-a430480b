@@ -12,6 +12,7 @@ import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteLogos } from "@/hooks/useSiteLogos";
 
 /* ---------- Principal Photo Component ---------- */
 const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props, ref) {
@@ -91,6 +92,8 @@ const stats = [
 ];
 
 export default function Home() {
+  const { logos: highlightLogos } = useSiteLogos("highlights");
+  const { logos: quickLinkLogos } = useSiteLogos("quicklinks");
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
   const [traditionImage, setTraditionImage] = useState<string | null>(null);
@@ -162,17 +165,20 @@ export default function Home() {
 
           {/* Quick link cards — Woodberry-style icon cards */}
           <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-3">
-            {quickLinks.map((ql, i) => (
-              <motion.div key={ql.label} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <Link to={ql.path} className="group block">
-                  <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-6 py-8 transition-all hover:border-secondary/50 hover:bg-white/10">
-                    <img src={schoolLogo} alt="Gifford High School crest" className="h-16 w-16 object-contain" />
-                    <span className="font-heading text-sm font-bold uppercase tracking-wider text-white">{ql.label}</span>
-                    <span className="text-xs text-white/50">{ql.desc}</span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+            {quickLinks.map((ql, i) => {
+              const customLogo = quickLinkLogos[i]?.image_url;
+              return (
+                <motion.div key={ql.label} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <Link to={ql.path} className="group block">
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-6 py-8 transition-all hover:border-secondary/50 hover:bg-white/10">
+                      <img src={customLogo || schoolLogo} alt={ql.label} className="h-16 w-16 object-contain" />
+                      <span className="font-heading text-sm font-bold uppercase tracking-wider text-white">{ql.label}</span>
+                      <span className="text-xs text-white/50">{ql.desc}</span>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -276,17 +282,20 @@ export default function Home() {
           </motion.div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {highlights.map((h, i) => (
-              <motion.div key={h.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="group flex flex-col items-center text-center">
-                  <div className="mb-5 flex h-32 w-32 items-center justify-center rounded-full border-2 border-secondary/20 transition-colors group-hover:border-secondary/60">
-                    <img src={schoolLogo} alt="Gifford High School" className="h-20 w-20 object-contain" />
+            {highlights.map((h, i) => {
+              const customLogo = highlightLogos[i]?.image_url;
+              return (
+                <motion.div key={h.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <div className="group flex flex-col items-center text-center">
+                    <div className="mb-5 flex h-32 w-32 items-center justify-center rounded-full border-2 border-secondary/20 transition-colors group-hover:border-secondary/60">
+                      <img src={customLogo || schoolLogo} alt={h.title} className="h-20 w-20 object-contain" />
+                    </div>
+                    <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{h.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{h.desc}</p>
                   </div>
-                  <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{h.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{h.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

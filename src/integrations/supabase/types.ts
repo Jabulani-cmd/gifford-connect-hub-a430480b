@@ -2635,6 +2635,45 @@ export type Database = {
         }
         Relationships: []
       }
+      site_logos: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          label: string
+          section: string
+          slot_key: string
+          sub_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label: string
+          section: string
+          slot_key: string
+          sub_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label?: string
+          section?: string
+          slot_key?: string
+          sub_label?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           id: string
