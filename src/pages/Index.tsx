@@ -12,6 +12,7 @@ import achievementsImg from "@/assets/achievements.png";
 import schoolLogo from "@/assets/school-logo.png";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteLogos } from "@/hooks/useSiteLogos";
 
 /* ---------- Principal Photo Component ---------- */
 const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props, ref) {
