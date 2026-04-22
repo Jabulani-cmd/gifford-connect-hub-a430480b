@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Home, Eye, EyeOff } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import { useMainCrest } from "@/hooks/useMainCrest";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +22,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const [showPassword, setShowPassword] = useState(false);
+  const crest = useMainCrest();
   // Seed admin on first visit
   useEffect(() => {
     const seedAdmin = async () => {
@@ -92,7 +94,7 @@ export default function Login() {
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md px-4">
           <Card className="shadow-maroon">
             <CardHeader className="text-center">
-              <img src={schoolLogo} alt="Gifford High School crest" className="mx-auto mb-2 h-32 w-32 object-contain" />
+              <img src={crest} alt="Gifford High School crest" className="mx-auto mb-2 h-32 w-32 object-contain" />
               <CardTitle className="font-heading text-2xl text-primary">Portal Login</CardTitle>
               <p className="text-xs italic text-muted-foreground">Hinc Orior — From Here I Arise</p>
               <p className="text-sm text-muted-foreground">Access your Gifford High portal</p>

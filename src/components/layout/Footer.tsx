@@ -5,6 +5,7 @@ import moeLogo from "@/assets/ministry-of-education-logo.png";
 import cambridgeLogo from "@/assets/cambridge-logo.png";
 import zimsecLogo from "@/assets/zimsec-logo.png";
 import { useSiteLogos } from "@/hooks/useSiteLogos";
+import { useMainCrest } from "@/hooks/useMainCrest";
 
 const fallbackBySlot: Record<string, string> = {
   affiliate_cambridge: cambridgeLogo,
@@ -14,6 +15,7 @@ const fallbackBySlot: Record<string, string> = {
 
 export default function Footer() {
   const { logos: affiliates } = useSiteLogos("affiliated");
+  const crest = useMainCrest();
 
   return (
     <footer className="bg-primary text-primary-foreground">
@@ -21,7 +23,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="mb-4 flex items-center gap-3">
-              <img src={schoolLogo} alt="Gifford High School crest" className="h-32 w-32 object-contain" />
+              <img src={crest} alt="Gifford High School crest" className="h-32 w-32 object-contain" />
               <span className="font-heading text-xl font-bold">Gifford High School</span>
             </div>
             <p className="text-xs italic text-primary-foreground/70">Hinc Orior — From Here I Arise</p>

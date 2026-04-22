@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const sectionLabels: Record<string, string> = {
+  branding: "Main Logo",
   affiliated: "Affiliated With (Footer)",
   highlights: "Homepage Highlights",
   quicklinks: "Quick Links",
@@ -135,7 +136,7 @@ export default function SiteLogosManagement() {
     toast({ title: "Logo entry deleted", description: `${logo.label} removed.` });
   };
 
-  const sections = ["affiliated", "highlights", "quicklinks"];
+  const sections = ["branding", "affiliated", "highlights", "quicklinks"];
 
   if (loading) {
     return <p className="text-sm text-muted-foreground italic">Loading logos…</p>;
@@ -152,7 +153,7 @@ export default function SiteLogosManagement() {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="affiliated">
+      <Tabs defaultValue="branding">
         <TabsList className="bg-muted">
           {sections.map((s) => (
             <TabsTrigger key={s} value={s}>
