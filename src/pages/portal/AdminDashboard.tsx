@@ -10,6 +10,7 @@ import StaffManagement from "@/components/admin/StaffManagement";
 import ProjectsManagement from "@/components/admin/ProjectsManagement";
 import AwardsManagement from "@/components/admin/AwardsManagement";
 import FacilitiesManagement from "@/components/admin/FacilitiesManagement";
+import SiteLogosManagement from "@/components/admin/SiteLogosManagement";
 import StudentManagement from "@/pages/admin/StudentManagement";
 import StaffManagementFull from "@/pages/admin/StaffManagementFull";
 import BoardingManagement from "@/pages/admin/BoardingManagement";
@@ -782,6 +783,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
               <TabsTrigger value="boarding" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><BedDouble className="mr-1 h-3.5 w-3.5" /> Boarding</TabsTrigger>
               <TabsTrigger value="inventory" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="mr-1 h-3.5 w-3.5" /> Inventory</TabsTrigger>
               <TabsTrigger value="facilities" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building className="mr-1 h-3.5 w-3.5" /> Facilities</TabsTrigger>
+              <TabsTrigger value="site-logos" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Image className="mr-1 h-3.5 w-3.5" /> Site Logos</TabsTrigger>
               <TabsTrigger value="projects" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-3.5 w-3.5" /> Projects</TabsTrigger>
               <TabsTrigger value="awards" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-3.5 w-3.5" /> Awards</TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Attendance</TabsTrigger>
@@ -1157,6 +1159,11 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           {/* Facilities Tab */}
           <TabsContent value="facilities">
             <FacilitiesManagement />
+          </TabsContent>
+
+          {/* Site Logos Tab */}
+          <TabsContent value="site-logos">
+            <SiteLogosManagement />
           </TabsContent>
 
           {/* Projects Tab */}
