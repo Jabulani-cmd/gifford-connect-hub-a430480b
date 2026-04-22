@@ -92,6 +92,8 @@ const stats = [
 ];
 
 export default function Home() {
+  const { logos: highlightLogos } = useSiteLogos("highlights");
+  const { logos: quickLinkLogos } = useSiteLogos("quicklinks");
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string | null; created_at: string }[]>([]);
   const [achievementsImage, setAchievementsImage] = useState<string | null>(null);
   const [traditionImage, setTraditionImage] = useState<string | null>(null);
