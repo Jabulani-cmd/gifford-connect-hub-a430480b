@@ -4,6 +4,13 @@ import schoolLogo from "@/assets/school-logo.png";
 import moeLogo from "@/assets/ministry-of-education-logo.png";
 import cambridgeLogo from "@/assets/cambridge-logo.png";
 import zimsecLogo from "@/assets/zimsec-logo.png";
+import { useSiteLogos } from "@/hooks/useSiteLogos";
+
+const fallbackBySlot: Record<string, string> = {
+  affiliate_cambridge: cambridgeLogo,
+  affiliate_moe: moeLogo,
+  affiliate_zimsec: zimsecLogo,
+};
 
 export default function Footer() {
   return (
