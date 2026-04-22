@@ -5,7 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, RotateCcw, ImagePlus } from "lucide-react";
+import { Upload, RotateCcw, ImagePlus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -114,6 +125,16 @@ export default function SiteLogosManagement() {
     toast({ title: "Logo cleared", description: "Default crest will be shown." });
   };
 
+  const deleteLogo = async (logo: any) => {
+    const { error } = await supabase.from("site_logos").delete().eq("id", logo.id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setLogos((prev) => prev.filter((l) => l.id !== logo.id));
+    toast({ title: "Logo entry deleted", description: `${logo.label} removed.` });
+  };
+
   const sections = ["affiliated", "highlights", "quicklinks"];
 
   if (loading) {
@@ -208,10 +229,29 @@ export default function SiteLogosManagement() {
                           {uploadingId === logo.id ? "Resizing…" : logo.image_url ? "Replace" : "Upload"}
                         </Button>
                         {logo.image_url && (
-                          <Button size="sm" variant="outline" onClick={() => clearLogo(logo)}>
+                          <Button size="sm" variant="outline" onClick={() => clearLogo(logo)} title="Reset to crest">
                             <RotateCcw className="h-3.5 w-3.5" />
                           </Button>
                         )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" title="Delete entry">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this logo entry?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently remove the “{logo.label}” slot from the {sectionLabels[logo.section]} section. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteLogo(logo)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </CardContent>
                   </Card>
