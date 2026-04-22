@@ -652,13 +652,14 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   };
 
   const meetingTypeLabels: Record<string, string> = { sdc: "SDC Meeting", "parent-teacher": "Parent-Teacher Meeting", general: "General" };
+  const crest = useMainCrest();
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur">
         <div className="container flex h-14 sm:h-20 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <img src={useMainCrest()} alt="Gifford High School crest" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
+            <img src={crest} alt="Gifford High School crest" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
             <span className="font-heading text-sm sm:text-lg font-bold text-primary">{displayTitle}</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
