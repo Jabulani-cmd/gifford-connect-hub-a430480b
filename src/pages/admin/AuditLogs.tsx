@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Download, Eye, RefreshCw, Shield, Filter } from "lucide-react";
-import { Search, Download, Eye, RefreshCw, Shield, Filter } from "lucide-react";
 
 interface AuditLog {
   id: string;
