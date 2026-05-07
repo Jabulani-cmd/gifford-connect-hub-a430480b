@@ -25,6 +25,8 @@ import UserManualPage from "@/pages/admin/UserManual";
 import UserManagement from "@/components/admin/UserManagement";
 import PasswordManagement from "@/components/admin/PasswordManagement";
 import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
+import ExamResultsManagement from "@/components/admin/ExamResultsManagement";
+import TermReportsTab from "@/components/admin/TermReportsTab";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -789,6 +791,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
               <TabsTrigger value="projects" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FolderKanban className="mr-1 h-3.5 w-3.5" /> Projects</TabsTrigger>
               <TabsTrigger value="awards" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Trophy className="mr-1 h-3.5 w-3.5" /> Awards</TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Attendance</TabsTrigger>
+              <TabsTrigger value="exam-results" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileText className="mr-1 h-3.5 w-3.5" /> Exam Results</TabsTrigger>
+              <TabsTrigger value="term-reports" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ClipboardList className="mr-1 h-3.5 w-3.5" /> Term Reports</TabsTrigger>
               {isFinanceUser && (
                 <>
                   <TabsTrigger value="finance" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><DollarSign className="mr-1 h-3.5 w-3.5" /> Finance</TabsTrigger>
@@ -1253,6 +1257,16 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           {/* Verification Codes Tab */}
           <TabsContent value="verification-codes">
             <VerificationCodesManager />
+          </TabsContent>
+
+          {/* Exam Results Tab */}
+          <TabsContent value="exam-results">
+            <ExamResultsManagement />
+          </TabsContent>
+
+          {/* Term Reports Tab */}
+          <TabsContent value="term-reports">
+            <TermReportsTab />
           </TabsContent>
         </Tabs>
       </div>
