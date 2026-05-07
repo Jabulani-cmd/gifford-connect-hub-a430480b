@@ -23,22 +23,6 @@ export default function Login() {
   
   const [showPassword, setShowPassword] = useState(false);
   const crest = useMainCrest();
-  // Seed admin on first visit
-  useEffect(() => {
-    const seedAdmin = async () => {
-      try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        await fetch(`https://${projectId}.supabase.co/functions/v1/manage-users`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ action: "seed-admin" }),
-        });
-      } catch {
-        // Silently fail
-      }
-    };
-    seedAdmin();
-  }, []);
 
   // Track whether a manual login was just performed
   const [justLoggedIn, setJustLoggedIn] = useState(false);
