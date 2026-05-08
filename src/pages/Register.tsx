@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, UserPlus, Plus, X } from "lucide-react";
+import ChildNameAutocomplete from "@/components/parent/ChildNameAutocomplete";
 import schoolLogo from "@/assets/school-logo.png";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,7 +142,7 @@ export default function Register() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Enter your child's admission number and full name (as it appears on school records). No code needed.
+                    Enter your child's admission number, then start typing their name — we'll suggest the matching record.
                   </p>
                   {children.map((child, index) => (
                     <div key={index} className="flex items-start gap-2 rounded-md border p-3">
@@ -151,10 +152,10 @@ export default function Register() {
                           value={child.admissionNumber}
                           onChange={(e) => updateChild(index, "admissionNumber", e.target.value)}
                         />
-                        <Input
-                          placeholder="Child's Full Name"
+                        <ChildNameAutocomplete
+                          admissionNumber={child.admissionNumber}
                           value={child.fullName}
-                          onChange={(e) => updateChild(index, "fullName", e.target.value)}
+                          onChange={(v) => updateChild(index, "fullName", v)}
                         />
                       </div>
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeChild(index)}>

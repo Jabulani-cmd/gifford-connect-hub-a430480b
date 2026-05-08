@@ -53,6 +53,7 @@ import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 import ParentBottomNav from "@/components/parent/ParentBottomNav";
 import PlansBilling from "@/components/subscription/PlansBilling";
+import ChildNameAutocomplete from "@/components/parent/ChildNameAutocomplete";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments" | "billing";
 
@@ -528,10 +529,11 @@ function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
           </div>
           <div className="space-y-2">
             <Label>Child's Full Name</Label>
-            <Input
-              placeholder="As on school records"
+            <ChildNameAutocomplete
+              admissionNumber={admissionNumber}
               value={childFullName}
-              onChange={(e) => setChildFullName(e.target.value)}
+              onChange={setChildFullName}
+              placeholder="Start typing — we'll suggest the match"
             />
           </div>
           <Button onClick={handleLink} disabled={linking} className="w-full">
