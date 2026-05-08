@@ -94,7 +94,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         setSportsSchedule([]);
         return empty;
       }
-      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }, { data: publicStaff }] = await Promise.all([
+      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }] = await Promise.all([
         supabase
           .from("timetable_entries")
           .select("*, subjects(name), classes(name)")
@@ -112,12 +112,18 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
           .from("class_subjects")
           .select("subject_id, teacher_id")
           .eq("class_id", resolvedClassId),
-        supabase
-          .from("staff_public")
-          .select("id, full_name"),
       ]);
+
+      const staffIds = Array.from(new Set([
+        ...(detailed || []).map((entry: any) => entry.teacher_id),
+        ...(classSubjects || []).map((assignment: any) => assignment.teacher_id),
+        ...(sports || []).map((entry: any) => entry.coach_id),
+      ].filter(Boolean)));
+      const { data: staffNames } = staffIds.length > 0
+        ? await supabase.rpc("get_public_staff_names", { _staff_ids: staffIds })
+        : { data: [] };
       const staffById = new Map<string, { full_name: string }>();
-      (publicStaff || []).forEach((staff: any) => {
+      (staffNames || []).forEach((staff: any) => {
         if (staff.id && staff.full_name) {
           staffById.set(staff.id, { full_name: staff.full_name });
         }
