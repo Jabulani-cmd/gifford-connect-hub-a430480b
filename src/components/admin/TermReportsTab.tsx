@@ -168,7 +168,7 @@ export default function TermReportsTab() {
 
       for (const student of formStudents) {
         const studentExamResults = examResults?.filter(r => r.student_id === student.id) || [];
-        const studentAssessResults = assessmentResults?.filter(r => r.student_id === student.id) || [];
+        const studentAssessResults = filteredAssessmentResults.filter((r: any) => r.student_id === student.id);
 
         // Calculate weighted average (exams 70%, assessments 30%)
         let examTotal = 0, examCount = 0;
