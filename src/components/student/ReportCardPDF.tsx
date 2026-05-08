@@ -62,13 +62,24 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
       console.warn("Could not load school logo for report card");
     }
 
-    // Fetch attendance summary
+    // Term boundaries (Zim school calendar): T1 Jan-Apr, T2 May-Aug, T3 Sep-Dec
+    const yearNum = parseInt(props.academicYear, 10) || new Date().getFullYear();
+    const termRanges: Record<string, [string, string]> = {
+      "Term 1": [`${yearNum}-01-01`, `${yearNum}-04-30`],
+      "Term 2": [`${yearNum}-05-01`, `${yearNum}-08-31`],
+      "Term 3": [`${yearNum}-09-01`, `${yearNum}-12-31`],
+    };
+    const [termStart, termEnd] = termRanges[props.term] || [`${yearNum}-01-01`, `${yearNum}-12-31`];
+
+    // Fetch term-scoped attendance summary
     let attendanceSummary = { total: 0, present: 0, absent: 0, late: 0 };
     if (props.studentId) {
       const { data: att } = await supabase
         .from("attendance")
         .select("status")
-        .eq("student_id", props.studentId);
+        .eq("student_id", props.studentId)
+        .gte("date", termStart)
+        .lte("date", termEnd);
 
       if (att && att.length > 0) {
         attendanceSummary.total = att.length;
