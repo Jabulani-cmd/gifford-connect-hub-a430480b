@@ -626,8 +626,50 @@ Deno.serve(async (req) => {
     }
 
     // ==================== REGISTER PARENT (public, self-service) ====================
+    // ==================== LOOKUP CHILD (autocomplete) ====================
+    // Privacy guard: requires BOTH an exact admission_number and a name prefix
+    // of at least 1 character that matches the start of any token in the
+    // student's full name. Returns at most 1 record.
+    if (action === "lookup-child") {
+      const { admission_number, name_query } = payload;
+      if (!admission_number || typeof admission_number !== "string" || admission_number.trim().length < 4) {
+        return new Response(JSON.stringify({ matches: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const q = (name_query || "").toString().trim().toLowerCase();
+      if (q.length < 1) {
+        return new Response(JSON.stringify({ matches: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: student } = await supabaseAdmin
+        .from("students")
+        .select("id, full_name, form, admission_number")
+        .eq("admission_number", admission_number.trim())
+        .eq("status", "active")
+        .maybeSingle();
+
+      const matches: any[] = [];
+      if (student) {
+        const tokens = (student.full_name || "").toLowerCase().split(/\s+/).filter(Boolean);
+        const startsWithQuery = tokens.some((t) => t.startsWith(q));
+        if (startsWithQuery) {
+          matches.push({
+            full_name: student.full_name,
+            form: student.form,
+            admission_number: student.admission_number,
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ matches }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "register-parent") {
-      const { email, password, full_name, phone, children } = payload;
       if (!email || !password || !full_name) {
         return new Response(JSON.stringify({ error: "email, password, and full_name are required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
