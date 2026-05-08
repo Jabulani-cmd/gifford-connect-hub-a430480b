@@ -42,6 +42,7 @@ import {
 import { staffFormSchema, type StaffFormData } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 const roleOptions = ["principal", "deputy_principal", "hod", "admin", "bursar", "teacher", "senior_teacher", "housemaster", "counsellor", "librarian", "it_administrator", "groundskeeper", "matron", "secretary", "sports_director", "lab_technician", "school_administrator", "admin_clerk", "finance_clerk"];
 const departmentOptions = [
@@ -669,13 +670,16 @@ export default function StaffManagementFull() {
                 filtered.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
-                      {s.photo_url ? (
-                        <img src={s.photo_url} alt={s.full_name} className="h-8 w-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-light">
-                          <User className="h-4 w-4 text-secondary" />
-                        </div>
-                      )}
+                      <ProfilePhoto
+                        src={s.photo_url}
+                        alt={s.full_name}
+                        className="h-8 w-8 rounded-full object-cover"
+                        fallback={
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-light">
+                            <User className="h-4 w-4 text-secondary" />
+                          </div>
+                        }
+                      />
                     </TableCell>
                     <TableCell className="font-mono text-sm">{s.staff_number || "—"}</TableCell>
                     <TableCell className="font-medium">{s.full_name}</TableCell>
@@ -1046,17 +1050,16 @@ export default function StaffManagementFull() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-heading flex items-center gap-3">
-                  {selectedStaff.photo_url ? (
-                    <img
-                      src={selectedStaff.photo_url}
-                      alt={selectedStaff.full_name}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-maroon-light">
-                      <User className="h-6 w-6 text-secondary" />
-                    </div>
-                  )}
+                  <ProfilePhoto
+                    src={selectedStaff.photo_url}
+                    alt={selectedStaff.full_name}
+                    className="h-12 w-12 rounded-full object-cover"
+                    fallback={
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-maroon-light">
+                        <User className="h-6 w-6 text-secondary" />
+                      </div>
+                    }
+                  />
                   {selectedStaff.title ? `${selectedStaff.title} ` : ""}
                   {selectedStaff.full_name}
                 </DialogTitle>

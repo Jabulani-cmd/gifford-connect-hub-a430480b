@@ -47,6 +47,7 @@ import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedProfilePhotoUrl } from "@/lib/photoUrl";
 
 const portalRoles = [
   { value: "admin", label: "System Administrator" },
@@ -622,7 +623,7 @@ export default function UserManagement() {
       paye_number: staffDetails.paye_number || "",
       bank_details: staffDetails.bank_details || "",
       employment_date: staffDetails.employment_date || "",
-      photo_url: photoUrl,
+      photo_url: (await getSignedProfilePhotoUrl(photoUrl)) || photoUrl,
     });
   };
 

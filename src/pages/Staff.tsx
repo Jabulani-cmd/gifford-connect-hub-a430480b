@@ -5,6 +5,7 @@ import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import schoolLogo from "@/assets/school-logo.png";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 type StaffMember = {
   id: string;
@@ -88,13 +89,16 @@ export default function Staff() {
                   <Card className="h-full border-none shadow-maroon overflow-hidden">
                     {group.category === "leadership" ? (
                       <div className="flex flex-col items-center p-6 text-center">
-                        {member.photo_url ? (
-                          <img src={member.photo_url} alt={member.full_name} className="mb-4 h-32 w-32 rounded-full object-cover object-top shadow-md" />
-                        ) : (
-                          <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-maroon-light">
-                            <span className="font-heading text-4xl font-bold text-primary">{member.full_name[0]}</span>
-                          </div>
-                        )}
+                        <ProfilePhoto
+                          src={member.photo_url}
+                          alt={member.full_name}
+                          className="mb-4 h-32 w-32 rounded-full object-cover object-top shadow-md"
+                          fallback={
+                            <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-maroon-light">
+                              <span className="font-heading text-4xl font-bold text-primary">{member.full_name[0]}</span>
+                            </div>
+                          }
+                        />
                         <h3 className="font-heading text-lg font-bold">{member.full_name}</h3>
                         {member.title && <p className="text-sm font-medium text-accent">{member.title}</p>}
                         {member.department && <p className="text-xs text-muted-foreground">{member.department}</p>}
@@ -104,7 +108,7 @@ export default function Staff() {
                       <>
                         {member.photo_url ? (
                           <div className="relative w-full" style={{ aspectRatio: "3/4" }}>
-                            <img src={member.photo_url} alt={member.full_name} className="absolute inset-0 h-full w-full object-cover object-top" />
+                            <ProfilePhoto src={member.photo_url} alt={member.full_name} className="absolute inset-0 h-full w-full object-cover object-top" />
                           </div>
                         ) : (
                           <div className="flex items-center justify-center bg-maroon-light" style={{ aspectRatio: "3/4" }}>
