@@ -13,7 +13,8 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen, Sparkles, Copy, Printer
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen, Sparkles, Copy, Printer,
+  Globe, EyeOff, GraduationCap, UserSquare2, CalendarDays
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
