@@ -3829,6 +3829,7 @@ export type Database = {
         Returns: Json
       }
       column_exists: { Args: { col: string; tbl: string }; Returns: boolean }
+      current_staff_id: { Args: never; Returns: string }
       delete_class_cascade: { Args: { _class_id: string }; Returns: undefined }
       delete_staff_cascade: { Args: { _staff_id: string }; Returns: undefined }
       delete_student_cascade: {
