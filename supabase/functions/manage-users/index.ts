@@ -80,10 +80,11 @@ Deno.serve(async (req) => {
     // Verify caller authentication
     const authHeader = req.headers.get("Authorization");
 
-    // For register-parent: allow unauthenticated calls — the edge function
-    // creates the auth user itself via admin API, so no JWT is needed.
-    if (action === "register-parent") {
-      // No auth check needed — validated by email/password in the handler below
+    // For register-parent / lookup-child: allow unauthenticated calls.
+    // register-parent creates the auth user itself; lookup-child only returns
+    // a single student when admission AND a name prefix both match (prevents enumeration).
+    if (action === "register-parent" || action === "lookup-child") {
+      // No auth check needed
     } else {
       // All other actions require a valid JWT
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
