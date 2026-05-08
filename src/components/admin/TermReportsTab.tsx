@@ -269,24 +269,45 @@ export default function TermReportsTab() {
       return;
     }
 
-    // Get parent links
+    const studentIds = publishedReports.map(r => r.student_id);
+
+    // Parent notifications
     const { data: parentLinks } = await supabase
       .from("parent_students")
       .select("parent_id, student_id")
-      .in("student_id", publishedReports.map(r => r.student_id));
+      .in("student_id", studentIds);
 
-    if (parentLinks && parentLinks.length > 0) {
-      const notifications = parentLinks.map(pl => ({
+    // Student notifications (direct)
+    const { data: studentUsers } = await supabase
+      .from("students")
+      .select("id, user_id")
+      .in("id", studentIds);
+
+    const notifications: any[] = [];
+    (parentLinks || []).forEach(pl => {
+      notifications.push({
         user_id: pl.parent_id,
         title: "Term Report Available",
         message: `The ${filterTerm} ${filterYear} report for your child is now available. Please check your dashboard.`,
-        type: "term_report"
-      }));
+        type: "term_report",
+      });
+    });
+    (studentUsers || []).forEach(su => {
+      if (su.user_id) {
+        notifications.push({
+          user_id: su.user_id,
+          title: "Your Term Report is Ready",
+          message: `Your ${filterTerm} ${filterYear} report card has been published. View and download it from your dashboard.`,
+          type: "term_report",
+        });
+      }
+    });
 
+    if (notifications.length > 0) {
       await supabase.from("notifications").insert(notifications);
-      toast({ title: "Parents notified", description: `${parentLinks.length} notifications sent` });
+      toast({ title: "Notifications sent", description: `${notifications.length} sent (parents + students)` });
     } else {
-      toast({ title: "No linked parents found", variant: "destructive" });
+      toast({ title: "No recipients found", variant: "destructive" });
     }
   }
 
