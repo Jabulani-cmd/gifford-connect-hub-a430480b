@@ -461,12 +461,12 @@ export default function ParentDashboard() {
 function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
   const [open, setOpen] = useState(false);
   const [admissionNumber, setAdmissionNumber] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
+  const [childFullName, setChildFullName] = useState("");
   const [linking, setLinking] = useState(false);
   const { toast } = useToast();
 
   const handleLink = async () => {
-    if (!admissionNumber.trim() || !verificationCode.trim()) {
+    if (!admissionNumber.trim() || !childFullName.trim()) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
@@ -485,7 +485,7 @@ function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
         body: JSON.stringify({
           action: "link",
           admission_number: admissionNumber.trim(),
-          verification_code: verificationCode.trim().toUpperCase(),
+          full_name: childFullName.trim(),
         }),
       });
       const data = await res.json();
@@ -493,7 +493,7 @@ function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
       toast({ title: "Child linked!", description: `${data.student.full_name} has been linked to your account.` });
       setOpen(false);
       setAdmissionNumber("");
-      setVerificationCode("");
+      setChildFullName("");
       onLinked();
     } catch (err: any) {
       toast({ title: "Link failed", description: err.message, variant: "destructive" });
@@ -516,24 +516,22 @@ function LinkChildDialog({ onLinked }: { onLinked: () => void }) {
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <p className="text-sm text-muted-foreground">
-            Enter your child's admission number and the verification code provided by the school.
+            Enter your child's admission number and full name as it appears on their school records.
           </p>
           <div className="space-y-2">
             <Label>Admission Number</Label>
             <Input
-              placeholder="e.g. GHS-2026-001"
+              placeholder="e.g. GHS00123"
               value={admissionNumber}
               onChange={(e) => setAdmissionNumber(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Verification Code</Label>
+            <Label>Child's Full Name</Label>
             <Input
-              placeholder="e.g. ABC123"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
-              maxLength={6}
-              className="tracking-widest font-mono text-center text-lg"
+              placeholder="As on school records"
+              value={childFullName}
+              onChange={(e) => setChildFullName(e.target.value)}
             />
           </div>
           <Button onClick={handleLink} disabled={linking} className="w-full">
