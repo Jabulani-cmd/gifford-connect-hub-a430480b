@@ -31,7 +31,7 @@ export default function Register() {
   const [children, setChildren] = useState<ChildEntry[]>([]);
 
   const addChild = () => {
-    setChildren((prev) => [...prev, { admissionNumber: "", verificationCode: "" }]);
+    setChildren((prev) => [...prev, { admissionNumber: "", fullName: "" }]);
   };
 
   const removeChild = (index: number) => {
