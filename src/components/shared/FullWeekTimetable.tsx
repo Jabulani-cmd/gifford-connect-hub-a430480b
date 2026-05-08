@@ -93,7 +93,7 @@ export default function FullWeekTimetable({
           const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
           if (entry) {
             html += `<td style="text-align:center"><strong>${entry.subjects?.name || entry.activity_name || "—"}</strong>`;
-            if (entry.staff?.full_name) html += `<br><span style="font-size:9px;color:#666">${entry.staff.full_name}</span>`;
+            html += `<br><span style="font-size:9px;color:#666">${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}</span>`;
             if (entry.room || entry.venue) html += `<br><span style="font-size:8px;background:#f0f0f0;padding:1px 4px;border-radius:3px">${entry.room || entry.venue}</span>`;
             html += `</td>`;
           } else {
