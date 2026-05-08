@@ -557,11 +557,32 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   {selectedAssessment.due_date && ` • Due: ${format(new Date(selectedAssessment.due_date), "MMM d, yyyy")}`}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={selectedAssessment.is_published ? "default" : "secondary"}>
-                  {selectedAssessment.is_published ? "Published" : "Draft"}
-                </Badge>
-                <Badge variant="outline">{selectedAssessment.assessment_type}</Badge>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  {selectedAssessment.is_published ? (
+                    <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1">
+                      <Globe className="h-3 w-3" /> Published — visible to students &amp; parents
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                      <EyeOff className="h-3 w-3" /> Draft — only visible to you
+                    </Badge>
+                  )}
+                  <Badge variant="outline">{selectedAssessment.assessment_type}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openPreview(selectedAssessment, "student")}>
+                    <Eye className="mr-1 h-3 w-3" /> Preview as Student/Parent
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedAssessment.is_published ? "outline" : "default"}
+                    className="h-7 text-xs"
+                    onClick={() => togglePublish(selectedAssessment)}
+                  >
+                    {selectedAssessment.is_published ? (<><EyeOff className="mr-1 h-3 w-3" /> Unpublish</>) : (<><Globe className="mr-1 h-3 w-3" /> Publish</>)}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
