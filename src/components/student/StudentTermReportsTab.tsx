@@ -242,17 +242,27 @@ export default function StudentTermReportsTab({ studentId: propStudentId }: Prop
                       academicYear={report.academic_year}
                       results={(Array.isArray(report.exam_data) ? report.exam_data : []).map((r: any) => ({
                         subject_name: r.subjects?.name || "Unknown",
-                        subject_code: null,
+                        subject_code: r.subjects?.code || null,
                         mark: r.mark || 0,
                         grade: r.grade || "U",
                         teacher_comment: r.teacher_comment || null,
                         class_rank: null,
                         class_size: null
                       }))}
+                      assessmentResults={(Array.isArray(report.assessment_data) ? report.assessment_data : []).map((r: any) => ({
+                        title: r.assessments?.title || "Assessment",
+                        subject_name: r.assessments?.subjects?.name || "—",
+                        marks_obtained: r.marks_obtained ?? 0,
+                        max_marks: r.assessments?.max_marks ?? 100,
+                        percentage: r.percentage ?? 0,
+                        grade: r.grade || "U",
+                      }))}
                       overallRank={report.class_rank && report.class_size ? { rank: report.class_rank, total: report.class_size } : null}
                       averageMark={report.average_mark ?? 0}
                       averageGrade={report.overall_grade ?? "U"}
                       studentId={studentInfo.id}
+                      term={report.term}
+                      academicYear={report.academic_year}
                       classTeacherComment={report.class_teacher_comment}
                       headComment={report.head_comment}
                     />
