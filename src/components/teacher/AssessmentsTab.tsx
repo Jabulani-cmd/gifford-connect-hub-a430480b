@@ -325,6 +325,37 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     toast({ title: "Assessment deleted" });
   };
 
+  // Publish / Unpublish toggle (syncs to student & parent portals immediately)
+  const togglePublish = async (assessment: any) => {
+    const next = !assessment.is_published;
+    const { error } = await supabase
+      .from("assessments")
+      .update({ is_published: next } as any)
+      .eq("id", assessment.id);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssessments(prev => prev.map(a => a.id === assessment.id ? { ...a, is_published: next } : a));
+    if (selectedAssessment?.id === assessment.id) setSelectedAssessment({ ...selectedAssessment, is_published: next });
+    toast({
+      title: next ? "Published" : "Reverted to Draft",
+      description: next
+        ? "Now visible to students and parents in this class."
+        : "Hidden from students and parents.",
+    });
+  };
+
+  // Preview-as dialog state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewAudience, setPreviewAudience] = useState<"student" | "parent">("student");
+  const [previewAssessment, setPreviewAssessment] = useState<any | null>(null);
+  const openPreview = (a: any, audience: "student" | "parent" = "student") => {
+    setPreviewAssessment(a);
+    setPreviewAudience(audience);
+    setPreviewOpen(true);
+  };
+
   // AI Question Design
   const generateAiQuestions = async () => {
     if (!selectedAssessment || !aiQForm.topic) {
