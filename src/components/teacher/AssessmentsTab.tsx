@@ -1348,6 +1348,120 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           })}
         </div>
       )}
+
+      {/* Preview as Student / Parent dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" /> Portal Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {previewAssessment && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                {!previewAssessment.is_published && (
+                  <Badge variant="secondary" className="gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                    <EyeOff className="h-3 w-3" /> This is currently a Draft — students &amp; parents won't see it until you publish.
+                  </Badge>
+                )}
+              </div>
+
+              <Tabs value={previewAudience} onValueChange={(v: any) => setPreviewAudience(v)}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="student"><GraduationCap className="mr-1 h-4 w-4" /> Student view</TabsTrigger>
+                  <TabsTrigger value="parent"><UserSquare2 className="mr-1 h-4 w-4" /> Parent view</TabsTrigger>
+                </TabsList>
+
+                {/* Student preview — mirrors StudentAssessmentsTab card */}
+                <TabsContent value="student" className="mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground mb-2">As seen on the Student portal → Assessments tab</p>
+                    <Card>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{previewAssessment.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {getSubjectName(previewAssessment.subject_id)} • {getClassName(previewAssessment.class_id)}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{typeLabels[previewAssessment.assessment_type] || previewAssessment.assessment_type}</Badge>
+                        </div>
+                        {previewAssessment.instructions && (
+                          <p className="text-xs whitespace-pre-wrap text-muted-foreground">{previewAssessment.instructions}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                          {previewAssessment.due_date && (
+                            <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Due {format(new Date(previewAssessment.due_date), "MMM d, yyyy")}</span>
+                          )}
+                          {previewAssessment.max_marks && <span>{previewAssessment.max_marks} marks</span>}
+                          {previewAssessment.time_limit_minutes && <span>⏱ {previewAssessment.time_limit_minutes} min</span>}
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          {previewAssessment.file_url && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs" disabled>
+                              <Download className="mr-1 h-3 w-3" /> Question paper
+                            </Button>
+                          )}
+                          {previewAssessment.is_online ? (
+                            <Button size="sm" className="h-7 text-xs" disabled>
+                              <PenTool className="mr-1 h-3 w-3" /> Take online test
+                            </Button>
+                          ) : (
+                            <Button size="sm" className="h-7 text-xs" disabled>
+                              <Upload className="mr-1 h-3 w-3" /> Submit work
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Parent preview — mirrors ParentAssessmentsTab card */}
+                <TabsContent value="parent" className="mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground mb-2">As seen on the Parent portal → Assessments tab</p>
+                    <Card>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{previewAssessment.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {getSubjectName(previewAssessment.subject_id)} • {getClassName(previewAssessment.class_id)}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{typeLabels[previewAssessment.assessment_type] || previewAssessment.assessment_type}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                          {previewAssessment.due_date && (
+                            <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Due {format(new Date(previewAssessment.due_date), "MMM d, yyyy")}</span>
+                          )}
+                          {previewAssessment.max_marks && <span>Max {previewAssessment.max_marks} marks</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">
+                          Parents see this assessment read-only. Once you grade it, the result and feedback appear here automatically.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" onClick={() => setPreviewOpen(false)}>Close</Button>
+                {!previewAssessment.is_published && (
+                  <Button onClick={() => { togglePublish(previewAssessment); setPreviewOpen(false); }}>
+                    <Globe className="mr-1 h-4 w-4" /> Publish now
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
