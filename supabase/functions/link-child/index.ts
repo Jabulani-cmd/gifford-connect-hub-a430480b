@@ -112,12 +112,6 @@ Deno.serve(async (req) => {
 
       if (linkError) throw linkError;
 
-      // Mark code as used
-      await supabaseAdmin
-        .from("student_verification_codes")
-        .update({ used_at: new Date().toISOString(), used_by: user.id })
-        .eq("id", codeRecord.id);
-
       return new Response(JSON.stringify({
         message: "Child linked successfully",
         student: { id: student.id, full_name: student.full_name, form: student.form },
