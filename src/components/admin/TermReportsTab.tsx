@@ -146,17 +146,21 @@ export default function TermReportsTab() {
 
       const examIds = exams?.map(e => e.id) || [];
 
-      // Get assessment results for students in this form
+      // Get assessment results for students in this form (term-scoped via assessment)
       const { data: assessmentResults } = await supabase
         .from("assessment_results")
-        .select("student_id, marks_obtained, percentage, grade")
+        .select("student_id, marks_obtained, percentage, grade, assessment_id, assessments(title, max_marks, term, academic_year, subjects(name, code))")
         .in("student_id", formStudents.map(s => s.id))
         .eq("is_published", true);
+
+      const filteredAssessmentResults = (assessmentResults || []).filter((r: any) =>
+        r.assessments && r.assessments.term === filterTerm && r.assessments.academic_year === filterYear
+      );
 
       // Get exam results
       const { data: examResults } = await supabase
         .from("exam_results")
-        .select("student_id, subject_id, mark, grade, subjects(name)")
+        .select("student_id, subject_id, mark, grade, subjects(name, code)")
         .in("exam_id", examIds);
 
       // Calculate averages and rankings
