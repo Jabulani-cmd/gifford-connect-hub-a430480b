@@ -1261,7 +1261,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           </TabsContent>
 
           {/* Exam Results Tab */}
-          <TabsContent value="exam-results">
+          <TabsContent value="exam-results" className="space-y-6">
+            <ExamResultsEntry />
             <ExamResultsManagement />
           </TabsContent>
 
