@@ -141,22 +141,20 @@ export default function Register() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Enter the admission number and verification code provided by the school for each child.
+                    Enter your child's admission number and full name (as it appears on school records). No code needed.
                   </p>
                   {children.map((child, index) => (
                     <div key={index} className="flex items-start gap-2 rounded-md border p-3">
                       <div className="flex-1 space-y-2">
                         <Input
-                          placeholder="Admission Number"
+                          placeholder="Admission Number (e.g. GHS00123)"
                           value={child.admissionNumber}
                           onChange={(e) => updateChild(index, "admissionNumber", e.target.value)}
                         />
                         <Input
-                          placeholder="Verification Code"
-                          value={child.verificationCode}
-                          onChange={(e) => updateChild(index, "verificationCode", e.target.value.toUpperCase())}
-                          maxLength={6}
-                          className="uppercase tracking-widest"
+                          placeholder="Child's Full Name"
+                          value={child.fullName}
+                          onChange={(e) => updateChild(index, "fullName", e.target.value)}
                         />
                       </div>
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeChild(index)}>
