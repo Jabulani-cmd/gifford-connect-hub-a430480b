@@ -257,7 +257,12 @@ export default function FullWeekTimetable({
                               <span className="font-medium">
                                 {entry.subjects?.name || entry.activity_name || "—"}
                               </span>
-                              {entry.staff?.full_name && (
+                              {!isSports && (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  {entry.staff?.full_name || "Teacher TBA"}
+                                </span>
+                              )}
+                              {isSports && entry.staff?.full_name && (
                                 <span className="block text-[10px] text-muted-foreground">
                                   {entry.staff.full_name}
                                 </span>
