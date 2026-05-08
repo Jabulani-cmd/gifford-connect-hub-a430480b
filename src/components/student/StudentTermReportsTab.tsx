@@ -183,7 +183,7 @@ export default function StudentTermReportsTab({ studentId: propStudentId }: Prop
                           <TrendingUp className="h-4 w-4 text-accent" />
                           <div>
                             <p className="text-muted-foreground text-xs">Average</p>
-                            <p className="font-bold text-lg">{report.average_mark}%</p>
+                          <p className="font-bold text-lg">{report.average_mark ?? 0}%</p>
                           </div>
                         </div>
                         <div>
@@ -242,12 +242,20 @@ export default function StudentTermReportsTab({ studentId: propStudentId }: Prop
                       academicYear={report.academic_year}
                       results={(Array.isArray(report.exam_data) ? report.exam_data : []).map((r: any) => ({
                         subject_name: r.subjects?.name || "Unknown",
-                        subject_code: null,
+                        subject_code: r.subjects?.code || null,
                         mark: r.mark || 0,
                         grade: r.grade || "U",
                         teacher_comment: r.teacher_comment || null,
                         class_rank: null,
                         class_size: null
+                      }))}
+                      assessmentResults={(Array.isArray(report.assessment_data) ? report.assessment_data : []).map((r: any) => ({
+                        title: r.assessments?.title || "Assessment",
+                        subject_name: r.assessments?.subjects?.name || "—",
+                        marks_obtained: r.marks_obtained ?? 0,
+                        max_marks: r.assessments?.max_marks ?? 100,
+                        percentage: r.percentage ?? 0,
+                        grade: r.grade || "U",
                       }))}
                       overallRank={report.class_rank && report.class_size ? { rank: report.class_rank, total: report.class_size } : null}
                       averageMark={report.average_mark ?? 0}

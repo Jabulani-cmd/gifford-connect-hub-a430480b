@@ -146,17 +146,21 @@ export default function TermReportsTab() {
 
       const examIds = exams?.map(e => e.id) || [];
 
-      // Get assessment results for students in this form
+      // Get assessment results for students in this form (term-scoped via assessment)
       const { data: assessmentResults } = await supabase
         .from("assessment_results")
-        .select("student_id, marks_obtained, percentage, grade")
+        .select("student_id, marks_obtained, percentage, grade, assessment_id, assessments(title, max_marks, term, academic_year, subjects(name, code))")
         .in("student_id", formStudents.map(s => s.id))
         .eq("is_published", true);
+
+      const filteredAssessmentResults = (assessmentResults || []).filter((r: any) =>
+        r.assessments && r.assessments.term === filterTerm && r.assessments.academic_year === filterYear
+      );
 
       // Get exam results
       const { data: examResults } = await supabase
         .from("exam_results")
-        .select("student_id, subject_id, mark, grade, subjects(name)")
+        .select("student_id, subject_id, mark, grade, subjects(name, code)")
         .in("exam_id", examIds);
 
       // Calculate averages and rankings
@@ -164,7 +168,7 @@ export default function TermReportsTab() {
 
       for (const student of formStudents) {
         const studentExamResults = examResults?.filter(r => r.student_id === student.id) || [];
-        const studentAssessResults = assessmentResults?.filter(r => r.student_id === student.id) || [];
+        const studentAssessResults = filteredAssessmentResults.filter((r: any) => r.student_id === student.id);
 
         // Calculate weighted average (exams 70%, assessments 30%)
         let examTotal = 0, examCount = 0;
@@ -225,7 +229,7 @@ export default function TermReportsTab() {
           overall_grade: zimGrade(s.avg),
           class_rank: idx + 1,
           class_size: classSize,
-          assessment_data: assessmentResults?.filter(r => r.student_id === s.id) || [],
+          assessment_data: filteredAssessmentResults.filter((r: any) => r.student_id === s.id),
           exam_data: examResults?.filter(r => r.student_id === s.id) || [],
           generated_by: user?.id,
           is_published: false
@@ -265,24 +269,45 @@ export default function TermReportsTab() {
       return;
     }
 
-    // Get parent links
+    const studentIds = publishedReports.map(r => r.student_id);
+
+    // Parent notifications
     const { data: parentLinks } = await supabase
       .from("parent_students")
       .select("parent_id, student_id")
-      .in("student_id", publishedReports.map(r => r.student_id));
+      .in("student_id", studentIds);
 
-    if (parentLinks && parentLinks.length > 0) {
-      const notifications = parentLinks.map(pl => ({
+    // Student notifications (direct)
+    const { data: studentUsers } = await supabase
+      .from("students")
+      .select("id, user_id")
+      .in("id", studentIds);
+
+    const notifications: any[] = [];
+    (parentLinks || []).forEach(pl => {
+      notifications.push({
         user_id: pl.parent_id,
         title: "Term Report Available",
         message: `The ${filterTerm} ${filterYear} report for your child is now available. Please check your dashboard.`,
-        type: "term_report"
-      }));
+        type: "term_report",
+      });
+    });
+    (studentUsers || []).forEach(su => {
+      if (su.user_id) {
+        notifications.push({
+          user_id: su.user_id,
+          title: "Your Term Report is Ready",
+          message: `Your ${filterTerm} ${filterYear} report card has been published. View and download it from your dashboard.`,
+          type: "term_report",
+        });
+      }
+    });
 
+    if (notifications.length > 0) {
       await supabase.from("notifications").insert(notifications);
-      toast({ title: "Parents notified", description: `${parentLinks.length} notifications sent` });
+      toast({ title: "Notifications sent", description: `${notifications.length} sent (parents + students)` });
     } else {
-      toast({ title: "No linked parents found", variant: "destructive" });
+      toast({ title: "No recipients found", variant: "destructive" });
     }
   }
 

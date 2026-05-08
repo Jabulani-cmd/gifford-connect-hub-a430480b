@@ -15,6 +15,15 @@ interface ResultRow {
   class_size: number | null;
 }
 
+interface AssessmentRow {
+  title: string;
+  subject_name: string;
+  marks_obtained: number;
+  max_marks: number;
+  percentage: number;
+  grade: string;
+}
+
 interface ReportCardProps {
   studentName: string;
   admissionNumber: string;
@@ -24,6 +33,7 @@ interface ReportCardProps {
   term: string;
   academicYear: string;
   results: ResultRow[];
+  assessmentResults?: AssessmentRow[];
   overallRank: { rank: number; total: number } | null;
   averageMark: number;
   averageGrade: string;
@@ -52,13 +62,24 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
       console.warn("Could not load school logo for report card");
     }
 
-    // Fetch attendance summary
+    // Term boundaries (Zim school calendar): T1 Jan-Apr, T2 May-Aug, T3 Sep-Dec
+    const yearNum = parseInt(props.academicYear, 10) || new Date().getFullYear();
+    const termRanges: Record<string, [string, string]> = {
+      "Term 1": [`${yearNum}-01-01`, `${yearNum}-04-30`],
+      "Term 2": [`${yearNum}-05-01`, `${yearNum}-08-31`],
+      "Term 3": [`${yearNum}-09-01`, `${yearNum}-12-31`],
+    };
+    const [termStart, termEnd] = termRanges[props.term] || [`${yearNum}-01-01`, `${yearNum}-12-31`];
+
+    // Fetch term-scoped attendance summary
     let attendanceSummary = { total: 0, present: 0, absent: 0, late: 0 };
     if (props.studentId) {
       const { data: att } = await supabase
         .from("attendance")
         .select("status")
-        .eq("student_id", props.studentId);
+        .eq("student_id", props.studentId)
+        .gte("date", termStart)
+        .lte("date", termEnd);
 
       if (att && att.length > 0) {
         attendanceSummary.total = att.length;
@@ -210,6 +231,34 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
       </tr>
     </tbody>
   </table>
+
+  ${(props.assessmentResults && props.assessmentResults.length > 0) ? `
+  <h3 style="font-size:11pt;color:#1a5276;margin:16px 0 6px;border-bottom:1px solid #dee2e6;padding-bottom:4px;">Continuous Assessments (Term Coursework)</h3>
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Assessment</th>
+        <th>Subject</th>
+        <th>Score</th>
+        <th>%</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${props.assessmentResults.map((a, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td style="text-align:left;">${a.title}</td>
+          <td style="text-align:left;">${a.subject_name}</td>
+          <td>${a.marks_obtained}/${a.max_marks}</td>
+          <td><strong>${Math.round(a.percentage)}%</strong></td>
+          <td><span class="grade-badge grade-${(a.grade || "U").toLowerCase().replace("*", "-star")}">${a.grade}</span></td>
+        </tr>`).join("")}
+    </tbody>
+  </table>
+  <p style="font-size:9pt;color:#666;margin-top:4px;font-style:italic;">Final average is weighted: Examinations 70% · Assessments 30%.</p>
+  ` : ""}
 
   <div class="summary-grid">
     <div class="summary-box">
