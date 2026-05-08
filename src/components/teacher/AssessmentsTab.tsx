@@ -407,16 +407,92 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
   };
 
   const copyMemoToClipboard = () => {
-    const text = aiGeneratedQuestions.map((q: any, i: number) => {
-      let out = `Q${q.question_number || i + 1} [${q.marks} marks]: `;
-      if (q.question_type === "multiple_choice" || q.question_type === "true_false") {
-        out += `Answer: ${q.correct_answer}\n`;
-      }
-      out += `Model Answer: ${q.model_answer}\nExplanation: ${q.explanation}`;
-      return out;
-    }).join("\n\n");
+    const text = buildMemoText(aiGeneratedQuestions, selectedAssessment);
     navigator.clipboard.writeText(text);
     toast({ title: "Memo copied to clipboard!" });
+  };
+
+  const buildMemoText = (qs: any[], a: any) => {
+    const header = `MARKING MEMORANDUM\nAssessment: ${a?.title || ""}\nTotal Marks: ${qs.reduce((s, q) => s + (q.marks || 0), 0)}\nGenerated: ${new Date().toLocaleString()}\n\n`;
+    return header + qs.map((q: any, i: number) => {
+      let out = `Q${q.question_number || i + 1} [${q.marks} marks] (${(q.question_type || "").replace(/_/g, " ")})\n`;
+      out += `Question: ${q.question_text}\n`;
+      if (q.question_type === "multiple_choice") {
+        out += `A. ${q.option_a}\nB. ${q.option_b}\nC. ${q.option_c}\nD. ${q.option_d}\n`;
+      }
+      if (q.correct_answer) out += `Correct Answer: ${q.correct_answer}\n`;
+      if (q.model_answer) out += `Model Answer: ${q.model_answer}\n`;
+      if (q.explanation) out += `Explanation: ${q.explanation}\n`;
+      return out;
+    }).join("\n---\n\n");
+  };
+
+  const [savingAiToAssessment, setSavingAiToAssessment] = useState(false);
+  const saveAiQuestionsToAssessment = async () => {
+    if (!selectedAssessment || aiGeneratedQuestions.length === 0) return;
+    setSavingAiToAssessment(true);
+    try {
+      // Auto-grading currently supports MCQ. Filter MCQ questions for the online test.
+      const mcq = aiGeneratedQuestions.filter((q: any) => q.question_type === "multiple_choice" && q.correct_answer);
+      const hasMcq = mcq.length > 0;
+
+      // 1) Save MCQ questions into assessment_questions (replace existing)
+      if (hasMcq) {
+        await supabase.from("assessment_questions").delete().eq("assessment_id", selectedAssessment.id);
+        const rows = mcq.map((q: any, i: number) => ({
+          assessment_id: selectedAssessment.id,
+          question_text: q.question_text,
+          question_type: "multiple_choice",
+          option_a: q.option_a || null,
+          option_b: q.option_b || null,
+          option_c: q.option_c || null,
+          option_d: q.option_d || null,
+          correct_answer: q.correct_answer,
+          marks: Number(q.marks) || 1,
+          explanation: q.explanation || null,
+          display_order: i,
+        }));
+        const { error: qErr } = await supabase.from("assessment_questions").insert(rows);
+        if (qErr) throw qErr;
+      }
+
+      // 2) Build memo text file and upload to storage
+      const memoText = buildMemoText(aiGeneratedQuestions, selectedAssessment);
+      const memoBlob = new Blob([memoText], { type: "text/plain;charset=utf-8" });
+      const path = `assessments/${selectedAssessment.id}/memo-ai-${Date.now()}.txt`;
+      const { error: upErr } = await supabase.storage.from("school-media").upload(path, memoBlob, {
+        contentType: "text/plain",
+        upsert: true,
+      });
+      if (upErr) throw upErr;
+      const memo_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
+
+      // 3) Update assessment: attach memo, mark as online test if MCQs were saved
+      const updates: any = { memo_url };
+      if (hasMcq) {
+        updates.is_online = true;
+        updates.assessment_type = "online_test";
+        const totalMarks = mcq.reduce((s: number, q: any) => s + (Number(q.marks) || 0), 0);
+        if (totalMarks > 0) updates.max_marks = totalMarks;
+      }
+      const { error: aErr } = await supabase.from("assessments").update(updates).eq("id", selectedAssessment.id);
+      if (aErr) throw aErr;
+
+      setSelectedAssessment({ ...selectedAssessment, ...updates });
+      await fetchAssessments();
+
+      toast({
+        title: hasMcq ? "Online test ready!" : "Memo saved",
+        description: hasMcq
+          ? `${mcq.length} MCQ saved. Memo attached. Test will auto-mark and sync results to all portals.`
+          : "Memo attached to assessment. Add MCQ questions for auto-marking.",
+      });
+      setAiQDesignOpen(false);
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message || "Please try again", variant: "destructive" });
+    } finally {
+      setSavingAiToAssessment(false);
+    }
   };
 
   const openAssessmentDetail = async (assessment: any) => {
@@ -1245,6 +1321,17 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                       Regenerate
                     </Button>
                   </div>
+                </div>
+                <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" /> Save & Auto-Mark
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Save these questions as an online test. The memo (model answers) is attached automatically. Multiple-choice questions will be auto-marked when students submit, and results sync instantly to the student, parent, teacher, and admin portals.
+                  </p>
+                  <Button onClick={saveAiQuestionsToAssessment} disabled={savingAiToAssessment} className="w-full">
+                    {savingAiToAssessment ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : <><CheckCircle2 className="h-4 w-4 mr-2" /> Save as Online Test (with Memo)</>}
+                  </Button>
                 </div>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto">
                   {aiGeneratedQuestions.map((q: any, i: number) => (
