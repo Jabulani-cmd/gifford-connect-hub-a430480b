@@ -183,7 +183,7 @@ export default function StudentTermReportsTab({ studentId: propStudentId }: Prop
                           <TrendingUp className="h-4 w-4 text-accent" />
                           <div>
                             <p className="text-muted-foreground text-xs">Average</p>
-                            <p className="font-bold text-lg">{report.average_mark}%</p>
+                          <p className="font-bold text-lg">{report.average_mark ?? 0}%</p>
                           </div>
                         </div>
                         <div>
