@@ -1058,7 +1058,8 @@ export default function StaffManagementFull() {
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-maroon-light">
                         <User className="h-6 w-6 text-secondary" />
                       </div>
-                  )}
+                    }
+                  />
                   {selectedStaff.title ? `${selectedStaff.title} ` : ""}
                   {selectedStaff.full_name}
                 </DialogTitle>
