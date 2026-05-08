@@ -94,15 +94,15 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         setSportsSchedule([]);
         return empty;
       }
-      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }] = await Promise.all([
+      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }, { data: publicStaff }] = await Promise.all([
         supabase
           .from("timetable_entries")
-          .select("*, subjects(name), staff(full_name), classes(name)")
+          .select("*, subjects(name), classes(name)")
           .eq("class_id", resolvedClassId)
           .order("start_time"),
         supabase
           .from("sports_schedule")
-          .select("*, staff:coach_id(full_name)")
+          .select("*")
           .eq("class_id", resolvedClassId)
           .order("start_time"),
         studentId
@@ -110,23 +110,40 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
           : Promise.resolve({ data: null }),
         supabase
           .from("class_subjects")
-          .select("subject_id, staff:teacher_id(full_name)")
+          .select("subject_id, teacher_id")
           .eq("class_id", resolvedClassId),
+        supabase
+          .from("staff_public")
+          .select("id, full_name"),
       ]);
+      const staffById = new Map<string, { full_name: string }>();
+      (publicStaff || []).forEach((staff: any) => {
+        if (staff.id && staff.full_name) {
+          staffById.set(staff.id, { full_name: staff.full_name });
+        }
+      });
       // Build subject -> teacher fallback map from class_subjects assignments
       const teacherBySubject = new Map<string, { full_name: string }>();
       (classSubjects || []).forEach((cs: any) => {
-        if (cs.subject_id && cs.staff?.full_name) {
-          teacherBySubject.set(cs.subject_id, cs.staff);
+        const assignedTeacher = cs.teacher_id ? staffById.get(cs.teacher_id) : null;
+        if (cs.subject_id && assignedTeacher?.full_name) {
+          teacherBySubject.set(cs.subject_id, assignedTeacher);
         }
       });
       const enrichedEntries = (detailed || []).map((e: any) => ({
         ...e,
-        staff: e.staff || (e.subject_id ? teacherBySubject.get(e.subject_id) : null) || null,
+        staff:
+          (e.teacher_id ? staffById.get(e.teacher_id) : null) ||
+          (e.subject_id ? teacherBySubject.get(e.subject_id) : null) ||
+          null,
+      }));
+      const enrichedSports = (sports || []).map((s: any) => ({
+        ...s,
+        staff: s.coach_id ? staffById.get(s.coach_id) || null : null,
       }));
       const payload = {
         entries: enrichedEntries,
-        sports: sports || [],
+        sports: enrichedSports,
         sportsActivities: (sportsAct?.data?.sports_activities as string[]) || [],
       };
       setEntries(payload.entries);
