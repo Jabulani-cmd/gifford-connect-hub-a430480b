@@ -261,8 +261,6 @@ export default function StudentTermReportsTab({ studentId: propStudentId }: Prop
                       averageMark={report.average_mark ?? 0}
                       averageGrade={report.overall_grade ?? "U"}
                       studentId={studentInfo.id}
-                      term={report.term}
-                      academicYear={report.academic_year}
                       classTeacherComment={report.class_teacher_comment}
                       headComment={report.head_comment}
                     />
