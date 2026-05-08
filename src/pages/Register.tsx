@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ChildEntry {
   admissionNumber: string;
-  verificationCode: string;
+  fullName: string;
 }
 
 export default function Register() {
