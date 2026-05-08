@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
 
     // ==================== LINK CHILD ====================
     if (action === "link") {
-      const { admission_number, verification_code } = payload;
+      const { admission_number, full_name } = payload;
 
-      if (!admission_number || !verification_code) {
-        return new Response(JSON.stringify({ error: "Admission number and verification code are required" }), {
+      if (!admission_number || !full_name) {
+        return new Response(JSON.stringify({ error: "Admission number and child's full name are required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -78,18 +78,13 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Check verification code
-      const { data: codeRecord } = await supabaseAdmin
-        .from("student_verification_codes")
-        .select("*")
-        .eq("student_id", student.id)
-        .eq("code", verification_code.trim().toUpperCase())
-        .is("used_at", null)
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
-
-      if (!codeRecord) {
-        return new Response(JSON.stringify({ error: "Invalid or expired verification code" }), {
+      // Verify name matches
+      const norm = (s: string) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const provided = norm(full_name);
+      const actual = norm(student.full_name);
+      const tokensMatch = provided.split(" ").every((t) => t && actual.includes(t));
+      if (provided !== actual && !tokensMatch) {
+        return new Response(JSON.stringify({ error: "The name you entered does not match our records for this admission number." }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
