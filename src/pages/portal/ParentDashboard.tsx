@@ -53,6 +53,7 @@ import ParentHomeworkTab from "@/components/parent/ParentHomeworkTab";
 import ParentAssessmentsTab from "@/components/parent/ParentAssessmentsTab";
 import ParentBottomNav from "@/components/parent/ParentBottomNav";
 import PlansBilling from "@/components/subscription/PlansBilling";
+import ChildNameAutocomplete from "@/components/parent/ChildNameAutocomplete";
 
 type TabId = "overview" | "grades" | "marks" | "timetable" | "attendance" | "fees" | "announcements" | "exam-timetable" | "reports" | "homework" | "assessments" | "billing";
 
