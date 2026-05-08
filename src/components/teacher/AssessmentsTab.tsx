@@ -1322,6 +1322,17 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     </Button>
                   </div>
                 </div>
+                <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" /> Save & Auto-Mark
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Save these questions as an online test. The memo (model answers) is attached automatically. Multiple-choice questions will be auto-marked when students submit, and results sync instantly to the student, parent, teacher, and admin portals.
+                  </p>
+                  <Button onClick={saveAiQuestionsToAssessment} disabled={savingAiToAssessment} className="w-full">
+                    {savingAiToAssessment ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : <><CheckCircle2 className="h-4 w-4 mr-2" /> Save as Online Test (with Memo)</>}
+                  </Button>
+                </div>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto">
                   {aiGeneratedQuestions.map((q: any, i: number) => (
                     <Card key={i}>
