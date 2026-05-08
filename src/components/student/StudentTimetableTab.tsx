@@ -94,7 +94,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         setSportsSchedule([]);
         return empty;
       }
-      const [{ data: detailed }, { data: sports }, sportsAct] = await Promise.all([
+      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }] = await Promise.all([
         supabase
           .from("timetable_entries")
           .select("*, subjects(name), staff(full_name), classes(name)")
@@ -108,9 +108,24 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         studentId
           ? supabase.from("students").select("sports_activities").eq("id", studentId).maybeSingle()
           : Promise.resolve({ data: null }),
+        supabase
+          .from("class_subjects")
+          .select("subject_id, staff:teacher_id(full_name)")
+          .eq("class_id", resolvedClassId),
       ]);
+      // Build subject -> teacher fallback map from class_subjects assignments
+      const teacherBySubject = new Map<string, { full_name: string }>();
+      (classSubjects || []).forEach((cs: any) => {
+        if (cs.subject_id && cs.staff?.full_name) {
+          teacherBySubject.set(cs.subject_id, cs.staff);
+        }
+      });
+      const enrichedEntries = (detailed || []).map((e: any) => ({
+        ...e,
+        staff: e.staff || (e.subject_id ? teacherBySubject.get(e.subject_id) : null) || null,
+      }));
       const payload = {
-        entries: detailed || [],
+        entries: enrichedEntries,
         sports: sports || [],
         sportsActivities: (sportsAct?.data?.sports_activities as string[]) || [],
       };
