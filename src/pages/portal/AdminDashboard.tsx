@@ -26,6 +26,7 @@ import UserManagement from "@/components/admin/UserManagement";
 import PasswordManagement from "@/components/admin/PasswordManagement";
 import StaffAvailabilityOverview from "@/components/admin/StaffAvailabilityOverview";
 import ExamResultsManagement from "@/components/admin/ExamResultsManagement";
+import ExamResultsEntry from "@/components/admin/ExamResultsEntry";
 import TermReportsTab from "@/components/admin/TermReportsTab";
 import ExchangeRateCard from "@/components/finance/ExchangeRateCard";
 import { motion } from "framer-motion";
