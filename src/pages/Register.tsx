@@ -65,7 +65,7 @@ export default function Register() {
           password,
           full_name: fullName,
           phone,
-          children: children.filter(c => c.admissionNumber && c.verificationCode),
+          children: children.filter(c => c.admissionNumber && c.fullName),
         },
       });
 
