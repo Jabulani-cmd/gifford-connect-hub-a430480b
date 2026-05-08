@@ -47,6 +47,7 @@ import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedProfilePhotoUrl } from "@/lib/photoUrl";
 
 const portalRoles = [
   { value: "admin", label: "System Administrator" },
