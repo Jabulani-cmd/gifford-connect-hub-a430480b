@@ -85,7 +85,10 @@ export default function EnhancedMaterialsTab({ teacherId, classes, subjects, mat
 
     if (file) {
       const ext = file.name.split(".").pop();
-      const path = `materials/${teacherId}/${Date.now()}.${ext}`;
+      const { data: authData } = await supabase.auth.getUser();
+      const authUid = authData.user?.id;
+      if (!authUid) { toast({ title: "Not signed in", variant: "destructive" }); setUploading(false); return; }
+      const path = `materials/${authUid}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("school-media").upload(path, file);
       if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); setUploading(false); return; }
       file_url = supabase.storage.from("school-media").getPublicUrl(path).data.publicUrl;
