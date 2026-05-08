@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, UserPlus, Plus, X } from "lucide-react";
+import ChildNameAutocomplete from "@/components/parent/ChildNameAutocomplete";
 import schoolLogo from "@/assets/school-logo.png";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
