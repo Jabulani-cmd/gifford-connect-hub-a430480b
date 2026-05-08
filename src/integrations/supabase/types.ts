@@ -3839,6 +3839,13 @@ export type Database = {
         Args: { p_exam_id: string; p_student_id: string }
         Returns: Json
       }
+      get_public_staff_names: {
+        Args: { _staff_ids: string[] }
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
