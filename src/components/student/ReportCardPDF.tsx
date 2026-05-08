@@ -232,6 +232,34 @@ export default function ReportCardDownloadButton(props: ReportCardProps) {
     </tbody>
   </table>
 
+  ${(props.assessmentResults && props.assessmentResults.length > 0) ? `
+  <h3 style="font-size:11pt;color:#1a5276;margin:16px 0 6px;border-bottom:1px solid #dee2e6;padding-bottom:4px;">Continuous Assessments (Term Coursework)</h3>
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Assessment</th>
+        <th>Subject</th>
+        <th>Score</th>
+        <th>%</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${props.assessmentResults.map((a, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td style="text-align:left;">${a.title}</td>
+          <td style="text-align:left;">${a.subject_name}</td>
+          <td>${a.marks_obtained}/${a.max_marks}</td>
+          <td><strong>${Math.round(a.percentage)}%</strong></td>
+          <td><span class="grade-badge grade-${(a.grade || "U").toLowerCase().replace("*", "-star")}">${a.grade}</span></td>
+        </tr>`).join("")}
+    </tbody>
+  </table>
+  <p style="font-size:9pt;color:#666;margin-top:4px;font-style:italic;">Final average is weighted: Examinations 70% · Assessments 30%.</p>
+  ` : ""}
+
   <div class="summary-grid">
     <div class="summary-box">
       <h3>Academic Summary</h3>
