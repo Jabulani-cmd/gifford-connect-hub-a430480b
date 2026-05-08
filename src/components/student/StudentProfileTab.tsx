@@ -10,6 +10,7 @@ import { User, Phone, Mail, MapPin, AlertTriangle, Lock, Shield, Calendar, Hash,
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 interface Props {
   profile: any;
@@ -108,15 +109,12 @@ export default function StudentProfileTab({ profile, student, studentClassName, 
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10 overflow-hidden">
-              {(student?.profile_photo_url || profile?.avatar_url) ? (
-                <img
-                  src={student?.profile_photo_url || profile?.avatar_url}
-                  alt={student?.full_name || profile?.full_name}
-                  className="h-16 w-16 rounded-full object-cover"
-                />
-              ) : (
-                <User className="h-8 w-8 text-secondary" />
-              )}
+              <ProfilePhoto
+                src={student?.profile_photo_url || profile?.avatar_url}
+                alt={student?.full_name || profile?.full_name}
+                className="h-16 w-16 rounded-full object-cover"
+                fallback={<User className="h-8 w-8 text-secondary" />}
+              />
             </div>
             <div className="flex-1">
               <h2 className="text-lg font-bold">{student?.full_name || profile?.full_name}</h2>

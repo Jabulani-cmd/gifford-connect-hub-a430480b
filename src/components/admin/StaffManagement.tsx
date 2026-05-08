@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ImageCropper from "@/components/ImageCropper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 const categoryOptions = [
   { value: "leadership", label: "Leadership" },
@@ -189,13 +190,16 @@ export default function StaffManagement() {
             {filteredStaff.map(member => (
               <div key={member.id} className="flex items-center gap-4 rounded-lg border p-3">
                 <div className="relative shrink-0">
-                  {member.photo_url ? (
-                    <img src={member.photo_url} alt={member.full_name} className="h-16 w-16 rounded-full object-cover object-top" />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-maroon-light">
-                      <span className="font-heading text-xl font-bold text-primary">{member.full_name[0]}</span>
-                    </div>
-                  )}
+                  <ProfilePhoto
+                    src={member.photo_url}
+                    alt={member.full_name}
+                    className="h-16 w-16 rounded-full object-cover object-top"
+                    fallback={
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-maroon-light">
+                        <span className="font-heading text-xl font-bold text-primary">{member.full_name[0]}</span>
+                      </div>
+                    }
+                  />
                   <input
                     type="file"
                     accept="image/*"
