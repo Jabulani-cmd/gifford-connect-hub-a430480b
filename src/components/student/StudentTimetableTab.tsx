@@ -102,7 +102,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
           .order("start_time"),
         supabase
           .from("sports_schedule")
-          .select("*")
+          .select("*, staff:coach_id(full_name)")
           .eq("class_id", resolvedClassId)
           .order("start_time"),
         studentId
