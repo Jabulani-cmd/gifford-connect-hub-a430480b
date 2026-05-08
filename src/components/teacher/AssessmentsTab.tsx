@@ -1276,9 +1276,16 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm">{a.title}</p>
-                      <Badge variant={!a.is_published ? "secondary" : isPast ? "destructive" : "default"} className="text-xs">
-                        {!a.is_published ? "Draft" : isPast ? "Past" : "Active"}
-                      </Badge>
+                      {a.is_published ? (
+                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1">
+                          <Globe className="h-3 w-3" /> Published
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                          <EyeOff className="h-3 w-3" /> Draft
+                        </Badge>
+                      )}
+                      {isPast && a.is_published && <Badge variant="destructive" className="text-xs">Past due</Badge>}
                       <Badge variant="outline" className="text-xs">{a.assessment_type === "online_test" ? "Online Test" : a.assessment_type}</Badge>
                       {a.is_online && <Badge variant="outline" className="text-xs border-primary/40 text-primary">🖥 Online</Badge>}
                     </div>
