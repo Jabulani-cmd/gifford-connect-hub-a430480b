@@ -1315,8 +1315,19 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openPreview(a, "student"); }}>
+                      <Eye className="mr-1 h-3 w-3" /> Preview
+                    </Button>
+                    <Button
+                      variant={a.is_published ? "outline" : "default"}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={e => { e.stopPropagation(); togglePublish(a); }}
+                    >
+                      {a.is_published ? (<><EyeOff className="mr-1 h-3 w-3" /> Unpublish</>) : (<><Globe className="mr-1 h-3 w-3" /> Publish</>)}
+                    </Button>
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openAssessmentDetail(a); }}>
-                      <Upload className="mr-1 h-3 w-3" /> Upload Files & Mark
+                      <Upload className="mr-1 h-3 w-3" /> Upload & Mark
                     </Button>
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setSelectedAssessment(a); setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
                       <Sparkles className="mr-1 h-3 w-3" /> AI Design
