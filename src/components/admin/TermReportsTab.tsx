@@ -229,7 +229,7 @@ export default function TermReportsTab() {
           overall_grade: zimGrade(s.avg),
           class_rank: idx + 1,
           class_size: classSize,
-          assessment_data: assessmentResults?.filter(r => r.student_id === s.id) || [],
+          assessment_data: filteredAssessmentResults.filter((r: any) => r.student_id === s.id),
           exam_data: examResults?.filter(r => r.student_id === s.id) || [],
           generated_by: user?.id,
           is_published: false
