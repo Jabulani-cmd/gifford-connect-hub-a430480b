@@ -36,12 +36,43 @@ export default function StudentMaterialsTab({ studentClassId }: Props) {
     userId: user?.id,
     deps: [studentClassId],
     fetcher: async () => {
+      const classIds = new Set<string>();
+      if (studentClassId) classIds.add(studentClassId);
+
+      if (user?.id) {
+        const { data: studentRec } = await supabase
+          .from("students")
+          .select("id, form, stream")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (studentRec?.id) {
+          const { data: linkedClasses } = await supabase
+            .from("student_classes")
+            .select("class_id")
+            .eq("student_id", studentRec.id);
+          (linkedClasses || []).forEach((row: any) => row.class_id && classIds.add(row.class_id));
+        }
+
+        if (studentRec?.form) {
+          const { data: matchingClasses } = await supabase
+            .from("classes")
+            .select("id, name, stream")
+            .eq("form_level", studentRec.form);
+          const stream = studentRec.stream?.trim();
+          (matchingClasses || [])
+            .filter((cls: any) => !stream || cls.stream === stream || cls.name === `${studentRec.form}${stream}` || cls.name === `${studentRec.form} ${stream}`)
+            .forEach((cls: any) => cls.id && classIds.add(cls.id));
+        }
+      }
+
       let q = supabase
         .from("study_materials")
         .select("*, subjects(name), classes(name)")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
-      if (studentClassId) q = q.eq("class_id", studentClassId);
+      if (classIds.size > 0) q = q.in("class_id", Array.from(classIds));
+      else q = q.is("class_id", null);
       const [{ data: m }, { data: s }] = await Promise.all([
         q,
         supabase.from("subjects").select("id, name").order("name"),
