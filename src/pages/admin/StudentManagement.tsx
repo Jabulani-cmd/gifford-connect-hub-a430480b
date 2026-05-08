@@ -21,6 +21,7 @@ import TermRegistration from "@/components/admin/TermRegistration";
 import { studentFormSchema, type StudentFormData, zimPhoneRegex } from "@/lib/validators";
 import ImageCropper from "@/components/ImageCropper";
 import WebcamCapture from "@/components/WebcamCapture";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 const formOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const streamOptions = ["A", "B", "C", "D", "Arts", "Sciences", "Commercials"];
@@ -725,13 +726,16 @@ export default function StudentManagement() {
               ) : filtered.map(s => (
                 <TableRow key={s.id}>
                   <TableCell>
-                    {s.profile_photo_url ? (
-                      <img src={s.profile_photo_url} alt={s.full_name} className="h-8 w-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-light">
-                        <User className="h-4 w-4 text-secondary" />
-                      </div>
-                    )}
+                    <ProfilePhoto
+                      src={s.profile_photo_url}
+                      alt={s.full_name}
+                      className="h-8 w-8 rounded-full object-cover"
+                      fallback={
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-light">
+                          <User className="h-4 w-4 text-secondary" />
+                        </div>
+                      }
+                    />
                   </TableCell>
                   <TableCell className="font-mono text-sm">{s.admission_number}</TableCell>
                   <TableCell className="font-medium">
@@ -1048,11 +1052,12 @@ export default function StudentManagement() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-heading flex items-center gap-3">
-                  {selectedStudent.profile_photo_url ? (
-                    <img src={selectedStudent.profile_photo_url} alt={selectedStudent.full_name} className="h-12 w-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-maroon-light"><User className="h-6 w-6 text-secondary" /></div>
-                  )}
+                  <ProfilePhoto
+                    src={selectedStudent.profile_photo_url}
+                    alt={selectedStudent.full_name}
+                    className="h-12 w-12 rounded-full object-cover"
+                    fallback={<div className="flex h-12 w-12 items-center justify-center rounded-full bg-maroon-light"><User className="h-6 w-6 text-secondary" /></div>}
+                  />
                   {selectedStudent.full_name}
                   {selectedStudent.has_medical_alert && <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" /> Medical Alert</Badge>}
                 </DialogTitle>
