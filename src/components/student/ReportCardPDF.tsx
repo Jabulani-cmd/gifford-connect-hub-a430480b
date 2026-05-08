@@ -15,6 +15,15 @@ interface ResultRow {
   class_size: number | null;
 }
 
+interface AssessmentRow {
+  title: string;
+  subject_name: string;
+  marks_obtained: number;
+  max_marks: number;
+  percentage: number;
+  grade: string;
+}
+
 interface ReportCardProps {
   studentName: string;
   admissionNumber: string;
@@ -24,6 +33,7 @@ interface ReportCardProps {
   term: string;
   academicYear: string;
   results: ResultRow[];
+  assessmentResults?: AssessmentRow[];
   overallRank: { rank: number; total: number } | null;
   averageMark: number;
   averageGrade: string;
