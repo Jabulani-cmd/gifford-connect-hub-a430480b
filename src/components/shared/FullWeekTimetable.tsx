@@ -129,7 +129,7 @@ export default function FullWeekTimetable({
           const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
           if (entry) {
             let cell = entry.subjects?.name || entry.activity_name || "—";
-            if (entry.staff?.full_name) cell += ` (${entry.staff.full_name})`;
+            cell += ` (${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")})`;
             if (entry.room || entry.venue) cell += ` [${entry.room || entry.venue}]`;
             row.push(cell);
           } else {
