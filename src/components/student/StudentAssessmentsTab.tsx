@@ -37,6 +37,12 @@ export default function StudentAssessmentsTab({ studentId, studentClassId, userI
   useEffect(() => {
     if (studentClassId && studentId) {
       fetchAll();
+      const channel = supabase
+        .channel(`student-assessments-${studentId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "assessment_results", filter: `student_id=eq.${studentId}` }, () => fetchAll())
+        .on("postgres_changes", { event: "*", schema: "public", table: "marks", filter: `student_id=eq.${studentId}` }, () => fetchAll())
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
     } else {
       setLoading(false);
     }
