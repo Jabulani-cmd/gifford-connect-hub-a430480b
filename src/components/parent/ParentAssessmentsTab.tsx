@@ -26,6 +26,12 @@ export default function ParentAssessmentsTab({ studentId, studentClassId: passed
   useEffect(() => {
     if (!studentId) return;
     fetchData();
+    const channel = supabase
+      .channel(`parent-assessments-${studentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "assessment_results", filter: `student_id=eq.${studentId}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "assessment_submissions", filter: `student_id=eq.${studentId}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [studentId]);
 
   const fetchData = async () => {
