@@ -32,6 +32,15 @@ const typeLabels: Record<string, string> = {
   project: "Project",
 };
 
+const assessmentTypeOptions: { value: string; label: string; icon: string; description: string }[] = [
+  { value: "online_test", label: "Online MCQ Test", icon: "📝", description: "Auto-graded multiple-choice test taken in the student portal" },
+  { value: "quiz", label: "Quick Quiz", icon: "⚡", description: "Short, low-stakes quiz — upload paper or share a link" },
+  { value: "test", label: "Class Test", icon: "🧪", description: "Standard written test, marked manually or by AI" },
+  { value: "exam", label: "Formal Exam", icon: "🎓", description: "End-of-term / major exam with formal grading" },
+  { value: "assignment", label: "Assignment", icon: "✍️", description: "Take-home work students upload back to the portal" },
+  { value: "project", label: "Project", icon: "📚", description: "Long-form project with file/link submissions" },
+];
+
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
   if (pct >= 80) return "A";
@@ -986,16 +995,32 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-heading">Create Assessment</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Mid-term Biology Test" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Type</Label>
-                <Select value={form.assessment_type} onValueChange={v => setForm(p => ({ ...p, assessment_type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{assessmentTypes.map(t => <SelectItem key={t} value={t}>{typeLabels[t] || t}</SelectItem>)}</SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <Label>Choose assessment type *</Label>
+              <p className="text-xs text-muted-foreground">Pick how students will engage with this assessment.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {assessmentTypeOptions.map(opt => {
+                  const active = form.assessment_type === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, assessment_type: opt.value }))}
+                      className={`text-left rounded-lg border-2 p-3 transition-all hover:border-primary/60 ${active ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"}`}
+                    >
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <span className="text-lg">{opt.icon}</span>
+                        <span>{opt.label}</span>
+                        {active && <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{opt.description}</p>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="space-y-2"><Label>Max Marks</Label><Input type="number" value={form.max_marks} onChange={e => setForm(p => ({ ...p, max_marks: e.target.value }))} /></div>
             </div>
+            <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Mid-term Biology Test" /></div>
+            <div className="space-y-2"><Label>Max Marks</Label><Input type="number" value={form.max_marks} onChange={e => setForm(p => ({ ...p, max_marks: e.target.value }))} /></div>
             {form.assessment_type === "online_test" && (
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1">
                 <p className="font-medium text-primary">📝 Online MCQ Test</p>
