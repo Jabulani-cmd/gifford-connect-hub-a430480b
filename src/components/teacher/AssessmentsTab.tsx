@@ -13,7 +13,8 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Upload, ClipboardList, Eye, Trash2, ChevronRight, ChevronLeft, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen, Sparkles, Copy, Printer
+  FileText, CheckCircle2, Clock, AlertCircle, Users, Link as LinkIcon, ExternalLink, PenTool, Bot, Loader2, BookOpen, Sparkles, Copy, Printer,
+  Globe, EyeOff, GraduationCap, UserSquare2, CalendarDays
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -324,6 +325,37 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
     toast({ title: "Assessment deleted" });
   };
 
+  // Publish / Unpublish toggle (syncs to student & parent portals immediately)
+  const togglePublish = async (assessment: any) => {
+    const next = !assessment.is_published;
+    const { error } = await supabase
+      .from("assessments")
+      .update({ is_published: next } as any)
+      .eq("id", assessment.id);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssessments(prev => prev.map(a => a.id === assessment.id ? { ...a, is_published: next } : a));
+    if (selectedAssessment?.id === assessment.id) setSelectedAssessment({ ...selectedAssessment, is_published: next });
+    toast({
+      title: next ? "Published" : "Reverted to Draft",
+      description: next
+        ? "Now visible to students and parents in this class."
+        : "Hidden from students and parents.",
+    });
+  };
+
+  // Preview-as dialog state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewAudience, setPreviewAudience] = useState<"student" | "parent">("student");
+  const [previewAssessment, setPreviewAssessment] = useState<any | null>(null);
+  const openPreview = (a: any, audience: "student" | "parent" = "student") => {
+    setPreviewAssessment(a);
+    setPreviewAudience(audience);
+    setPreviewOpen(true);
+  };
+
   // AI Question Design
   const generateAiQuestions = async () => {
     if (!selectedAssessment || !aiQForm.topic) {
@@ -525,11 +557,32 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   {selectedAssessment.due_date && ` • Due: ${format(new Date(selectedAssessment.due_date), "MMM d, yyyy")}`}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={selectedAssessment.is_published ? "default" : "secondary"}>
-                  {selectedAssessment.is_published ? "Published" : "Draft"}
-                </Badge>
-                <Badge variant="outline">{selectedAssessment.assessment_type}</Badge>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  {selectedAssessment.is_published ? (
+                    <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1">
+                      <Globe className="h-3 w-3" /> Published — visible to students &amp; parents
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                      <EyeOff className="h-3 w-3" /> Draft — only visible to you
+                    </Badge>
+                  )}
+                  <Badge variant="outline">{selectedAssessment.assessment_type}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openPreview(selectedAssessment, "student")}>
+                    <Eye className="mr-1 h-3 w-3" /> Preview as Student/Parent
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedAssessment.is_published ? "outline" : "default"}
+                    className="h-7 text-xs"
+                    onClick={() => togglePublish(selectedAssessment)}
+                  >
+                    {selectedAssessment.is_published ? (<><EyeOff className="mr-1 h-3 w-3" /> Unpublish</>) : (<><Globe className="mr-1 h-3 w-3" /> Publish</>)}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -1223,9 +1276,16 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm">{a.title}</p>
-                      <Badge variant={!a.is_published ? "secondary" : isPast ? "destructive" : "default"} className="text-xs">
-                        {!a.is_published ? "Draft" : isPast ? "Past" : "Active"}
-                      </Badge>
+                      {a.is_published ? (
+                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1">
+                          <Globe className="h-3 w-3" /> Published
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                          <EyeOff className="h-3 w-3" /> Draft
+                        </Badge>
+                      )}
+                      {isPast && a.is_published && <Badge variant="destructive" className="text-xs">Past due</Badge>}
                       <Badge variant="outline" className="text-xs">{a.assessment_type === "online_test" ? "Online Test" : a.assessment_type}</Badge>
                       {a.is_online && <Badge variant="outline" className="text-xs border-primary/40 text-primary">🖥 Online</Badge>}
                     </div>
@@ -1255,8 +1315,19 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openPreview(a, "student"); }}>
+                      <Eye className="mr-1 h-3 w-3" /> Preview
+                    </Button>
+                    <Button
+                      variant={a.is_published ? "outline" : "default"}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={e => { e.stopPropagation(); togglePublish(a); }}
+                    >
+                      {a.is_published ? (<><EyeOff className="mr-1 h-3 w-3" /> Unpublish</>) : (<><Globe className="mr-1 h-3 w-3" /> Publish</>)}
+                    </Button>
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); openAssessmentDetail(a); }}>
-                      <Upload className="mr-1 h-3 w-3" /> Upload Files & Mark
+                      <Upload className="mr-1 h-3 w-3" /> Upload & Mark
                     </Button>
                     <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setSelectedAssessment(a); setAiQDesignOpen(true); setAiGeneratedQuestions([]); setAiQForm(f => ({ ...f, topic: "" })); }}>
                       <Sparkles className="mr-1 h-3 w-3" /> AI Design
@@ -1277,6 +1348,120 @@ export default function AssessmentsTab({ teacherId, teacherIds, classes, subject
           })}
         </div>
       )}
+
+      {/* Preview as Student / Parent dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" /> Portal Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {previewAssessment && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                {!previewAssessment.is_published && (
+                  <Badge variant="secondary" className="gap-1 border-orange-400/50 text-orange-700 dark:text-orange-300">
+                    <EyeOff className="h-3 w-3" /> This is currently a Draft — students &amp; parents won't see it until you publish.
+                  </Badge>
+                )}
+              </div>
+
+              <Tabs value={previewAudience} onValueChange={(v: any) => setPreviewAudience(v)}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="student"><GraduationCap className="mr-1 h-4 w-4" /> Student view</TabsTrigger>
+                  <TabsTrigger value="parent"><UserSquare2 className="mr-1 h-4 w-4" /> Parent view</TabsTrigger>
+                </TabsList>
+
+                {/* Student preview — mirrors StudentAssessmentsTab card */}
+                <TabsContent value="student" className="mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground mb-2">As seen on the Student portal → Assessments tab</p>
+                    <Card>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{previewAssessment.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {getSubjectName(previewAssessment.subject_id)} • {getClassName(previewAssessment.class_id)}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{typeLabels[previewAssessment.assessment_type] || previewAssessment.assessment_type}</Badge>
+                        </div>
+                        {previewAssessment.instructions && (
+                          <p className="text-xs whitespace-pre-wrap text-muted-foreground">{previewAssessment.instructions}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                          {previewAssessment.due_date && (
+                            <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Due {format(new Date(previewAssessment.due_date), "MMM d, yyyy")}</span>
+                          )}
+                          {previewAssessment.max_marks && <span>{previewAssessment.max_marks} marks</span>}
+                          {previewAssessment.time_limit_minutes && <span>⏱ {previewAssessment.time_limit_minutes} min</span>}
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          {previewAssessment.file_url && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs" disabled>
+                              <Download className="mr-1 h-3 w-3" /> Question paper
+                            </Button>
+                          )}
+                          {previewAssessment.is_online ? (
+                            <Button size="sm" className="h-7 text-xs" disabled>
+                              <PenTool className="mr-1 h-3 w-3" /> Take online test
+                            </Button>
+                          ) : (
+                            <Button size="sm" className="h-7 text-xs" disabled>
+                              <Upload className="mr-1 h-3 w-3" /> Submit work
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Parent preview — mirrors ParentAssessmentsTab card */}
+                <TabsContent value="parent" className="mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground mb-2">As seen on the Parent portal → Assessments tab</p>
+                    <Card>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{previewAssessment.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {getSubjectName(previewAssessment.subject_id)} • {getClassName(previewAssessment.class_id)}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{typeLabels[previewAssessment.assessment_type] || previewAssessment.assessment_type}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                          {previewAssessment.due_date && (
+                            <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Due {format(new Date(previewAssessment.due_date), "MMM d, yyyy")}</span>
+                          )}
+                          {previewAssessment.max_marks && <span>Max {previewAssessment.max_marks} marks</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">
+                          Parents see this assessment read-only. Once you grade it, the result and feedback appear here automatically.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" onClick={() => setPreviewOpen(false)}>Close</Button>
+                {!previewAssessment.is_published && (
+                  <Button onClick={() => { togglePublish(previewAssessment); setPreviewOpen(false); }}>
+                    <Globe className="mr-1 h-4 w-4" /> Publish now
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
