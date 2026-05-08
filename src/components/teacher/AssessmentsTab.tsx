@@ -32,6 +32,15 @@ const typeLabels: Record<string, string> = {
   project: "Project",
 };
 
+const assessmentTypeOptions: { value: string; label: string; icon: string; description: string }[] = [
+  { value: "online_test", label: "Online MCQ Test", icon: "📝", description: "Auto-graded multiple-choice test taken in the student portal" },
+  { value: "quiz", label: "Quick Quiz", icon: "⚡", description: "Short, low-stakes quiz — upload paper or share a link" },
+  { value: "test", label: "Class Test", icon: "🧪", description: "Standard written test, marked manually or by AI" },
+  { value: "exam", label: "Formal Exam", icon: "🎓", description: "End-of-term / major exam with formal grading" },
+  { value: "assignment", label: "Assignment", icon: "✍️", description: "Take-home work students upload back to the portal" },
+  { value: "project", label: "Project", icon: "📚", description: "Long-form project with file/link submissions" },
+];
+
 function zimGrade(pct: number): string {
   if (pct >= 90) return "A*";
   if (pct >= 80) return "A";
