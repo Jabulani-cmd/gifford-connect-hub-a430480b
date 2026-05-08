@@ -1920,6 +1920,7 @@ export type Database = {
       }
       marks: {
         Row: {
+          assessment_id: string | null
           assessment_type: string
           comment: string | null
           created_at: string
@@ -1932,6 +1933,7 @@ export type Database = {
           term: string
         }
         Insert: {
+          assessment_id?: string | null
           assessment_type?: string
           comment?: string | null
           created_at?: string
@@ -1944,6 +1946,7 @@ export type Database = {
           term?: string
         }
         Update: {
+          assessment_id?: string | null
           assessment_type?: string
           comment?: string | null
           created_at?: string
@@ -1956,6 +1959,13 @@ export type Database = {
           term?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marks_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marks_student_id_fkey"
             columns: ["student_id"]
