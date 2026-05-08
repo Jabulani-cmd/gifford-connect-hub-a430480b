@@ -13,85 +13,135 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const typesStr = (questionTypes && questionTypes.length > 0)
-      ? questionTypes.join(", ")
-      : "multiple_choice, short_answer, structured, essay";
+    if (!topic || typeof topic !== "string") {
+      return new Response(JSON.stringify({ error: "Topic is required." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const systemPrompt = `You are an expert teacher creating assessment questions for a Zimbabwean secondary school curriculum.
+    const allowedTypes = ["multiple_choice", "short_answer", "structured", "essay", "true_false", "fill_in_blank", "matching"];
+    const types = Array.isArray(questionTypes) && questionTypes.length > 0
+      ? questionTypes.filter((t: string) => allowedTypes.includes(t))
+      : ["multiple_choice", "short_answer", "structured"];
 
-Generate exactly ${numQuestions || 5} questions on the given topic.
-Question types to include: ${typesStr}
-Total marks for the assessment: ${maxMarks || 100}
-Difficulty level: ${difficulty || "Medium"}
-${instructions ? `Additional instructions: ${instructions}` : ""}
+    const n = Math.max(1, Math.min(50, parseInt(String(numQuestions)) || 5));
+    const total = Math.max(1, parseInt(String(maxMarks)) || 100);
 
-IMPORTANT: Return ONLY a valid JSON array, no markdown, no code fences.
-Each object in the array must have these fields:
-- question_number: number (1-based)
-- question_type: "multiple_choice" | "short_answer" | "structured" | "essay" | "true_false" | "fill_in_blank" | "matching"
-- question_text: string (the full question)
-- marks: number (marks allocated to this question)
-- model_answer: string (the expected answer or marking guide)
-- explanation: string (why this answer is correct, for the teacher's reference)
+    const systemPrompt = `You are a Zimbabwean secondary school teacher creating an assessment aligned to the ZIMSEC curriculum.
+Generate exactly ${n} questions on the given topic.
+- Allowed question types: ${types.join(", ")}.
+- Total marks: ${total}. Distribute marks sensibly across questions (MCQ/True-False: 1-2, fill/short: 1-3, structured: 4-10, essay: 10-25).
+- Difficulty: ${difficulty || "Medium"}.
+${instructions ? `- Additional instructions: ${instructions}` : ""}
 
-For multiple_choice questions, also include:
-- option_a: string
-- option_b: string
-- option_c: string
-- option_d: string
-- correct_answer: "A" | "B" | "C" | "D"
-
-For structured questions, include sub-parts in the question_text using (a), (b), (c) etc., and provide corresponding model answers.
-
-For true_false questions, include:
-- correct_answer: "True" | "False"
-
-Distribute marks appropriately across questions. Short answer: 1-3 marks, Structured: 4-10 marks, Essay: 10-25 marks, MCQ: 1-2 marks, True/False: 1 mark, Fill-in-blank: 1-2 marks.`;
+You MUST call the create_assessment tool with the questions array. Do not answer in plain text.`;
 
     const userPrompt = `Subject: ${subject || "General"}
 Topic: ${topic}
-Number of questions: ${numQuestions || 5}
+Number of questions: ${n}
 Difficulty: ${difficulty || "Medium"}
-Question types: ${typesStr}
-Total marks: ${maxMarks || 100}
+Question types: ${types.join(", ")}
+Total marks: ${total}`;
 
-Generate the assessment questions now.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "create_assessment",
+              description: "Return the generated assessment questions in structured form.",
+              parameters: {
+                type: "object",
+                properties: {
+                  questions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        question_number: { type: "number" },
+                        question_type: { type: "string", enum: allowedTypes },
+                        question_text: { type: "string" },
+                        marks: { type: "number" },
+                        model_answer: { type: "string" },
+                        explanation: { type: "string" },
+                        option_a: { type: "string" },
+                        option_b: { type: "string" },
+                        option_c: { type: "string" },
+                        option_d: { type: "string" },
+                        correct_answer: { type: "string" },
+                      },
+                      required: ["question_number", "question_type", "question_text", "marks", "model_answer"],
+                    },
+                  },
+                },
+                required: ["questions"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "create_assessment" } },
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
+    if (!aiResponse.ok) {
+      const status = aiResponse.status;
+      const errText = await aiResponse.text().catch(() => "");
+      console.error("AI gateway error:", status, errText);
+      if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please contact the administrator." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ error: "AI gateway error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || "";
-    content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const questions = JSON.parse(content);
+    const aiData = await aiResponse.json();
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) {
+      console.error("No tool call:", JSON.stringify(aiData).slice(0, 600));
+      return new Response(JSON.stringify({ error: "AI did not return structured questions. Please try again." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(toolCall.function.arguments);
+    } catch {
+      return new Response(JSON.stringify({ error: "Could not parse AI response." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const questions = (parsed.questions || []).map((q: any, i: number) => ({
+      question_number: q.question_number ?? i + 1,
+      question_type: q.question_type,
+      question_text: q.question_text,
+      marks: Number(q.marks) || 1,
+      model_answer: q.model_answer || "",
+      explanation: q.explanation || "",
+      option_a: q.option_a, option_b: q.option_b, option_c: q.option_c, option_d: q.option_d,
+      correct_answer: q.correct_answer,
+    }));
 
     return new Response(JSON.stringify({ questions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
