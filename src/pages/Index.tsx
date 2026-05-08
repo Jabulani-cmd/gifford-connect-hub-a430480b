@@ -13,6 +13,7 @@ import schoolLogo from "@/assets/school-logo.png";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteLogos } from "@/hooks/useSiteLogos";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 
 /* ---------- Principal Photo Component ---------- */
 const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props, ref) {
@@ -44,17 +45,16 @@ const PrincipalPhoto = forwardRef<HTMLDivElement>(function PrincipalPhoto(_props
 
   return (
     <div ref={ref} className="relative">
-      {photoUrl ? (
-        <img
-          src={photoUrl}
-          alt="The Principal"
-          className="aspect-[3/4] w-full rounded-xl object-cover object-top shadow-2xl lg:aspect-[4/5]"
-        />
-      ) : (
-        <div className="flex h-[420px] w-full items-center justify-center rounded-xl bg-muted shadow-2xl">
-          <img src={schoolLogo} alt="Gifford High School" className="h-32 w-32 object-contain opacity-40" />
-        </div>
-      )}
+      <ProfilePhoto
+        src={photoUrl}
+        alt="The Principal"
+        className="aspect-[3/4] w-full rounded-xl object-cover object-top shadow-2xl lg:aspect-[4/5]"
+        fallback={
+          <div className="flex h-[420px] w-full items-center justify-center rounded-xl bg-muted shadow-2xl">
+            <img src={schoolLogo} alt="Gifford High School" className="h-32 w-32 object-contain opacity-40" />
+          </div>
+        }
+      />
       <div className="absolute -bottom-4 left-6 rounded-lg bg-secondary px-5 py-2.5 shadow-lg">
         <span className="text-sm font-bold text-secondary-foreground">Mrs. B. Dewa</span>
       </div>
