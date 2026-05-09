@@ -596,7 +596,33 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       toast({ title: "Cannot delete fallback slot", description: "Save a custom slot first.", variant: "destructive" });
       return;
     }
-    if (!window.confirm("Permanently Delete this time slot? It will disappear from all portals.")) return;
+    const slot = timetableSlots.find((s: any) => s.id === id);
+    if (slot) {
+      const { count, error: countErr } = await supabase
+        .from("timetable_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("start_time", slot.start_time)
+        .eq("end_time", slot.end_time);
+      if (countErr) {
+        toast({ title: "Could not verify usage", description: countErr.message, variant: "destructive" });
+        return;
+      }
+      if ((count ?? 0) > 0) {
+        const proceed = window.confirm(
+          `WARNING: This time slot is used by ${count} timetable entr${count === 1 ? "y" : "ies"} across one or more classes.\n\nDeleting it will leave those entries orphaned and they will no longer appear correctly on Student, Teacher, or Parent portals.\n\nRecommended: reassign or delete those entries first.\n\nDo you still want to permanently delete this time slot?`
+        );
+        if (!proceed) return;
+        const reconfirm = window.prompt('Type "DELETE" to confirm permanent deletion of this in-use time slot:');
+        if (reconfirm !== "DELETE") {
+          toast({ title: "Deletion cancelled" });
+          return;
+        }
+      } else {
+        if (!window.confirm("Permanently Delete this time slot? It will disappear from all portals.")) return;
+      }
+    } else {
+      if (!window.confirm("Permanently Delete this time slot? It will disappear from all portals.")) return;
+    }
     const { error } = await supabase.from("timetable_time_slots").delete().eq("id", id);
     if (error) {
       toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
