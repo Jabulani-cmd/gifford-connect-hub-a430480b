@@ -527,51 +527,63 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     if (!ttSelectedClassId) { toast({ title: "Select a class first", variant: "destructive" }); return; }
     if (!qaSlot) { toast({ title: "Pick a time slot", variant: "destructive" }); return; }
     if (!qaSubject) { toast({ title: "Pick a subject", variant: "destructive" }); return; }
-    const slot = timetableSlots.find((s) => s.start === qaSlot);
-    if (!slot) return;
+    const slotIdx = timetableSlots.findIndex((s) => s.start === qaSlot);
+    if (slotIdx < 0) return;
+    const slot = timetableSlots[slotIdx];
+    const slot2 = qaDouble ? timetableSlots[slotIdx + 1] : null;
+    if (qaDouble && !slot2) {
+      toast({ title: "No next slot available", description: "Pick an earlier time for a double lesson.", variant: "destructive" });
+      return;
+    }
     const dayIndex = parseInt(qaDay, 10);
     const teacherId = qaTeacher || ttClassSubjects.find((a: any) => a.subject_id === qaSubject)?.teacher_id || null;
+    const targetSlots = slot2 ? [slot, slot2] : [slot];
+    const slotStarts = targetSlots.map((s) => s.start);
 
     setQaSaving(true);
-    // Clash check
+    // Clash check across all target slots
     const { data: clashRows } = await supabase
       .from("timetable_entries")
-      .select("class_id, teacher_id, room, classes(name), subjects(name), staff(full_name)")
+      .select("class_id, start_time, teacher_id, room, classes(name), subjects(name), staff(full_name)")
       .neq("class_id", ttSelectedClassId)
       .eq("day_of_week", dayIndex)
-      .eq("start_time", slot.start);
+      .in("start_time", slotStarts);
     const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"][dayIndex];
     const conflicts: string[] = [];
     (clashRows || []).forEach((other: any) => {
       if (teacherId && other.teacher_id === teacherId) {
-        conflicts.push(`Teacher already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} at ${dayLabel} ${slot.start}`);
+        conflicts.push(`Teacher already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} at ${dayLabel} ${other.start_time}`);
       }
       if (qaRoom && other.room && qaRoom.trim().toLowerCase() === other.room.trim().toLowerCase()) {
-        conflicts.push(`Venue "${qaRoom}" already booked by ${other.classes?.name || "another class"} at ${dayLabel} ${slot.start}`);
+        conflicts.push(`Venue "${qaRoom}" already booked by ${other.classes?.name || "another class"} at ${dayLabel} ${other.start_time}`);
       }
     });
     if (conflicts.length > 0) {
       setQaSaving(false);
-      toast({ title: "Clash detected", description: conflicts.join(" • "), variant: "destructive" });
+      toast({ title: "Clash detected", description: Array.from(new Set(conflicts)).join(" • "), variant: "destructive" });
       return;
     }
 
-    // Upsert: delete same class/day/slot, insert new
+    // Upsert: delete same class/day/target-slots, insert new rows
     await supabase.from("timetable_entries").delete()
-      .eq("class_id", ttSelectedClassId).eq("day_of_week", dayIndex).eq("start_time", slot.start);
-    const { error } = await supabase.from("timetable_entries").insert({
+      .eq("class_id", ttSelectedClassId).eq("day_of_week", dayIndex).in("start_time", slotStarts);
+    const rows = targetSlots.map((s) => ({
       class_id: ttSelectedClassId,
       day_of_week: dayIndex,
-      start_time: slot.start,
-      end_time: slot.end,
+      start_time: s.start,
+      end_time: s.end,
       subject_id: qaSubject,
       teacher_id: teacherId,
       room: qaRoom.trim() || null,
-    });
+    }));
+    const { error } = await supabase.from("timetable_entries").insert(rows);
     setQaSaving(false);
     if (error) { toast({ title: "Failed to add", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Slot added", description: `${dayLabel} ${slot.start} saved.` });
-    setQaSlot(""); setQaSubject(""); setQaTeacher(""); setQaRoom("");
+    toast({
+      title: qaDouble ? "Double lesson added" : "Slot added",
+      description: `${dayLabel} ${slot.start}${slot2 ? `–${slot2.end}` : `–${slot.end}`} saved.`,
+    });
+    setQaSlot(""); setQaSubject(""); setQaTeacher(""); setQaRoom(""); setQaDouble(false);
     fetchClassTimetable(ttSelectedClassId);
   };
 
