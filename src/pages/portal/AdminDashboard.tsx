@@ -760,8 +760,13 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     }
 
     // Upsert: delete same class/day/target-slots, insert new rows
-    await supabase.from("timetable_entries").delete()
+    const { error: deleteError } = await supabase.from("timetable_entries").delete()
       .eq("class_id", ttSelectedClassId).eq("day_of_week", dayIndex).in("start_time", slotStarts);
+    if (deleteError) {
+      setQaSaving(false);
+      toast({ title: "Failed to replace existing slot", description: deleteError.message, variant: "destructive" });
+      return;
+    }
     const rows = targetSlots.map((s) => ({
       class_id: ttSelectedClassId,
       day_of_week: dayIndex,
