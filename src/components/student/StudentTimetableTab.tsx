@@ -9,9 +9,10 @@ import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 interface Props {
   studentClassId: string | null;
   studentId?: string | null;
+  studentName?: string | null;
 }
 
-export default function StudentTimetableTab({ studentClassId, studentId }: Props) {
+export default function StudentTimetableTab({ studentClassId, studentId, studentName }: Props) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<any[]>([]);
   const [sportsSchedule, setSportsSchedule] = useState<any[]>([]);
@@ -195,6 +196,8 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
         loading={offline.loading}
         hasClass={resolvedClassId !== null}
         noClassMessage="No class assignment found for this student yet."
+        title="Weekly Class Timetable"
+        printTitle={studentName ? `Weekly Timetable — ${studentName}` : "Weekly Class Timetable"}
       />
     </div>
   );

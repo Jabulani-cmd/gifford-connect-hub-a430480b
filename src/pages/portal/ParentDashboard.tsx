@@ -1249,7 +1249,7 @@ function TabContent(props: TabContentProps) {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-lg font-bold">Class Timetable — {child.full_name}</h2>
-        <StudentTimetableTab studentClassId={childClassId} studentId={child.id} />
+        <StudentTimetableTab studentClassId={childClassId} studentId={child.id} studentName={child.full_name} />
       </motion.div>
     );
   }
