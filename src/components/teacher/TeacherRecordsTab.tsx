@@ -14,6 +14,7 @@ import { Download, Printer, Search, Users, BarChart3, Calendar, CheckCircle2, Lo
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { getLogoDataUrl, SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_ADDRESS } from "@/lib/finance/pdf";
+import { timetableDayLabel, timetableUsesZeroBasedDays } from "@/lib/timetable";
 
 interface Props {
   userId: string;
@@ -220,14 +221,29 @@ export default function TeacherRecordsTab({ userId, classes, subjects, staffId }
   const fetchTimetable = async () => {
     if (!ttClass) return;
     setTtLoading(true);
-    const { data, error } = await supabase
-      .from("timetable_entries")
-      .select("*, subjects(name), staff(full_name)")
-      .eq("class_id", ttClass)
-      .order("day_of_week")
-      .order("start_time");
+    const [{ data: detailed, error }, { data: classSubjects }] = await Promise.all([
+      supabase.from("timetable_entries").select("*, subjects(name), classes(name)").eq("class_id", ttClass).order("day_of_week").order("start_time"),
+      supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", ttClass),
+    ]);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else setTtData(data || []);
+    else {
+      const staffIds = Array.from(new Set([
+        ...(detailed || []).map((entry: any) => entry.teacher_id),
+        ...(classSubjects || []).map((assignment: any) => assignment.teacher_id),
+      ].filter(Boolean)));
+      const { data: staffNames } = staffIds.length > 0 ? await supabase.rpc("get_public_staff_names", { _staff_ids: staffIds }) : { data: [] };
+      const staffById = new Map<string, { full_name: string }>();
+      (staffNames || []).forEach((staff: any) => staff?.id && staff?.full_name && staffById.set(staff.id, { full_name: staff.full_name }));
+      const teacherBySubject = new Map<string, { full_name: string }>();
+      (classSubjects || []).forEach((cs: any) => {
+        const assignedTeacher = cs.teacher_id ? staffById.get(cs.teacher_id) : null;
+        if (cs.subject_id && assignedTeacher?.full_name) teacherBySubject.set(cs.subject_id, assignedTeacher);
+      });
+      setTtData((detailed || []).map((entry: any) => ({
+        ...entry,
+        staff: (entry.teacher_id ? staffById.get(entry.teacher_id) : null) || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : null) || null,
+      })));
+    }
     setTtLoading(false);
   };
 
