@@ -196,6 +196,8 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         loading={offline.loading}
         hasClass={resolvedClassId !== null}
         noClassMessage="No class assignment found for this student yet."
+        title="Weekly Class Timetable"
+        printTitle={studentName ? `Weekly Timetable — ${studentName}` : "Weekly Class Timetable"}
       />
     </div>
   );
