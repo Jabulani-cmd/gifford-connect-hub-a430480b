@@ -540,6 +540,72 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     setTtSaving(false);
   };
 
+  // ===== Time Slot CRUD =====
+  const tsResetForm = () => {
+    setTsForm({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "" });
+    setTsEditingId(null);
+  };
+
+  const tsStartEdit = (slot: any) => {
+    setTsEditingId(slot.id);
+    setTsForm({
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      label: slot.label || "",
+      slot_type: slot.slot_type,
+      display_order: String(slot.display_order),
+    });
+  };
+
+  const saveTimeSlot = async () => {
+    if (!tsForm.start_time || !tsForm.end_time) {
+      toast({ title: "Start and end time required", variant: "destructive" });
+      return;
+    }
+    if (tsForm.start_time >= tsForm.end_time) {
+      toast({ title: "End time must be after start time", variant: "destructive" });
+      return;
+    }
+    setTsSaving(true);
+    const order = parseInt(tsForm.display_order, 10);
+    const payload: any = {
+      start_time: tsForm.start_time,
+      end_time: tsForm.end_time,
+      label: tsForm.label.trim() || null,
+      slot_type: tsForm.slot_type,
+      display_order: Number.isFinite(order) ? order : (allTimeSlots.length + 1),
+    };
+    let error;
+    if (tsEditingId && !tsEditingId.startsWith("fallback-")) {
+      ({ error } = await supabase.from("timetable_time_slots").update(payload).eq("id", tsEditingId));
+    } else {
+      ({ error } = await supabase.from("timetable_time_slots").insert(payload));
+    }
+    setTsSaving(false);
+    if (error) {
+      toast({ title: "Failed to save slot", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: tsEditingId ? "Slot updated" : "Slot added" });
+    tsResetForm();
+    refetchTimeSlots();
+  };
+
+  const deleteTimeSlot = async (id: string) => {
+    if (id.startsWith("fallback-")) {
+      toast({ title: "Cannot delete fallback slot", description: "Save a custom slot first.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Permanently Delete this time slot? It will disappear from all portals.")) return;
+    const { error } = await supabase.from("timetable_time_slots").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Time slot deleted" });
+    refetchTimeSlots();
+  };
+
   const runSyncCheck = async () => {
     if (!ttSelectedClassId) {
       toast({ title: "Select a class first", variant: "destructive" });
