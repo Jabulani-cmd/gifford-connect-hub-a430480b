@@ -813,8 +813,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
         // delete all rows
         q = q.not("id", "is", null);
       }
-      const { error: delErr } = await q;
+      // .select() so we get back the deleted rows and can verify the count
+      const { data: deletedRows, error: delErr } = await q.select("id");
       if (delErr) throw delErr;
+      const deletedCount = deletedRows?.length ?? 0;
 
       // Also clear cached personal_timetables (class-derived snapshots) on full wipes
       if (choice === "ALL" || choice === "ALL+SLOTS") {
@@ -822,18 +824,41 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       }
 
       if (choice === "ALL+SLOTS") {
-        const { error: slotErr } = await supabase.from("timetable_time_slots").delete().not("id", "is", null);
+        const { error: slotErr } = await supabase
+          .from("timetable_time_slots")
+          .delete()
+          .not("id", "is", null)
+          .select("id");
         if (slotErr) throw slotErr;
       }
 
-      toast({
-        title: "Timetable cleared",
-        description: choice === "CLASS"
-          ? "All entries for the selected class were deleted. Ready to rebuild."
-          : choice === "ALL"
-            ? "All timetable entries deleted across every class. Ready to rebuild."
-            : "All entries and time slots deleted. Add new time slots, then rebuild.",
-      });
+      // Verify nothing remains in the wiped scope
+      let remaining = 0;
+      {
+        let countQ = supabase.from("timetable_entries").select("id", { count: "exact", head: true });
+        if (choice === "CLASS") countQ = countQ.eq("class_id", ttSelectedClassId);
+        const { count } = await countQ;
+        remaining = count ?? 0;
+      }
+
+      if (remaining > 0) {
+        toast({
+          title: "Some entries could not be deleted",
+          description: `${deletedCount} removed, but ${remaining} ${choice === "CLASS" ? "remain in this class" : "still exist in other classes"}. ${choice === "CLASS" ? "Choose ALL to wipe every class." : "Check permissions."}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Timetable cleared",
+          description: `${deletedCount} entries deleted. ${
+            choice === "CLASS"
+              ? "Selected class is empty — ready to rebuild."
+              : choice === "ALL"
+                ? "Every class is empty — ready to rebuild."
+                : "All entries and time slots removed — add new slots, then rebuild."
+          }`,
+        });
+      }
       if (ttSelectedClassId) fetchClassTimetable(ttSelectedClassId);
     } catch (e: any) {
       toast({ title: "Wipe failed", description: e.message, variant: "destructive" });
