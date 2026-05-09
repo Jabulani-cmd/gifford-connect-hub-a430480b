@@ -167,6 +167,20 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [syncRunning, setSyncRunning] = useState(false);
   const [syncReport, setSyncReport] = useState<any>(null);
 
+  // DB-driven time slots — shared with all portals via useTimeSlots
+  const { timeSlots: allTimeSlots, lessonSlots: dbLessonSlots, refetch: refetchTimeSlots, loading: timeSlotsLoading } = useTimeSlots();
+  const timetableSlots = useMemo(
+    () =>
+      dbLessonSlots.length > 0
+        ? dbLessonSlots.map((s) => ({ start: s.start_time, end: s.end_time }))
+        : FALLBACK_TT_SLOTS,
+    [dbLessonSlots],
+  );
+  // Time slot editor state
+  const [tsForm, setTsForm] = useState({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "" });
+  const [tsEditingId, setTsEditingId] = useState<string | null>(null);
+  const [tsSaving, setTsSaving] = useState(false);
+
   useEffect(() => {
     fetchAnnouncements();
     fetchCarouselImages();
