@@ -157,12 +157,28 @@ export default function ParentTeacherDashboard() {
   };
 
   const fetchTimetable = async (classId: string) => {
-    const { data } = await supabase
-      .from("timetable_entries")
-      .select("*, subjects(name)")
-      .eq("class_id", classId)
-      .order("start_time");
-    if (data) setTimetableData(data);
+    const [{ data: detailed }, { data: classSubjects }] = await Promise.all([
+      supabase.from("timetable_entries").select("*, subjects(name), classes(name)").eq("class_id", classId).order("start_time"),
+      supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
+    ]);
+    const staffIds = Array.from(new Set([
+      ...(detailed || []).map((entry: any) => entry.teacher_id),
+      ...(classSubjects || []).map((assignment: any) => assignment.teacher_id),
+    ].filter(Boolean)));
+    const { data: staffNames } = staffIds.length > 0
+      ? await supabase.rpc("get_public_staff_names", { _staff_ids: staffIds })
+      : { data: [] };
+    const staffById = new Map<string, { full_name: string }>();
+    (staffNames || []).forEach((staff: any) => staff?.id && staff?.full_name && staffById.set(staff.id, { full_name: staff.full_name }));
+    const teacherBySubject = new Map<string, { full_name: string }>();
+    (classSubjects || []).forEach((cs: any) => {
+      const assignedTeacher = cs.teacher_id ? staffById.get(cs.teacher_id) : null;
+      if (cs.subject_id && assignedTeacher?.full_name) teacherBySubject.set(cs.subject_id, assignedTeacher);
+    });
+    setTimetableData((detailed || []).map((entry: any) => ({
+      ...entry,
+      staff: (entry.teacher_id ? staffById.get(entry.teacher_id) : null) || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : null) || null,
+    })));
   };
 
   const submitMark = async () => {
