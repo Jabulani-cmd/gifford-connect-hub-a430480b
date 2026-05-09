@@ -155,6 +155,13 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [ttGrid, setTtGrid] = useState<Record<string, string>>({});
   const [ttLoading, setTtLoading] = useState(false);
   const [ttSaving, setTtSaving] = useState(false);
+  // Quick Add slot form
+  const [qaDay, setQaDay] = useState<string>("0");
+  const [qaSlot, setQaSlot] = useState<string>("");
+  const [qaSubject, setQaSubject] = useState<string>("");
+  const [qaTeacher, setQaTeacher] = useState<string>("");
+  const [qaRoom, setQaRoom] = useState<string>("");
+  const [qaSaving, setQaSaving] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -513,7 +520,58 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
     await fetchClassTimetable(ttSelectedClassId);
     setTtSaving(false);
-    toast({ title: "Timetable saved!" });
+  };
+
+  const quickAddSlot = async () => {
+    if (!ttSelectedClassId) { toast({ title: "Select a class first", variant: "destructive" }); return; }
+    if (!qaSlot) { toast({ title: "Pick a time slot", variant: "destructive" }); return; }
+    if (!qaSubject) { toast({ title: "Pick a subject", variant: "destructive" }); return; }
+    const slot = timetableSlots.find((s) => s.start === qaSlot);
+    if (!slot) return;
+    const dayIndex = parseInt(qaDay, 10);
+    const teacherId = qaTeacher || ttClassSubjects.find((a: any) => a.subject_id === qaSubject)?.teacher_id || null;
+
+    setQaSaving(true);
+    // Clash check
+    const { data: clashRows } = await supabase
+      .from("timetable_entries")
+      .select("class_id, teacher_id, room, classes(name), subjects(name), staff(full_name)")
+      .neq("class_id", ttSelectedClassId)
+      .eq("day_of_week", dayIndex)
+      .eq("start_time", slot.start);
+    const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"][dayIndex];
+    const conflicts: string[] = [];
+    (clashRows || []).forEach((other: any) => {
+      if (teacherId && other.teacher_id === teacherId) {
+        conflicts.push(`Teacher already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} at ${dayLabel} ${slot.start}`);
+      }
+      if (qaRoom && other.room && qaRoom.trim().toLowerCase() === other.room.trim().toLowerCase()) {
+        conflicts.push(`Venue "${qaRoom}" already booked by ${other.classes?.name || "another class"} at ${dayLabel} ${slot.start}`);
+      }
+    });
+    if (conflicts.length > 0) {
+      setQaSaving(false);
+      toast({ title: "Clash detected", description: conflicts.join(" • "), variant: "destructive" });
+      return;
+    }
+
+    // Upsert: delete same class/day/slot, insert new
+    await supabase.from("timetable_entries").delete()
+      .eq("class_id", ttSelectedClassId).eq("day_of_week", dayIndex).eq("start_time", slot.start);
+    const { error } = await supabase.from("timetable_entries").insert({
+      class_id: ttSelectedClassId,
+      day_of_week: dayIndex,
+      start_time: slot.start,
+      end_time: slot.end,
+      subject_id: qaSubject,
+      teacher_id: teacherId,
+      room: qaRoom.trim() || null,
+    });
+    setQaSaving(false);
+    if (error) { toast({ title: "Failed to add", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Slot added", description: `${dayLabel} ${slot.start} saved.` });
+    setQaSlot(""); setQaSubject(""); setQaTeacher(""); setQaRoom("");
+    fetchClassTimetable(ttSelectedClassId);
   };
 
   const addAnnouncement = async () => {
@@ -1075,9 +1133,14 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           {/* Timetable Tab */}
           <TabsContent value="timetable">
             <Card>
-              <CardHeader><CardTitle className="font-heading">Manage Timetable</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="font-heading">Manage Timetable</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  One simple flow: pick a class → add slots (subject, teacher, venue, time) → changes appear instantly in Teacher, Student & Parent portals. Clashes are blocked automatically.
+                </p>
+              </CardHeader>
               <CardContent>
-                <div className="mb-4 flex items-center gap-4">
+                <div className="mb-4 flex items-center gap-4 flex-wrap">
                   <Label>Class:</Label>
                   <Select value={ttSelectedClassId} onValueChange={setTtSelectedClassId}>
                     <SelectTrigger className="w-40"><SelectValue placeholder="Select" /></SelectTrigger>
@@ -1088,9 +1151,72 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={saveTimetable} disabled={!ttSelectedClassId || ttSaving}>
-                    {ttSaving ? "Saving..." : "Save Timetable"}
+                    {ttSaving ? "Saving..." : "Save Grid Changes"}
                   </Button>
                 </div>
+
+                {ttSelectedClassId && (
+                  <div className="mb-6 rounded-lg border bg-muted/30 p-3">
+                    <div className="mb-2 text-sm font-semibold">Quick Add Slot</div>
+                    <div className="grid gap-2 md:grid-cols-6">
+                      <div>
+                        <Label className="text-[11px]">Day</Label>
+                        <Select value={qaDay} onValueChange={setQaDay}>
+                          <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {timetableDays.map((d, i) => <SelectItem key={d} value={String(i)}>{d}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">Time</Label>
+                        <Select value={qaSlot} onValueChange={setQaSlot}>
+                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Pick time" /></SelectTrigger>
+                          <SelectContent>
+                            {timetableSlots.map((s) => <SelectItem key={s.start} value={s.start}>{s.start}–{s.end}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">Subject</Label>
+                        <Select
+                          value={qaSubject}
+                          onValueChange={(v) => {
+                            setQaSubject(v);
+                            const auto = ttClassSubjects.find((a: any) => a.subject_id === v)?.teacher_id;
+                            if (auto) setQaTeacher(auto);
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Subject" /></SelectTrigger>
+                          <SelectContent>
+                            {ttSubjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">Teacher</Label>
+                        <Select value={qaTeacher} onValueChange={setQaTeacher}>
+                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Teacher" /></SelectTrigger>
+                          <SelectContent>
+                            {ttStaff.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">Venue</Label>
+                        <Input className="h-9 text-xs" placeholder="e.g. Room 12" value={qaRoom} onChange={(e) => setQaRoom(e.target.value)} />
+                      </div>
+                      <div className="flex items-end">
+                        <Button className="h-9 w-full" onClick={quickAddSlot} disabled={qaSaving}>
+                          {qaSaving ? "Adding..." : "Add Slot"}
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      Tip: choosing a subject auto-fills the teacher (from Academic → Class Subjects). Override here if needed. Saves instantly to all portals.
+                    </p>
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
