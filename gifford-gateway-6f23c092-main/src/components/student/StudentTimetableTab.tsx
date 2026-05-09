@@ -115,9 +115,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
                     {e.staff?.full_name && (
                       <span className="text-[11px] text-muted-foreground">{e.staff.full_name}</span>
                     )}
-                    {e.room && (
-                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">{e.room}</Badge>
-                    )}
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">{e.room || "Venue TBA"}</Badge>
                   </div>
                 </div>
               </CardContent>
