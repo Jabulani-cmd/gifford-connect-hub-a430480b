@@ -2,7 +2,9 @@ export const timetableDayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday",
 export const timetableShortDayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export function timetableUsesZeroBasedDays(entries: Array<{ day_of_week?: number | null }> = []) {
-  return entries.some((entry) => entry?.day_of_week === 0);
+  if (entries.some((entry) => entry?.day_of_week === 0)) return true;
+  if (entries.some((entry) => entry?.day_of_week === 5)) return false;
+  return true;
 }
 
 export function timetableDayMatches(entryDay: number | null | undefined, dayIndex: number, zeroBased: boolean) {
