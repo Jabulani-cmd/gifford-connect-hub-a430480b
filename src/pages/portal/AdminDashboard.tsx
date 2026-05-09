@@ -417,7 +417,9 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
         .from("timetable_entries")
         .select("day_of_week, start_time, subject_id, teacher_id, room")
         .eq("class_id", classId)
-        .in("day_of_week", [0, 1, 2, 3, 4]),
+        .in("day_of_week", [0, 1, 2, 3, 4])
+        .order("day_of_week")
+        .order("start_time"),
       supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
     ]);
 
@@ -431,7 +433,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     const teacherBySubject = new Map((assignments || []).map((a: any) => [a.subject_id, a.teacher_id]));
     const nextGrid: Record<string, any> = {};
     (data || []).forEach((entry: any) => {
-      const key = getTimetableCellKey(entry.day_of_week, entry.start_time);
+      const key = getTimetableCellKey(entry.day_of_week, normalizeTimetableTime(entry.start_time));
       nextGrid[key] = {
         subject_id: entry.subject_id || "",
         teacher_id: entry.teacher_id || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : "") || "",
