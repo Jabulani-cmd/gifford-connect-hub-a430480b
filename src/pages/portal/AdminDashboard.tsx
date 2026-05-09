@@ -161,6 +161,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [qaSubject, setQaSubject] = useState<string>("");
   const [qaTeacher, setQaTeacher] = useState<string>("");
   const [qaRoom, setQaRoom] = useState<string>("");
+  const [qaDouble, setQaDouble] = useState<boolean>(false);
   const [qaSaving, setQaSaving] = useState(false);
 
   useEffect(() => {
