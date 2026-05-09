@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 import { printBrandedHtml, downloadBrandedPdf } from "@/lib/export-pdf";
-import { timetableDayMatches, timetableShortDayLabels, timetableUsesZeroBasedDays } from "@/lib/timetable";
+import { normalizeTimetableTime, timetableDayMatches, timetableShortDayLabels, timetableUsesZeroBasedDays } from "@/lib/timetable";
 
 const days = timetableShortDayLabels;
 
@@ -64,7 +64,7 @@ export default function FullWeekTimetable({
     return (startTime: string, dayIndex: number) => {
       const entry = entries.find(
         (t) =>
-          t.start_time === startTime &&
+          normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
           timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
       );
       return entry;
@@ -75,7 +75,7 @@ export default function FullWeekTimetable({
     return (startTime: string, dayIndex: number) => {
       const entry = sportsSchedule.find(
         (t) =>
-          t.start_time === startTime &&
+          normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
           timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
       );
       return entry;
