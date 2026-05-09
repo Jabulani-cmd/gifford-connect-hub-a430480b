@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { Link, useNavigate } from "react-router-dom";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
