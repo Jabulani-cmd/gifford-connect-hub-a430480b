@@ -1253,6 +1253,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                   <Button variant="outline" onClick={saveTimetable} disabled={!ttSelectedClassId || ttSaving}>
                     {ttSaving ? "Saving..." : "Save Grid Changes"}
                   </Button>
+                  <Button variant="secondary" onClick={runSyncCheck} disabled={!ttSelectedClassId || syncRunning}>
+                    <ShieldCheck className="mr-1 h-4 w-4" />
+                    {syncRunning ? "Checking..." : "Check Sync Status"}
+                  </Button>
                 </div>
 
                 {ttSelectedClassId && (
