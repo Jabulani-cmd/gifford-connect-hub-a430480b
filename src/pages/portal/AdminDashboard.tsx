@@ -451,7 +451,44 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       });
     });
 
+    // ----- Clash detection (teacher / venue across other classes) -----
     const slotStarts = timetableSlots.map((slot) => slot.start);
+    const { data: otherEntries } = await supabase
+      .from("timetable_entries")
+      .select("day_of_week, start_time, teacher_id, room, class_id, classes(name), subjects(name), staff(full_name)")
+      .neq("class_id", ttSelectedClassId)
+      .in("day_of_week", [0, 1, 2, 3, 4])
+      .in("start_time", slotStarts);
+
+    const clashes: string[] = [];
+    const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    rows.forEach((row) => {
+      (otherEntries || []).forEach((other: any) => {
+        if (other.day_of_week !== row.day_of_week || other.start_time !== row.start_time) return;
+        if (row.teacher_id && other.teacher_id === row.teacher_id) {
+          clashes.push(
+            `Teacher ${other.staff?.full_name || "—"} already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} on ${dayLabel[row.day_of_week]} ${row.start_time}`
+          );
+        }
+        if (row.room && other.room && row.room.trim().toLowerCase() === other.room.trim().toLowerCase()) {
+          clashes.push(
+            `Venue "${row.room}" already booked by ${other.classes?.name || "another class"} on ${dayLabel[row.day_of_week]} ${row.start_time}`
+          );
+        }
+      });
+    });
+
+    if (clashes.length > 0) {
+      setTtSaving(false);
+      const unique = Array.from(new Set(clashes));
+      toast({
+        title: `Timetable clash detected (${unique.length})`,
+        description: unique.slice(0, 4).join(" • ") + (unique.length > 4 ? ` …and ${unique.length - 4} more` : ""),
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error: deleteError } = await supabase
       .from("timetable_entries")
       .delete()
