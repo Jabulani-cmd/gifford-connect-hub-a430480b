@@ -52,7 +52,7 @@ const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities",
 const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
 const meetingTypes = ["sdc", "parent-teacher", "general"];
 const timetableDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timetableSlots = [
+const FALLBACK_TT_SLOTS = [
   { start: "07:30", end: "08:10" },
   { start: "08:10", end: "08:50" },
   { start: "08:50", end: "09:30" },
@@ -63,8 +63,6 @@ const timetableSlots = [
   { start: "12:30", end: "13:10" },
   { start: "13:50", end: "14:30" },
   { start: "14:30", end: "15:10" },
-  { start: "15:30", end: "16:10" },
-  { start: "16:10", end: "17:00" },
 ];
 
 interface AdminDashboardProps {
