@@ -1,6 +1,11 @@
 export const timetableDayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 export const timetableShortDayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
+export function normalizeTimetableTime(time: string | null | undefined) {
+  if (!time) return "";
+  return time.slice(0, 5);
+}
+
 export function timetableUsesZeroBasedDays(entries: Array<{ day_of_week?: number | null }> = []) {
   if (entries.some((entry) => entry?.day_of_week === 0)) return true;
   if (entries.some((entry) => entry?.day_of_week === 5)) return false;

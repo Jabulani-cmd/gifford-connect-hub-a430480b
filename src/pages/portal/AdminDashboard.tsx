@@ -45,6 +45,7 @@ import { useMainCrest } from "@/hooks/useMainCrest";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeTimetableTime } from "@/lib/timetable";
 
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
@@ -172,7 +173,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const timetableSlots = useMemo(
     () =>
       dbLessonSlots.length > 0
-        ? dbLessonSlots.map((s) => ({ start: s.start_time, end: s.end_time }))
+        ? dbLessonSlots.map((s) => ({ start: normalizeTimetableTime(s.start_time), end: normalizeTimetableTime(s.end_time) }))
         : FALLBACK_TT_SLOTS,
     [dbLessonSlots],
   );
@@ -416,7 +417,9 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
         .from("timetable_entries")
         .select("day_of_week, start_time, subject_id, teacher_id, room")
         .eq("class_id", classId)
-        .in("day_of_week", [0, 1, 2, 3, 4]),
+        .in("day_of_week", [0, 1, 2, 3, 4])
+        .order("day_of_week")
+        .order("start_time"),
       supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
     ]);
 
@@ -430,7 +433,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     const teacherBySubject = new Map((assignments || []).map((a: any) => [a.subject_id, a.teacher_id]));
     const nextGrid: Record<string, any> = {};
     (data || []).forEach((entry: any) => {
-      const key = getTimetableCellKey(entry.day_of_week, entry.start_time);
+      const key = getTimetableCellKey(entry.day_of_week, normalizeTimetableTime(entry.start_time));
       nextGrid[key] = {
         subject_id: entry.subject_id || "",
         teacher_id: entry.teacher_id || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : "") || "",
@@ -489,7 +492,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"];
     rows.forEach((row) => {
       (otherEntries || []).forEach((other: any) => {
-        if (other.day_of_week !== row.day_of_week || other.start_time !== row.start_time) return;
+        if (other.day_of_week !== row.day_of_week || normalizeTimetableTime(other.start_time) !== normalizeTimetableTime(row.start_time)) return;
         if (row.teacher_id && other.teacher_id === row.teacher_id) {
           clashes.push(
             `Teacher ${other.staff?.full_name || "—"} already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} on ${dayLabel[row.day_of_week]} ${row.start_time}`
@@ -664,8 +667,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     for (let day = 0; day < 5; day++) {
       const dayEntries = (entries || []).filter((e: any) => e.day_of_week === day);
       for (let i = 0; i < sortedSlots.length - 1; i++) {
-        const a = dayEntries.find((e: any) => e.start_time === sortedSlots[i]);
-        const b = dayEntries.find((e: any) => e.start_time === sortedSlots[i + 1]);
+        const a = dayEntries.find((e: any) => normalizeTimetableTime(e.start_time) === sortedSlots[i]);
+        const b = dayEntries.find((e: any) => normalizeTimetableTime(e.start_time) === sortedSlots[i + 1]);
         if (
           a && b &&
           a.subject_id === b.subject_id &&
@@ -757,8 +760,13 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     }
 
     // Upsert: delete same class/day/target-slots, insert new rows
-    await supabase.from("timetable_entries").delete()
+    const { error: deleteError } = await supabase.from("timetable_entries").delete()
       .eq("class_id", ttSelectedClassId).eq("day_of_week", dayIndex).in("start_time", slotStarts);
+    if (deleteError) {
+      setQaSaving(false);
+      toast({ title: "Failed to replace existing slot", description: deleteError.message, variant: "destructive" });
+      return;
+    }
     const rows = targetSlots.map((s) => ({
       class_id: ttSelectedClassId,
       day_of_week: dayIndex,
