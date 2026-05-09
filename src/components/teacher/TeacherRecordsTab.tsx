@@ -252,8 +252,18 @@ export default function TeacherRecordsTab({ userId, classes, subjects, staffId }
   useEffect(() => { if (studentsClass) fetchStudents(); }, [studentsClass]);
   useEffect(() => { if (ttClass) fetchTimetable(); }, [ttClass]);
 
+  useEffect(() => {
+    if (!ttClass) return;
+    const channel = supabase
+      .channel(`records-timetable-${ttClass}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${ttClass}` }, fetchTimetable)
+      .on("postgres_changes", { event: "*", schema: "public", table: "class_subjects", filter: `class_id=eq.${ttClass}` }, fetchTimetable)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ttClass]);
+
   const className = (id: string) => classes.find(c => c.id === id)?.name || "";
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const ttUsesZeroBasedDays = timetableUsesZeroBasedDays(ttData);
 
   // Attendance print/download
   const attHeaders = ["Date", "Student", "Adm No", "Status", "Notes"];
@@ -294,13 +304,13 @@ export default function TeacherRecordsTab({ userId, classes, subjects, staffId }
   ]);
 
   // Timetable print/download
-  const ttHeaders = ["Day", "Time", "Subject", "Teacher", "Room"];
+  const ttHeaders = ["Day", "Time", "Subject", "Teacher", "Venue"];
   const ttRows = ttData.map(t => [
-    days[t.day_of_week - 1] || `Day ${t.day_of_week}`,
+    timetableDayLabel(t.day_of_week, ttUsesZeroBasedDays),
     `${t.start_time} - ${t.end_time}`,
     t.subjects?.name || "",
-    t.staff?.full_name || "",
-    t.room || ""
+    t.staff?.full_name || "Teacher TBA",
+    t.room || "Venue TBA"
   ]);
 
   const [logoUrl, setLogoUrl] = useState("");
