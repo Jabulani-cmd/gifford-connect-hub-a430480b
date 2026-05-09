@@ -527,6 +527,89 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     setTtSaving(false);
   };
 
+  const runSyncCheck = async () => {
+    if (!ttSelectedClassId) {
+      toast({ title: "Select a class first", variant: "destructive" });
+      return;
+    }
+    setSyncOpen(true);
+    setSyncRunning(true);
+    setSyncReport(null);
+
+    const cls = ttClasses.find((c: any) => c.id === ttSelectedClassId);
+
+    // 1. Canonical query — exactly what Student/Parent/Teacher portals query
+    const { data: entries, error: entriesError } = await supabase
+      .from("timetable_entries")
+      .select("day_of_week, start_time, end_time, subject_id, teacher_id, room, subjects(name), staff(full_name)")
+      .eq("class_id", ttSelectedClassId)
+      .order("day_of_week")
+      .order("start_time");
+
+    // 2. class_subjects fallback (used by Student portal when teacher_id missing)
+    const { data: assignments } = await supabase
+      .from("class_subjects")
+      .select("subject_id, teacher_id")
+      .eq("class_id", ttSelectedClassId);
+
+    // 3. Detect double lessons
+    const sortedSlots = [...timetableSlots].map((s) => s.start);
+    const doubleLessons: string[] = [];
+    const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    for (let day = 0; day < 5; day++) {
+      const dayEntries = (entries || []).filter((e: any) => e.day_of_week === day);
+      for (let i = 0; i < sortedSlots.length - 1; i++) {
+        const a = dayEntries.find((e: any) => e.start_time === sortedSlots[i]);
+        const b = dayEntries.find((e: any) => e.start_time === sortedSlots[i + 1]);
+        if (
+          a && b &&
+          a.subject_id === b.subject_id &&
+          (a.teacher_id || "") === (b.teacher_id || "") &&
+          (a.room || "") === (b.room || "")
+        ) {
+          doubleLessons.push(
+            `${dayLabel[day]} ${a.start_time}–${b.end_time}: ${a.subjects?.name || "—"} (${a.staff?.full_name || "Teacher TBA"}) @ ${a.room || "Venue TBA"}`
+          );
+        }
+      }
+    }
+
+    // 4. Live realtime probe — subscribe and confirm the channel reaches SUBSCRIBED
+    let realtimeStatus: "live" | "failed" | "timeout" = "timeout";
+    const probe = supabase.channel(`sync-probe-${Date.now()}`);
+    probe.on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries" }, () => {});
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(() => resolve(), 4000);
+      probe.subscribe((status) => {
+        if (status === "SUBSCRIBED") { realtimeStatus = "live"; clearTimeout(t); resolve(); }
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") { realtimeStatus = "failed"; clearTimeout(t); resolve(); }
+      });
+    });
+    supabase.removeChannel(probe);
+
+    // 5. Build per-portal summary (all read same source of truth)
+    const total = entries?.length || 0;
+    const missingTeacher = (entries || []).filter((e: any) => !e.teacher_id).length;
+    const teacherFallbackResolves = (entries || []).filter((e: any) => {
+      if (e.teacher_id) return false;
+      return assignments?.some((a: any) => a.subject_id === e.subject_id && a.teacher_id);
+    }).length;
+    const missingVenue = (entries || []).filter((e: any) => !e.room).length;
+
+    setSyncReport({
+      className: cls?.name || "—",
+      total,
+      missingTeacher,
+      teacherFallbackResolves,
+      missingVenue,
+      doubleLessons,
+      realtimeStatus,
+      error: entriesError?.message || null,
+      timestamp: new Date().toLocaleString(),
+    });
+    setSyncRunning(false);
+  };
+
   const quickAddSlot = async () => {
     if (!ttSelectedClassId) { toast({ title: "Select a class first", variant: "destructive" }); return; }
     if (!qaSlot) { toast({ title: "Pick a time slot", variant: "destructive" }); return; }
