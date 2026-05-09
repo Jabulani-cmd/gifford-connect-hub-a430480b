@@ -474,45 +474,23 @@ export default function ParentTeacherDashboard() {
 
           {/* Class Timetable */}
           <TabsContent value="timetable">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <CardTitle className="font-heading">Class Timetable</CardTitle>
-                  <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
-                    <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
-                    <SelectContent>
-                      {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                {timetableData.length > 0 ? (
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Time</th>
-                        {days.map(d => <th key={d} className="px-3 py-2">{d}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {timeSlots.map((slot) => (
-                        <tr key={slot.start} className="border-t">
-                          <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
-                          {days.map((_, dayIndex) => (
-                            <td key={`${slot.start}-${dayIndex}`} className="px-3 py-2 text-center">{getTimetableCell(slot.start, dayIndex)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-center text-muted-foreground italic py-8">
-                    {loading ? "Loading..." : "No timetable set for this class yet."}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FullWeekTimetable
+                entries={timetableData}
+                hasClass={!!selectedTTClass}
+                loading={loading}
+                noClassMessage="Select a class to view the timetable."
+                printTitle={`Class Timetable — ${classes.find(c => c.id === selectedTTClass)?.name || ""}`}
+              />
+            </div>
           </TabsContent>
 
           {/* Announcements */}
