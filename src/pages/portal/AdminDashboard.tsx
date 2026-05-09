@@ -1335,7 +1335,85 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                   <Button variant="secondary" onClick={runSyncCheck} disabled={!ttSelectedClassId || syncRunning}>
                     <ShieldCheck className="mr-1 h-4 w-4" />
                     {syncRunning ? "Checking..." : "Check Sync Status"}
-                  </Button>
+                </div>
+
+                {/* Time Slot Editor */}
+                <div className="mb-6 rounded-lg border p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-sm font-semibold">Time Slots ({allTimeSlots.length})</div>
+                    {tsEditingId && (
+                      <Button size="sm" variant="ghost" onClick={tsResetForm}>Cancel edit</Button>
+                    )}
+                  </div>
+                  <p className="mb-3 text-[11px] text-muted-foreground">
+                    Edits sync instantly to Student, Teacher and Parent portals via the shared time slot table.
+                  </p>
+
+                  <div className="grid gap-2 md:grid-cols-6 mb-3">
+                    <div>
+                      <Label className="text-[11px]">Start</Label>
+                      <Input type="time" className="h-9 text-xs" value={tsForm.start_time} onChange={(e) => setTsForm({ ...tsForm, start_time: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">End</Label>
+                      <Input type="time" className="h-9 text-xs" value={tsForm.end_time} onChange={(e) => setTsForm({ ...tsForm, end_time: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Type</Label>
+                      <Select value={tsForm.slot_type} onValueChange={(v) => setTsForm({ ...tsForm, slot_type: v })}>
+                        <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lesson">Lesson</SelectItem>
+                          <SelectItem value="break">Break</SelectItem>
+                          <SelectItem value="sports">Sports</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Label (optional)</Label>
+                      <Input className="h-9 text-xs" placeholder="e.g. Lunch" value={tsForm.label} onChange={(e) => setTsForm({ ...tsForm, label: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Order</Label>
+                      <Input type="number" className="h-9 text-xs" placeholder="auto" value={tsForm.display_order} onChange={(e) => setTsForm({ ...tsForm, display_order: e.target.value })} />
+                    </div>
+                    <div className="flex items-end">
+                      <Button className="h-9 w-full" onClick={saveTimeSlot} disabled={tsSaving}>
+                        {tsSaving ? "Saving..." : tsEditingId ? "Update" : "Add Slot"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded border">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-2 py-1 text-left">#</th>
+                          <th className="px-2 py-1 text-left">Time</th>
+                          <th className="px-2 py-1 text-left">Type</th>
+                          <th className="px-2 py-1 text-left">Label</th>
+                          <th className="px-2 py-1"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSlotsLoading && (
+                          <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Loading…</td></tr>
+                        )}
+                        {!timeSlotsLoading && allTimeSlots.map((s) => (
+                          <tr key={s.id} className="border-t">
+                            <td className="px-2 py-1">{s.display_order}</td>
+                            <td className="px-2 py-1 font-mono">{s.start_time}–{s.end_time}</td>
+                            <td className="px-2 py-1 capitalize">{s.slot_type}</td>
+                            <td className="px-2 py-1">{s.label || "—"}</td>
+                            <td className="px-2 py-1 text-right space-x-1">
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => tsStartEdit(s)}>Edit</Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive" onClick={() => deleteTimeSlot(s.id)}>Delete</Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {ttSelectedClassId && (
