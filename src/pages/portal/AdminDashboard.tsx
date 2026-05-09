@@ -149,6 +149,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   // Timetable management
   const [ttClasses, setTtClasses] = useState<any[]>([]);
   const [ttSubjects, setTtSubjects] = useState<any[]>([]);
+  const [ttStaff, setTtStaff] = useState<any[]>([]);
+  const [ttClassSubjects, setTtClassSubjects] = useState<any[]>([]);
   const [ttSelectedClassId, setTtSelectedClassId] = useState("");
   const [ttGrid, setTtGrid] = useState<Record<string, string>>({});
   const [ttLoading, setTtLoading] = useState(false);
