@@ -492,7 +492,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     const dayLabel = ["Mon", "Tue", "Wed", "Thu", "Fri"];
     rows.forEach((row) => {
       (otherEntries || []).forEach((other: any) => {
-        if (other.day_of_week !== row.day_of_week || other.start_time !== row.start_time) return;
+        if (other.day_of_week !== row.day_of_week || normalizeTimetableTime(other.start_time) !== normalizeTimetableTime(row.start_time)) return;
         if (row.teacher_id && other.teacher_id === row.teacher_id) {
           clashes.push(
             `Teacher ${other.staff?.full_name || "—"} already teaching ${other.subjects?.name || ""} in ${other.classes?.name || "another class"} on ${dayLabel[row.day_of_week]} ${row.start_time}`
@@ -667,8 +667,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     for (let day = 0; day < 5; day++) {
       const dayEntries = (entries || []).filter((e: any) => e.day_of_week === day);
       for (let i = 0; i < sortedSlots.length - 1; i++) {
-        const a = dayEntries.find((e: any) => e.start_time === sortedSlots[i]);
-        const b = dayEntries.find((e: any) => e.start_time === sortedSlots[i + 1]);
+        const a = dayEntries.find((e: any) => normalizeTimetableTime(e.start_time) === sortedSlots[i]);
+        const b = dayEntries.find((e: any) => normalizeTimetableTime(e.start_time) === sortedSlots[i + 1]);
         if (
           a && b &&
           a.subject_id === b.subject_id &&
