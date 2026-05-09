@@ -183,7 +183,7 @@ export default function StudentTimetableTab({ studentClassId, studentId }: Props
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [resolvedClassId, offline.online]);
+  }, [resolvedClassId, offline.online, offline.refresh]);
 
   return (
     <div className="space-y-3">

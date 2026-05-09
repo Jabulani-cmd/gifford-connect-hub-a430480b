@@ -149,6 +149,8 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   // Timetable management
   const [ttClasses, setTtClasses] = useState<any[]>([]);
   const [ttSubjects, setTtSubjects] = useState<any[]>([]);
+  const [ttStaff, setTtStaff] = useState<any[]>([]);
+  const [ttClassSubjects, setTtClassSubjects] = useState<any[]>([]);
   const [ttSelectedClassId, setTtSelectedClassId] = useState("");
   const [ttGrid, setTtGrid] = useState<Record<string, string>>({});
   const [ttLoading, setTtLoading] = useState(false);
@@ -170,6 +172,16 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     } else {
       setTtGrid({});
     }
+  }, [ttSelectedClassId]);
+
+  useEffect(() => {
+    if (!ttSelectedClassId) return;
+    const channel = supabase
+      .channel(`admin-timetable-${ttSelectedClassId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${ttSelectedClassId}` }, () => fetchClassTimetable(ttSelectedClassId))
+      .on("postgres_changes", { event: "*", schema: "public", table: "class_subjects", filter: `class_id=eq.${ttSelectedClassId}` }, () => fetchClassTimetable(ttSelectedClassId))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [ttSelectedClassId]);
 
   const fetchSiteSettings = async () => {
@@ -344,10 +356,20 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
   const getTimetableCellKey = (dayIndex: number, startTime: string) => `${dayIndex}-${startTime}`;
 
+  const getTimetableCellValue = (key: string) => {
+    const cell = ttGrid[key];
+    return typeof cell === "object" && cell !== null ? cell : { subject_id: "", teacher_id: "", room: "" };
+  };
+
+  const updateTimetableCell = (key: string, patch: Record<string, string>) => {
+    setTtGrid((prev) => ({ ...prev, [key]: { ...getTimetableCellValue(key), ...patch } }));
+  };
+
   const fetchTimetableMeta = async () => {
-    const [{ data: classRows }, { data: subjectRows }] = await Promise.all([
+    const [{ data: classRows }, { data: subjectRows }, { data: staffRows }] = await Promise.all([
       supabase.from("classes").select("id, name").order("name"),
       supabase.from("subjects").select("id, name").order("name"),
+      supabase.from("staff").select("id, full_name").neq("status", "deleted").order("full_name"),
     ]);
 
     if (classRows) {
@@ -359,15 +381,19 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     if (subjectRows) {
       setTtSubjects(subjectRows);
     }
+    if (staffRows) setTtStaff(staffRows);
   };
 
   const fetchClassTimetable = async (classId: string) => {
     setTtLoading(true);
-    const { data, error } = await supabase
-      .from("timetable_entries")
-      .select("day_of_week, start_time, subjects(name)")
-      .eq("class_id", classId)
-      .in("day_of_week", [0, 1, 2, 3, 4]);
+    const [{ data, error }, { data: assignments }] = await Promise.all([
+      supabase
+        .from("timetable_entries")
+        .select("day_of_week, start_time, subject_id, teacher_id, room")
+        .eq("class_id", classId)
+        .in("day_of_week", [0, 1, 2, 3, 4]),
+      supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
+    ]);
 
     if (error) {
       toast({ title: "Failed to load timetable", description: error.message, variant: "destructive" });
@@ -375,10 +401,16 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       return;
     }
 
-    const nextGrid: Record<string, string> = {};
+    setTtClassSubjects(assignments || []);
+    const teacherBySubject = new Map((assignments || []).map((a: any) => [a.subject_id, a.teacher_id]));
+    const nextGrid: Record<string, any> = {};
     (data || []).forEach((entry: any) => {
       const key = getTimetableCellKey(entry.day_of_week, entry.start_time);
-      nextGrid[key] = entry.subjects?.name || "";
+      nextGrid[key] = {
+        subject_id: entry.subject_id || "",
+        teacher_id: entry.teacher_id || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : "") || "",
+        room: entry.room || "",
+      };
     });
     setTtGrid(nextGrid);
     setTtLoading(false);
@@ -397,21 +429,15 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
     setTtSaving(true);
 
-    const subjectMap = new Map(ttSubjects.map((s) => [String(s.name).trim().toLowerCase(), s.id]));
-    const unknownSubjects = new Set<string>();
+    const teacherBySubject = new Map(ttClassSubjects.map((a: any) => [a.subject_id, a.teacher_id]));
     const rows: any[] = [];
 
     timetableSlots.forEach((slot) => {
       timetableDays.forEach((_, dayIndex) => {
         const key = getTimetableCellKey(dayIndex, slot.start);
-        const rawSubject = (ttGrid[key] || "").trim();
-        if (!rawSubject) return;
-
-        const subjectId = subjectMap.get(rawSubject.toLowerCase());
-        if (!subjectId) {
-          unknownSubjects.add(rawSubject);
-          return;
-        }
+        const cell = getTimetableCellValue(key);
+        const subjectId = cell.subject_id;
+        if (!subjectId) return;
 
         rows.push({
           class_id: ttSelectedClassId,
@@ -419,21 +445,11 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           start_time: slot.start,
           end_time: slot.end,
           subject_id: subjectId,
-          teacher_id: null,
-          room: null,
+          teacher_id: cell.teacher_id || teacherBySubject.get(subjectId) || null,
+          room: cell.room?.trim() || null,
         });
       });
     });
-
-    if (unknownSubjects.size > 0) {
-      setTtSaving(false);
-      toast({
-        title: "Unknown subject names",
-        description: `These names do not match configured subjects: ${Array.from(unknownSubjects).join(", ")}`,
-        variant: "destructive",
-      });
-      return;
-    }
 
     const slotStarts = timetableSlots.map((slot) => slot.start);
     const { error: deleteError } = await supabase
@@ -1052,15 +1068,44 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                           <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
                           {timetableDays.map((_, dayIndex) => {
                             const key = getTimetableCellKey(dayIndex, slot.start);
+                            const cell = getTimetableCellValue(key);
                             return (
-                              <td key={key} className="px-1 py-1">
-                                <Input
-                                  className="h-8 text-xs text-center"
-                                  placeholder={ttLoading ? "Loading..." : "Subject"}
-                                  value={ttGrid[key] || ""}
-                                  onChange={(e) => setTtGrid((prev) => ({ ...prev, [key]: e.target.value }))}
-                                  disabled={ttLoading || !ttSelectedClassId}
-                                />
+                              <td key={key} className="min-w-[170px] px-1 py-1 align-top">
+                                <div className="space-y-1">
+                                  <Select
+                                    value={cell.subject_id || "empty"}
+                                    onValueChange={(value) => {
+                                      const subjectId = value === "empty" ? "" : value;
+                                      const assignedTeacher = ttClassSubjects.find((a: any) => a.subject_id === subjectId)?.teacher_id || "";
+                                      updateTimetableCell(key, { subject_id: subjectId, teacher_id: assignedTeacher });
+                                    }}
+                                    disabled={ttLoading || !ttSelectedClassId}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Subject" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="empty">Free period</SelectItem>
+                                      {ttSubjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <Select
+                                    value={cell.teacher_id || "empty"}
+                                    onValueChange={(value) => updateTimetableCell(key, { teacher_id: value === "empty" ? "" : value })}
+                                    disabled={ttLoading || !ttSelectedClassId || !cell.subject_id}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Teacher" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="empty">Teacher TBA</SelectItem>
+                                      {ttStaff.map((staff) => <SelectItem key={staff.id} value={staff.id}>{staff.full_name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    className="h-8 text-xs"
+                                    placeholder="Venue"
+                                    value={cell.room || ""}
+                                    onChange={(e) => updateTimetableCell(key, { room: e.target.value })}
+                                    disabled={ttLoading || !ttSelectedClassId || !cell.subject_id}
+                                  />
+                                </div>
                               </td>
                             );
                           })}

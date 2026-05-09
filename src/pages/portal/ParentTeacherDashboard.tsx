@@ -15,22 +15,8 @@ import schoolLogo from "@/assets/school-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import FullWeekTimetable from "@/components/shared/FullWeekTimetable";
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timeSlots = [
-  { start: "07:30", end: "08:10" },
-  { start: "08:10", end: "08:50" },
-  { start: "08:50", end: "09:30" },
-  { start: "09:50", end: "10:30" },
-  { start: "10:30", end: "11:10" },
-  { start: "11:10", end: "11:50" },
-  { start: "11:50", end: "12:30" },
-  { start: "12:30", end: "13:10" },
-  { start: "13:50", end: "14:30" },
-  { start: "14:30", end: "15:10" },
-  { start: "15:30", end: "16:10" },
-  { start: "16:10", end: "17:00" },
-];
 const termOptions = ["Term 1", "Term 2", "Term 3"];
 const assessmentTypes = ["test", "exam", "assignment", "project"];
 
@@ -72,6 +58,16 @@ export default function ParentTeacherDashboard() {
 
   useEffect(() => {
     if (selectedTTClass) fetchTimetable(selectedTTClass);
+  }, [selectedTTClass]);
+
+  useEffect(() => {
+    if (!selectedTTClass) return;
+    const channel = supabase
+      .channel(`parent-teacher-timetable-${selectedTTClass}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${selectedTTClass}` }, () => fetchTimetable(selectedTTClass))
+      .on("postgres_changes", { event: "*", schema: "public", table: "class_subjects", filter: `class_id=eq.${selectedTTClass}` }, () => fetchTimetable(selectedTTClass))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [selectedTTClass]);
 
   const fetchAll = async () => {
@@ -171,12 +167,28 @@ export default function ParentTeacherDashboard() {
   };
 
   const fetchTimetable = async (classId: string) => {
-    const { data } = await supabase
-      .from("timetable_entries")
-      .select("*, subjects(name)")
-      .eq("class_id", classId)
-      .order("start_time");
-    if (data) setTimetableData(data);
+    const [{ data: detailed }, { data: classSubjects }] = await Promise.all([
+      supabase.from("timetable_entries").select("*, subjects(name), classes(name)").eq("class_id", classId).order("start_time"),
+      supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
+    ]);
+    const staffIds = Array.from(new Set([
+      ...(detailed || []).map((entry: any) => entry.teacher_id),
+      ...(classSubjects || []).map((assignment: any) => assignment.teacher_id),
+    ].filter(Boolean)));
+    const { data: staffNames } = staffIds.length > 0
+      ? await supabase.rpc("get_public_staff_names", { _staff_ids: staffIds })
+      : { data: [] };
+    const staffById = new Map<string, { full_name: string }>();
+    (staffNames || []).forEach((staff: any) => staff?.id && staff?.full_name && staffById.set(staff.id, { full_name: staff.full_name }));
+    const teacherBySubject = new Map<string, { full_name: string }>();
+    (classSubjects || []).forEach((cs: any) => {
+      const assignedTeacher = cs.teacher_id ? staffById.get(cs.teacher_id) : null;
+      if (cs.subject_id && assignedTeacher?.full_name) teacherBySubject.set(cs.subject_id, assignedTeacher);
+    });
+    setTimetableData((detailed || []).map((entry: any) => ({
+      ...entry,
+      staff: (entry.teacher_id ? staffById.get(entry.teacher_id) : null) || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : null) || null,
+    })));
   };
 
   const submitMark = async () => {
@@ -248,13 +260,6 @@ export default function ParentTeacherDashboard() {
   };
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "User";
-
-  const getTimetableCell = (startTime: string, dayIndex: number) => {
-    const entry = timetableData.find(
-      (t) => t.start_time === startTime && (t.day_of_week === dayIndex || t.day_of_week === dayIndex + 1),
-    );
-    return entry?.subjects?.name || "—";
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -469,45 +474,23 @@ export default function ParentTeacherDashboard() {
 
           {/* Class Timetable */}
           <TabsContent value="timetable">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <CardTitle className="font-heading">Class Timetable</CardTitle>
-                  <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
-                    <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
-                    <SelectContent>
-                      {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                {timetableData.length > 0 ? (
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Time</th>
-                        {days.map(d => <th key={d} className="px-3 py-2">{d}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {timeSlots.map((slot) => (
-                        <tr key={slot.start} className="border-t">
-                          <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
-                          {days.map((_, dayIndex) => (
-                            <td key={`${slot.start}-${dayIndex}`} className="px-3 py-2 text-center">{getTimetableCell(slot.start, dayIndex)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-center text-muted-foreground italic py-8">
-                    {loading ? "Loading..." : "No timetable set for this class yet."}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Select value={selectedTTClass} onValueChange={setSelectedTTClass}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FullWeekTimetable
+                entries={timetableData}
+                hasClass={!!selectedTTClass}
+                loading={loading}
+                noClassMessage="Select a class to view the timetable."
+                printTitle={`Class Timetable — ${classes.find(c => c.id === selectedTTClass)?.name || ""}`}
+              />
+            </div>
           </TabsContent>
 
           {/* Announcements */}
