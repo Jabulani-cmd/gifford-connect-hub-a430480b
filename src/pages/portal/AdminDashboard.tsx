@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { Link, useNavigate } from "react-router-dom";
 
 import AcademicManagement from "@/pages/admin/AcademicManagement";
@@ -51,7 +52,7 @@ const departmentOptions = ["Mathematics", "Sciences", "Languages", "Humanities",
 const downloadCategories = ["fees", "forms", "policies", "vacancies", "general"];
 const meetingTypes = ["sdc", "parent-teacher", "general"];
 const timetableDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const timetableSlots = [
+const FALLBACK_TT_SLOTS = [
   { start: "07:30", end: "08:10" },
   { start: "08:10", end: "08:50" },
   { start: "08:50", end: "09:30" },
@@ -62,8 +63,6 @@ const timetableSlots = [
   { start: "12:30", end: "13:10" },
   { start: "13:50", end: "14:30" },
   { start: "14:30", end: "15:10" },
-  { start: "15:30", end: "16:10" },
-  { start: "16:10", end: "17:00" },
 ];
 
 interface AdminDashboardProps {
@@ -167,6 +166,20 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [syncOpen, setSyncOpen] = useState(false);
   const [syncRunning, setSyncRunning] = useState(false);
   const [syncReport, setSyncReport] = useState<any>(null);
+
+  // DB-driven time slots — shared with all portals via useTimeSlots
+  const { timeSlots: allTimeSlots, lessonSlots: dbLessonSlots, refetch: refetchTimeSlots, loading: timeSlotsLoading } = useTimeSlots();
+  const timetableSlots = useMemo(
+    () =>
+      dbLessonSlots.length > 0
+        ? dbLessonSlots.map((s) => ({ start: s.start_time, end: s.end_time }))
+        : FALLBACK_TT_SLOTS,
+    [dbLessonSlots],
+  );
+  // Time slot editor state
+  const [tsForm, setTsForm] = useState({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "" });
+  const [tsEditingId, setTsEditingId] = useState<string | null>(null);
+  const [tsSaving, setTsSaving] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -525,6 +538,72 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
     await fetchClassTimetable(ttSelectedClassId);
     setTtSaving(false);
+  };
+
+  // ===== Time Slot CRUD =====
+  const tsResetForm = () => {
+    setTsForm({ start_time: "", end_time: "", label: "", slot_type: "lesson", display_order: "" });
+    setTsEditingId(null);
+  };
+
+  const tsStartEdit = (slot: any) => {
+    setTsEditingId(slot.id);
+    setTsForm({
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      label: slot.label || "",
+      slot_type: slot.slot_type,
+      display_order: String(slot.display_order),
+    });
+  };
+
+  const saveTimeSlot = async () => {
+    if (!tsForm.start_time || !tsForm.end_time) {
+      toast({ title: "Start and end time required", variant: "destructive" });
+      return;
+    }
+    if (tsForm.start_time >= tsForm.end_time) {
+      toast({ title: "End time must be after start time", variant: "destructive" });
+      return;
+    }
+    setTsSaving(true);
+    const order = parseInt(tsForm.display_order, 10);
+    const payload: any = {
+      start_time: tsForm.start_time,
+      end_time: tsForm.end_time,
+      label: tsForm.label.trim() || null,
+      slot_type: tsForm.slot_type,
+      display_order: Number.isFinite(order) ? order : (allTimeSlots.length + 1),
+    };
+    let error;
+    if (tsEditingId && !tsEditingId.startsWith("fallback-")) {
+      ({ error } = await supabase.from("timetable_time_slots").update(payload).eq("id", tsEditingId));
+    } else {
+      ({ error } = await supabase.from("timetable_time_slots").insert(payload));
+    }
+    setTsSaving(false);
+    if (error) {
+      toast({ title: "Failed to save slot", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: tsEditingId ? "Slot updated" : "Slot added" });
+    tsResetForm();
+    refetchTimeSlots();
+  };
+
+  const deleteTimeSlot = async (id: string) => {
+    if (id.startsWith("fallback-")) {
+      toast({ title: "Cannot delete fallback slot", description: "Save a custom slot first.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Permanently Delete this time slot? It will disappear from all portals.")) return;
+    const { error } = await supabase.from("timetable_time_slots").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Time slot deleted" });
+    refetchTimeSlots();
   };
 
   const runSyncCheck = async () => {
@@ -1257,6 +1336,85 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <ShieldCheck className="mr-1 h-4 w-4" />
                     {syncRunning ? "Checking..." : "Check Sync Status"}
                   </Button>
+                </div>
+
+                {/* Time Slot Editor */}
+                <div className="mb-6 rounded-lg border p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-sm font-semibold">Time Slots ({allTimeSlots.length})</div>
+                    {tsEditingId && (
+                      <Button size="sm" variant="ghost" onClick={tsResetForm}>Cancel edit</Button>
+                    )}
+                  </div>
+                  <p className="mb-3 text-[11px] text-muted-foreground">
+                    Edits sync instantly to Student, Teacher and Parent portals via the shared time slot table.
+                  </p>
+
+                  <div className="grid gap-2 md:grid-cols-6 mb-3">
+                    <div>
+                      <Label className="text-[11px]">Start</Label>
+                      <Input type="time" className="h-9 text-xs" value={tsForm.start_time} onChange={(e) => setTsForm({ ...tsForm, start_time: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">End</Label>
+                      <Input type="time" className="h-9 text-xs" value={tsForm.end_time} onChange={(e) => setTsForm({ ...tsForm, end_time: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Type</Label>
+                      <Select value={tsForm.slot_type} onValueChange={(v) => setTsForm({ ...tsForm, slot_type: v })}>
+                        <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lesson">Lesson</SelectItem>
+                          <SelectItem value="break">Break</SelectItem>
+                          <SelectItem value="sports">Sports</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Label (optional)</Label>
+                      <Input className="h-9 text-xs" placeholder="e.g. Lunch" value={tsForm.label} onChange={(e) => setTsForm({ ...tsForm, label: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Order</Label>
+                      <Input type="number" className="h-9 text-xs" placeholder="auto" value={tsForm.display_order} onChange={(e) => setTsForm({ ...tsForm, display_order: e.target.value })} />
+                    </div>
+                    <div className="flex items-end">
+                      <Button className="h-9 w-full" onClick={saveTimeSlot} disabled={tsSaving}>
+                        {tsSaving ? "Saving..." : tsEditingId ? "Update" : "Add Slot"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded border">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-2 py-1 text-left">#</th>
+                          <th className="px-2 py-1 text-left">Time</th>
+                          <th className="px-2 py-1 text-left">Type</th>
+                          <th className="px-2 py-1 text-left">Label</th>
+                          <th className="px-2 py-1"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSlotsLoading && (
+                          <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Loading…</td></tr>
+                        )}
+                        {!timeSlotsLoading && allTimeSlots.map((s) => (
+                          <tr key={s.id} className="border-t">
+                            <td className="px-2 py-1">{s.display_order}</td>
+                            <td className="px-2 py-1 font-mono">{s.start_time}–{s.end_time}</td>
+                            <td className="px-2 py-1 capitalize">{s.slot_type}</td>
+                            <td className="px-2 py-1">{s.label || "—"}</td>
+                            <td className="px-2 py-1 text-right space-x-1">
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => tsStartEdit(s)}>Edit</Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive" onClick={() => deleteTimeSlot(s.id)}>Delete</Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {ttSelectedClassId && (
