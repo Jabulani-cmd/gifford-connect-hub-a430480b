@@ -250,18 +250,44 @@ export default function FullWeekTimetable({
                         ? getSportsCell(slot.start_time, di)
                         : getCell(slot.start_time, di);
 
+                      // Detect double lesson: next teaching slot has same subject + teacher + room
+                      let isDoubleStart = false;
+                      let isDoubleCont = false;
+                      if (entry && !isSports && !isBreak) {
+                        const nextSlot = timeSlots
+                          .slice(si + 1)
+                          .find((s) => s.slot_type !== "break");
+                        const prevSlot = [...timeSlots.slice(0, si)]
+                          .reverse()
+                          .find((s) => s.slot_type !== "break");
+                        const nextEntry = nextSlot ? getCell(nextSlot.start_time, di) : null;
+                        const prevEntry = prevSlot ? getCell(prevSlot.start_time, di) : null;
+                        const sameAs = (a: any, b: any) =>
+                          a && b &&
+                          a.subjects?.name === b.subjects?.name &&
+                          (a.staff?.full_name || "") === (b.staff?.full_name || "") &&
+                          (a.room || "") === (b.room || "");
+                        if (sameAs(entry, nextEntry) && !sameAs(entry, prevEntry)) isDoubleStart = true;
+                        if (sameAs(entry, prevEntry)) isDoubleCont = true;
+                      }
+
                       return (
                         <TableCell
                           key={di}
                           className={`py-2 text-center text-xs ${
                             today === di + 1 ? "bg-secondary/5" : ""
-                          }`}
+                          } ${isDoubleStart || isDoubleCont ? "bg-primary/5" : ""}`}
                         >
                           {entry ? (
                             <div>
                               <span className="font-medium">
                                 {entry.subjects?.name || entry.activity_name || "—"}
                               </span>
+                              {(isDoubleStart || isDoubleCont) && (
+                                <Badge className="ml-1 px-1 py-0 text-[8px]" variant="secondary">
+                                  Double
+                                </Badge>
+                              )}
                               <span className="block text-[10px] text-muted-foreground">
                                 {entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}
                               </span>
