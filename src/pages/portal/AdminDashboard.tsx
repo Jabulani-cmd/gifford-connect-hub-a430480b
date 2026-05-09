@@ -1335,6 +1335,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                   <Button variant="secondary" onClick={runSyncCheck} disabled={!ttSelectedClassId || syncRunning}>
                     <ShieldCheck className="mr-1 h-4 w-4" />
                     {syncRunning ? "Checking..." : "Check Sync Status"}
+                  </Button>
                 </div>
 
                 {/* Time Slot Editor */}
