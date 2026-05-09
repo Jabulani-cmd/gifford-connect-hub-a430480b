@@ -347,9 +347,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const getTimetableCellKey = (dayIndex: number, startTime: string) => `${dayIndex}-${startTime}`;
 
   const fetchTimetableMeta = async () => {
-    const [{ data: classRows }, { data: subjectRows }] = await Promise.all([
+    const [{ data: classRows }, { data: subjectRows }, { data: staffRows }] = await Promise.all([
       supabase.from("classes").select("id, name").order("name"),
       supabase.from("subjects").select("id, name").order("name"),
+      supabase.from("staff").select("id, full_name").neq("status", "deleted").order("full_name"),
     ]);
 
     if (classRows) {
@@ -361,15 +362,19 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     if (subjectRows) {
       setTtSubjects(subjectRows);
     }
+    if (staffRows) setTtStaff(staffRows);
   };
 
   const fetchClassTimetable = async (classId: string) => {
     setTtLoading(true);
-    const { data, error } = await supabase
-      .from("timetable_entries")
-      .select("day_of_week, start_time, subjects(name)")
-      .eq("class_id", classId)
-      .in("day_of_week", [0, 1, 2, 3, 4]);
+    const [{ data, error }, { data: assignments }] = await Promise.all([
+      supabase
+        .from("timetable_entries")
+        .select("day_of_week, start_time, subject_id, teacher_id, room")
+        .eq("class_id", classId)
+        .in("day_of_week", [0, 1, 2, 3, 4]),
+      supabase.from("class_subjects").select("subject_id, teacher_id").eq("class_id", classId),
+    ]);
 
     if (error) {
       toast({ title: "Failed to load timetable", description: error.message, variant: "destructive" });
@@ -377,10 +382,16 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
       return;
     }
 
-    const nextGrid: Record<string, string> = {};
+    setTtClassSubjects(assignments || []);
+    const teacherBySubject = new Map((assignments || []).map((a: any) => [a.subject_id, a.teacher_id]));
+    const nextGrid: Record<string, any> = {};
     (data || []).forEach((entry: any) => {
       const key = getTimetableCellKey(entry.day_of_week, entry.start_time);
-      nextGrid[key] = entry.subjects?.name || "";
+      nextGrid[key] = {
+        subject_id: entry.subject_id || "",
+        teacher_id: entry.teacher_id || (entry.subject_id ? teacherBySubject.get(entry.subject_id) : "") || "",
+        room: entry.room || "",
+      };
     });
     setTtGrid(nextGrid);
     setTtLoading(false);
