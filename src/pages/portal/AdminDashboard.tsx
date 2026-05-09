@@ -45,6 +45,7 @@ import { useMainCrest } from "@/hooks/useMainCrest";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeTimetableTime } from "@/lib/timetable";
 
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
@@ -172,7 +173,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const timetableSlots = useMemo(
     () =>
       dbLessonSlots.length > 0
-        ? dbLessonSlots.map((s) => ({ start: s.start_time, end: s.end_time }))
+        ? dbLessonSlots.map((s) => ({ start: normalizeTimetableTime(s.start_time), end: normalizeTimetableTime(s.end_time) }))
         : FALLBACK_TT_SLOTS,
     [dbLessonSlots],
   );
