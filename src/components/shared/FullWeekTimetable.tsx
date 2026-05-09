@@ -99,7 +99,7 @@ export default function FullWeekTimetable({
           if (entry) {
             html += `<td style="text-align:center"><strong>${entry.subjects?.name || entry.activity_name || "—"}</strong>`;
             html += `<br><span style="font-size:9px;color:#666">${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}</span>`;
-            if (entry.room || entry.venue) html += `<br><span style="font-size:8px;background:#f0f0f0;padding:1px 4px;border-radius:3px">${entry.room || entry.venue}</span>`;
+            html += `<br><span style="font-size:8px;background:#f0f0f0;padding:1px 4px;border-radius:3px">${entry.room || entry.venue || "Venue TBA"}</span>`;
             html += `</td>`;
           } else {
             html += `<td style="text-align:center;color:#ccc">—</td>`;
@@ -135,7 +135,7 @@ export default function FullWeekTimetable({
           if (entry) {
             let cell = entry.subjects?.name || entry.activity_name || "—";
             cell += ` (${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")})`;
-            if (entry.room || entry.venue) cell += ` [${entry.room || entry.venue}]`;
+            cell += ` [${entry.room || entry.venue || "Venue TBA"}]`;
             row.push(cell);
           } else {
             row.push("—");
@@ -265,14 +265,12 @@ export default function FullWeekTimetable({
                               <span className="block text-[10px] text-muted-foreground">
                                 {entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}
                               </span>
-                              {(entry.room || entry.venue) && (
-                                <Badge
-                                  variant="outline"
-                                  className="mt-0.5 px-1 py-0 text-[8px]"
-                                >
-                                  {entry.room || entry.venue}
-                                </Badge>
-                              )}
+                              <Badge
+                                variant="outline"
+                                className="mt-0.5 px-1 py-0 text-[8px]"
+                              >
+                                {entry.room || entry.venue || "Venue TBA"}
+                              </Badge>
                             </div>
                           ) : (
                             <span className="text-muted-foreground/40">—</span>
