@@ -1425,6 +1425,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                     <ShieldCheck className="mr-1 h-4 w-4" />
                     {syncRunning ? "Checking..." : "Check Sync Status"}
                   </Button>
+                  <Button variant="destructive" onClick={wipeAllTimetables} disabled={wipingTimetable}>
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {wipingTimetable ? "Clearing..." : "Clear & Rebuild Timetable"}
+                  </Button>
                 </div>
 
                 {/* Time Slot Editor */}
