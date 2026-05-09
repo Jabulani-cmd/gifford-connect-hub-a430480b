@@ -779,6 +779,69 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     fetchClassTimetable(ttSelectedClassId);
   };
 
+  const [wipingTimetable, setWipingTimetable] = useState(false);
+  const wipeAllTimetables = async () => {
+    const scope = window.prompt(
+      'This will PERMANENTLY DELETE timetable data so you can rebuild from scratch.\n\n' +
+      'Type one of:\n' +
+      '  CLASS    — delete all entries for the currently selected class only\n' +
+      '  ALL      — delete ALL timetable entries for EVERY class\n' +
+      '  ALL+SLOTS — delete ALL entries AND all time slots (full reset)\n\n' +
+      'Or leave blank to cancel.'
+    );
+    const choice = (scope || "").trim().toUpperCase();
+    if (!choice) return;
+    if (!["CLASS", "ALL", "ALL+SLOTS"].includes(choice)) {
+      toast({ title: "Cancelled", description: "Unrecognised option." });
+      return;
+    }
+    if (choice === "CLASS" && !ttSelectedClassId) {
+      toast({ title: "Pick a class first", variant: "destructive" });
+      return;
+    }
+    const confirmText = window.prompt(`Type "DELETE" to confirm permanent ${choice} wipe.`);
+    if (confirmText !== "DELETE") {
+      toast({ title: "Cancelled" });
+      return;
+    }
+    setWipingTimetable(true);
+    try {
+      let q = supabase.from("timetable_entries").delete();
+      if (choice === "CLASS") {
+        q = q.eq("class_id", ttSelectedClassId);
+      } else {
+        // delete all rows
+        q = q.not("id", "is", null);
+      }
+      const { error: delErr } = await q;
+      if (delErr) throw delErr;
+
+      // Also clear cached personal_timetables (class-derived snapshots) on full wipes
+      if (choice === "ALL" || choice === "ALL+SLOTS") {
+        await supabase.from("personal_timetables").delete().eq("activity_type", "class");
+      }
+
+      if (choice === "ALL+SLOTS") {
+        const { error: slotErr } = await supabase.from("timetable_time_slots").delete().not("id", "is", null);
+        if (slotErr) throw slotErr;
+      }
+
+      toast({
+        title: "Timetable cleared",
+        description: choice === "CLASS"
+          ? "All entries for the selected class were deleted. Ready to rebuild."
+          : choice === "ALL"
+            ? "All timetable entries deleted across every class. Ready to rebuild."
+            : "All entries and time slots deleted. Add new time slots, then rebuild.",
+      });
+      if (ttSelectedClassId) fetchClassTimetable(ttSelectedClassId);
+    } catch (e: any) {
+      toast({ title: "Wipe failed", description: e.message, variant: "destructive" });
+    } finally {
+      setWipingTimetable(false);
+    }
+  };
+
   const addAnnouncement = async () => {
     if (!newTitle) return;
     const { error } = await supabase.from("announcements").insert({ title: newTitle, content: newText, is_public: true, author_id: user?.id });
@@ -1361,6 +1424,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                   <Button variant="secondary" onClick={runSyncCheck} disabled={!ttSelectedClassId || syncRunning}>
                     <ShieldCheck className="mr-1 h-4 w-4" />
                     {syncRunning ? "Checking..." : "Check Sync Status"}
+                  </Button>
+                  <Button variant="destructive" onClick={wipeAllTimetables} disabled={wipingTimetable}>
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {wipingTimetable ? "Clearing..." : "Clear & Rebuild Timetable"}
                   </Button>
                 </div>
 
