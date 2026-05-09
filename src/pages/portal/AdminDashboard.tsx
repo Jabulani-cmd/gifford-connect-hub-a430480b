@@ -155,6 +155,13 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [ttGrid, setTtGrid] = useState<Record<string, string>>({});
   const [ttLoading, setTtLoading] = useState(false);
   const [ttSaving, setTtSaving] = useState(false);
+  // Quick Add slot form
+  const [qaDay, setQaDay] = useState<string>("0");
+  const [qaSlot, setQaSlot] = useState<string>("");
+  const [qaSubject, setQaSubject] = useState<string>("");
+  const [qaTeacher, setQaTeacher] = useState<string>("");
+  const [qaRoom, setQaRoom] = useState<string>("");
+  const [qaSaving, setQaSaving] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements();
