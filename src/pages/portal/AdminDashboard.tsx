@@ -163,6 +163,10 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
   const [qaRoom, setQaRoom] = useState<string>("");
   const [qaDouble, setQaDouble] = useState<boolean>(false);
   const [qaSaving, setQaSaving] = useState(false);
+  // Sync Status checker
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [syncRunning, setSyncRunning] = useState(false);
+  const [syncReport, setSyncReport] = useState<any>(null);
 
   useEffect(() => {
     fetchAnnouncements();
