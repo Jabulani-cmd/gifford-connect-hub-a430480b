@@ -1068,15 +1068,44 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                           <td className="px-3 py-2 font-medium">{slot.start}–{slot.end}</td>
                           {timetableDays.map((_, dayIndex) => {
                             const key = getTimetableCellKey(dayIndex, slot.start);
+                            const cell = getTimetableCellValue(key);
                             return (
-                              <td key={key} className="px-1 py-1">
-                                <Input
-                                  className="h-8 text-xs text-center"
-                                  placeholder={ttLoading ? "Loading..." : "Subject"}
-                                  value={ttGrid[key] || ""}
-                                  onChange={(e) => setTtGrid((prev) => ({ ...prev, [key]: e.target.value }))}
-                                  disabled={ttLoading || !ttSelectedClassId}
-                                />
+                              <td key={key} className="min-w-[170px] px-1 py-1 align-top">
+                                <div className="space-y-1">
+                                  <Select
+                                    value={cell.subject_id || "empty"}
+                                    onValueChange={(value) => {
+                                      const subjectId = value === "empty" ? "" : value;
+                                      const assignedTeacher = ttClassSubjects.find((a: any) => a.subject_id === subjectId)?.teacher_id || "";
+                                      updateTimetableCell(key, { subject_id: subjectId, teacher_id: assignedTeacher });
+                                    }}
+                                    disabled={ttLoading || !ttSelectedClassId}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Subject" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="empty">Free period</SelectItem>
+                                      {ttSubjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <Select
+                                    value={cell.teacher_id || "empty"}
+                                    onValueChange={(value) => updateTimetableCell(key, { teacher_id: value === "empty" ? "" : value })}
+                                    disabled={ttLoading || !ttSelectedClassId || !cell.subject_id}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Teacher" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="empty">Teacher TBA</SelectItem>
+                                      {ttStaff.map((staff) => <SelectItem key={staff.id} value={staff.id}>{staff.full_name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    className="h-8 text-xs"
+                                    placeholder="Venue"
+                                    value={cell.room || ""}
+                                    onChange={(e) => updateTimetableCell(key, { room: e.target.value })}
+                                    disabled={ttLoading || !ttSelectedClassId || !cell.subject_id}
+                                  />
+                                </div>
                               </td>
                             );
                           })}
