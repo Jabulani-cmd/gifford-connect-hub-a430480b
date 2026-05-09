@@ -1225,6 +1225,18 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                         </Button>
                       </div>
                     </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        id="qa-double"
+                        type="checkbox"
+                        checked={qaDouble}
+                        onChange={(e) => setQaDouble(e.target.checked)}
+                        className="h-4 w-4 cursor-pointer"
+                      />
+                      <Label htmlFor="qa-double" className="cursor-pointer text-xs">
+                        Double lesson (covers this slot + the next consecutive slot)
+                      </Label>
+                    </div>
                     <p className="mt-2 text-[10px] text-muted-foreground">
                       Tip: choosing a subject auto-fills the teacher (from Academic → Class Subjects). Override here if needed. Saves instantly to all portals.
                     </p>
