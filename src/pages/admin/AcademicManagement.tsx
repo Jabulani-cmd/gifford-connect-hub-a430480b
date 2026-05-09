@@ -251,9 +251,26 @@ export default function AcademicManagement() {
   // ═══ ASSIGN SUBJECT TO CLASS ═══
   async function assignSubjectToClass() {
     if (!assignClass || !assignSubject) { toast({ title: "Select class and subject", variant: "destructive" }); return; }
-    const { error } = await supabase.from("class_subjects").insert({ class_id: assignClass, subject_id: assignSubject, teacher_id: assignTeacher || null });
+    // Check if assignment already exists for this class+subject; update teacher if so, otherwise insert
+    const { data: existing } = await supabase
+      .from("class_subjects")
+      .select("id")
+      .eq("class_id", assignClass)
+      .eq("subject_id", assignSubject)
+      .maybeSingle();
+    let error;
+    if (existing?.id) {
+      ({ error } = await supabase
+        .from("class_subjects")
+        .update({ teacher_id: assignTeacher || null })
+        .eq("id", existing.id));
+    } else {
+      ({ error } = await supabase
+        .from("class_subjects")
+        .insert({ class_id: assignClass, subject_id: assignSubject, teacher_id: assignTeacher || null }));
+    }
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Subject assigned" });
+    toast({ title: existing?.id ? "Assignment updated" : "Subject assigned" });
     setAssignDialogOpen(false);
     fetchClassSubjects();
   }
