@@ -519,11 +519,11 @@ export default function TeacherRecordsTab({ userId, classes, subjects, staffId }
                   <TableBody>
                     {ttData.map(t => (
                       <TableRow key={t.id}>
-                        <TableCell className="font-medium">{days[t.day_of_week - 1] || `Day ${t.day_of_week}`}</TableCell>
+                        <TableCell className="font-medium">{timetableDayLabel(t.day_of_week, ttUsesZeroBasedDays)}</TableCell>
                         <TableCell>{t.start_time} - {t.end_time}</TableCell>
                         <TableCell>{t.subjects?.name || "—"}</TableCell>
-                        <TableCell>{t.staff?.full_name || "—"}</TableCell>
-                        <TableCell>{t.room || "—"}</TableCell>
+                        <TableCell>{t.staff?.full_name || "Teacher TBA"}</TableCell>
+                        <TableCell>{t.room || "Venue TBA"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
