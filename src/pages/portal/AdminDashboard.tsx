@@ -174,6 +174,16 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
     }
   }, [ttSelectedClassId]);
 
+  useEffect(() => {
+    if (!ttSelectedClassId) return;
+    const channel = supabase
+      .channel(`admin-timetable-${ttSelectedClassId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${ttSelectedClassId}` }, () => fetchClassTimetable(ttSelectedClassId))
+      .on("postgres_changes", { event: "*", schema: "public", table: "class_subjects", filter: `class_id=eq.${ttSelectedClassId}` }, () => fetchClassTimetable(ttSelectedClassId))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ttSelectedClassId]);
+
   const fetchSiteSettings = async () => {
     const { data } = await supabase.from("site_settings").select("*").in("setting_key", ["achievements_image", "principal_photo", "tradition_image", "cta_image"]);
     if (data) {
