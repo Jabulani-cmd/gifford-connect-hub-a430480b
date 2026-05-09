@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/table";
 import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
 import { printBrandedHtml, downloadBrandedPdf } from "@/lib/export-pdf";
+import { timetableDayMatches, timetableShortDayLabels, timetableUsesZeroBasedDays } from "@/lib/timetable";
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const days = timetableShortDayLabels;
 
 interface TimetableEntry {
   day_of_week: number;
@@ -53,6 +54,10 @@ export default function FullWeekTimetable({
 }: Props) {
   const today = new Date().getDay(); // 0=Sun, 1=Mon...
   const { timeSlots, loading: slotsLoading } = useTimeSlots();
+  const zeroBasedDays = useMemo(
+    () => timetableUsesZeroBasedDays([...entries, ...sportsSchedule]),
+    [entries, sportsSchedule],
+  );
 
 
   const getCell = useMemo(() => {
@@ -60,22 +65,22 @@ export default function FullWeekTimetable({
       const entry = entries.find(
         (t) =>
           t.start_time === startTime &&
-          (t.day_of_week === dayIndex || t.day_of_week === dayIndex + 1)
+          timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
       );
       return entry;
     };
-  }, [entries]);
+  }, [entries, zeroBasedDays]);
 
   const getSportsCell = useMemo(() => {
     return (startTime: string, dayIndex: number) => {
       const entry = sportsSchedule.find(
         (t) =>
           t.start_time === startTime &&
-          (t.day_of_week === dayIndex || t.day_of_week === dayIndex + 1)
+          timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
       );
       return entry;
     };
-  }, [sportsSchedule]);
+  }, [sportsSchedule, zeroBasedDays]);
 
   const buildTimetableHtml = () => {
     let html = `<table style="font-size:11px"><thead><tr><th style="width:100px">Time</th>`;
