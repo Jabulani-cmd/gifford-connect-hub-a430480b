@@ -60,6 +60,16 @@ export default function ParentTeacherDashboard() {
     if (selectedTTClass) fetchTimetable(selectedTTClass);
   }, [selectedTTClass]);
 
+  useEffect(() => {
+    if (!selectedTTClass) return;
+    const channel = supabase
+      .channel(`parent-teacher-timetable-${selectedTTClass}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${selectedTTClass}` }, () => fetchTimetable(selectedTTClass))
+      .on("postgres_changes", { event: "*", schema: "public", table: "class_subjects", filter: `class_id=eq.${selectedTTClass}` }, () => fetchTimetable(selectedTTClass))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTTClass]);
+
   const fetchAll = async () => {
     setLoading(true);
 
@@ -250,13 +260,6 @@ export default function ParentTeacherDashboard() {
   };
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || "User";
-
-  const getTimetableCell = (startTime: string, dayIndex: number) => {
-    const entry = timetableData.find(
-      (t) => t.start_time === startTime && (t.day_of_week === dayIndex || t.day_of_week === dayIndex + 1),
-    );
-    return entry?.subjects?.name || "—";
-  };
 
   return (
     <div className="min-h-screen bg-background">
