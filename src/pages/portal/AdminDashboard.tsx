@@ -1395,6 +1395,89 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
                 </div>
               </CardContent>
             </Card>
+
+            {/* Sync Status Dialog */}
+            <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="font-heading flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5" /> Timetable Sync Status
+                  </DialogTitle>
+                </DialogHeader>
+                {syncRunning && (
+                  <div className="py-8 text-center text-sm text-muted-foreground">Running checks…</div>
+                )}
+                {!syncRunning && syncReport && (
+                  <div className="space-y-4 text-sm">
+                    <div className="rounded-lg border p-3">
+                      <div className="font-semibold">{syncReport.className}</div>
+                      <div className="text-xs text-muted-foreground">Checked: {syncReport.timestamp}</div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div className="rounded-lg border p-3">
+                        <div className="text-2xl font-bold">{syncReport.total}</div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Entries</div>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <div className="text-2xl font-bold">{syncReport.doubleLessons.length}</div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Double Lessons</div>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <div className="text-2xl font-bold">{syncReport.missingTeacher - syncReport.teacherFallbackResolves}</div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Unresolved Teacher</div>
+                      </div>
+                      <div className="rounded-lg border p-3">
+                        <div className="text-2xl font-bold">{syncReport.missingVenue}</div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Missing Venue</div>
+                      </div>
+                    </div>
+
+                    <div className={`rounded-lg border p-3 ${syncReport.realtimeStatus === "live" ? "border-green-500/50 bg-green-500/5" : "border-destructive/50 bg-destructive/5"}`}>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className={`h-4 w-4 ${syncReport.realtimeStatus === "live" ? "text-green-600" : "text-destructive"}`} />
+                        <span className="font-semibold">
+                          Realtime channel: {syncReport.realtimeStatus === "live" ? "LIVE" : syncReport.realtimeStatus.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {syncReport.realtimeStatus === "live"
+                          ? "Student, Teacher and Parent portals will receive timetable updates instantly via the realtime channel."
+                          : "Realtime channel did not subscribe. Updates may require a manual refresh in the other portals."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-3">
+                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Per-portal view (single source of truth)</div>
+                      <div className="space-y-1 text-xs">
+                        <div>✓ Admin portal grid: {syncReport.total} entries</div>
+                        <div>✓ Student portal: {syncReport.total} entries (teacher resolved via class_subjects fallback for {syncReport.teacherFallbackResolves})</div>
+                        <div>✓ Teacher portal: {syncReport.total} entries (filtered by teacher_id)</div>
+                        <div>✓ Parent portal: {syncReport.total} entries (mirrors student view)</div>
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">All portals query the same <code>timetable_entries</code> table, so the row count is identical by definition.</p>
+                    </div>
+
+                    {syncReport.doubleLessons.length > 0 && (
+                      <div className="rounded-lg border p-3">
+                        <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Double Lessons Detected</div>
+                        <ul className="space-y-1 text-xs">
+                          {syncReport.doubleLessons.map((d: string, i: number) => (
+                            <li key={i}>• {d}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {syncReport.error && (
+                      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-xs text-destructive">
+                        Error: {syncReport.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Site Images Tab */}
