@@ -346,6 +346,15 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
   const getTimetableCellKey = (dayIndex: number, startTime: string) => `${dayIndex}-${startTime}`;
 
+  const getTimetableCellValue = (key: string) => {
+    const cell = ttGrid[key];
+    return typeof cell === "object" && cell !== null ? cell : { subject_id: "", teacher_id: "", room: "" };
+  };
+
+  const updateTimetableCell = (key: string, patch: Record<string, string>) => {
+    setTtGrid((prev) => ({ ...prev, [key]: { ...getTimetableCellValue(key), ...patch } }));
+  };
+
   const fetchTimetableMeta = async () => {
     const [{ data: classRows }, { data: subjectRows }, { data: staffRows }] = await Promise.all([
       supabase.from("classes").select("id, name").order("name"),
@@ -410,21 +419,15 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
     setTtSaving(true);
 
-    const subjectMap = new Map(ttSubjects.map((s) => [String(s.name).trim().toLowerCase(), s.id]));
-    const unknownSubjects = new Set<string>();
+    const teacherBySubject = new Map(ttClassSubjects.map((a: any) => [a.subject_id, a.teacher_id]));
     const rows: any[] = [];
 
     timetableSlots.forEach((slot) => {
       timetableDays.forEach((_, dayIndex) => {
         const key = getTimetableCellKey(dayIndex, slot.start);
-        const rawSubject = (ttGrid[key] || "").trim();
-        if (!rawSubject) return;
-
-        const subjectId = subjectMap.get(rawSubject.toLowerCase());
-        if (!subjectId) {
-          unknownSubjects.add(rawSubject);
-          return;
-        }
+        const cell = getTimetableCellValue(key);
+        const subjectId = cell.subject_id;
+        if (!subjectId) return;
 
         rows.push({
           class_id: ttSelectedClassId,
@@ -432,21 +435,11 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
           start_time: slot.start,
           end_time: slot.end,
           subject_id: subjectId,
-          teacher_id: null,
-          room: null,
+          teacher_id: cell.teacher_id || teacherBySubject.get(subjectId) || null,
+          room: cell.room?.trim() || null,
         });
       });
     });
-
-    if (unknownSubjects.size > 0) {
-      setTtSaving(false);
-      toast({
-        title: "Unknown subject names",
-        description: `These names do not match configured subjects: ${Array.from(unknownSubjects).join(", ")}`,
-        variant: "destructive",
-      });
-      return;
-    }
 
     const slotStarts = timetableSlots.map((slot) => slot.start);
     const { error: deleteError } = await supabase
