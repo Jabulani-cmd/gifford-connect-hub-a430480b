@@ -168,16 +168,18 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
   // Realtime subscription for live updates when online
   useEffect(() => {
     if (!resolvedClassId || !offline.online) return;
+    // Subscribe without class_id filter so deletes (which may not carry the
+    // filter column) and bulk admin rebuilds always trigger a refresh.
     const channel = supabase
-      .channel(`timetable-${resolvedClassId}`)
+      .channel(`timetable-watch-${resolvedClassId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "timetable_entries", filter: `class_id=eq.${resolvedClassId}` },
+        { event: "*", schema: "public", table: "timetable_entries" },
         () => offline.refresh(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "sports_schedule", filter: `class_id=eq.${resolvedClassId}` },
+        { event: "*", schema: "public", table: "sports_schedule" },
         () => offline.refresh(),
       )
       .subscribe();
@@ -185,6 +187,21 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
       supabase.removeChannel(channel);
     };
   }, [resolvedClassId, offline.online, offline.refresh]);
+
+  // Refresh when the tab/window regains focus so parents/students always see
+  // the latest admin edits even if a realtime event was missed.
+  useEffect(() => {
+    if (!resolvedClassId) return;
+    const onFocus = () => {
+      if (document.visibilityState === "visible") offline.refresh();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [resolvedClassId, offline.refresh]);
 
   return (
     <div className="space-y-3">
