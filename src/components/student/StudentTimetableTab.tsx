@@ -245,7 +245,3 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
     </div>
   );
 }
-      />
-    </div>
-  );
-}
