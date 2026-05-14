@@ -1085,11 +1085,13 @@ export type Database = {
           exam_date: string
           exam_id: string
           id: string
+          invigilator_staff_id: string | null
           invigilators: string[] | null
           notes: string | null
           start_time: string
           subject_id: string
           venue: string | null
+          venue_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1097,11 +1099,13 @@ export type Database = {
           exam_date: string
           exam_id: string
           id?: string
+          invigilator_staff_id?: string | null
           invigilators?: string[] | null
           notes?: string | null
           start_time: string
           subject_id: string
           venue?: string | null
+          venue_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1109,11 +1113,13 @@ export type Database = {
           exam_date?: string
           exam_id?: string
           id?: string
+          invigilator_staff_id?: string | null
           invigilators?: string[] | null
           notes?: string | null
           start_time?: string
           subject_id?: string
           venue?: string | null
+          venue_id?: string | null
         }
         Relationships: [
           {
@@ -1124,10 +1130,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "exam_timetable_entries_invigilator_staff_id_fkey"
+            columns: ["invigilator_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_timetable_entries_invigilator_staff_id_fkey"
+            columns: ["invigilator_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "exam_timetable_entries_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_timetable_entries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_venues"
             referencedColumns: ["id"]
           },
         ]
@@ -3139,6 +3166,41 @@ export type Database = {
           },
         ]
       }
+      subject_period_requirements: {
+        Row: {
+          created_at: string
+          form_level: string
+          id: string
+          periods_per_week: number
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          form_level: string
+          id?: string
+          periods_per_week?: number
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          form_level?: string
+          id?: string
+          periods_per_week?: number
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_period_requirements_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           code: string | null
@@ -3349,6 +3411,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teaching_venues: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          venue_type: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          venue_type?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          venue_type?: string
+        }
+        Relationships: []
       }
       term_registrations: {
         Row: {
@@ -3590,6 +3682,36 @@ export type Database = {
           },
         ]
       }
+      timetable_drafts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          draft_json: Json
+          draft_type: string
+          id: string
+          meta: Json | null
+          scope_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          draft_json: Json
+          draft_type: string
+          id?: string
+          meta?: Json | null
+          scope_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          draft_json?: Json
+          draft_type?: string
+          id?: string
+          meta?: Json | null
+          scope_id?: string | null
+        }
+        Relationships: []
+      }
       timetable_entries: {
         Row: {
           academic_year: string | null
@@ -3603,6 +3725,7 @@ export type Database = {
           subject_id: string | null
           teacher_id: string | null
           term: string | null
+          venue_id: string | null
         }
         Insert: {
           academic_year?: string | null
@@ -3616,6 +3739,7 @@ export type Database = {
           subject_id?: string | null
           teacher_id?: string | null
           term?: string | null
+          venue_id?: string | null
         }
         Update: {
           academic_year?: string | null
@@ -3629,6 +3753,7 @@ export type Database = {
           subject_id?: string | null
           teacher_id?: string | null
           term?: string | null
+          venue_id?: string | null
         }
         Relationships: [
           {
@@ -3657,6 +3782,13 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_entries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_venues"
             referencedColumns: ["id"]
           },
         ]
