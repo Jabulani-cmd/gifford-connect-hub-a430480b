@@ -1434,6 +1434,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
           {/* Timetable Tab */}
           <TabsContent value="timetable">
+            <div className="mb-4"><AITimetableGenerator /></div>
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading">Manage Timetable</CardTitle>
