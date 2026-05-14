@@ -3725,6 +3725,8 @@ export type Database = {
           subject_id: string | null
           teacher_id: string | null
           term: string | null
+          term_end_date: string | null
+          term_start_date: string | null
           venue_id: string | null
         }
         Insert: {
@@ -3739,6 +3741,8 @@ export type Database = {
           subject_id?: string | null
           teacher_id?: string | null
           term?: string | null
+          term_end_date?: string | null
+          term_start_date?: string | null
           venue_id?: string | null
         }
         Update: {
@@ -3753,6 +3757,8 @@ export type Database = {
           subject_id?: string | null
           teacher_id?: string | null
           term?: string | null
+          term_end_date?: string | null
+          term_start_date?: string | null
           venue_id?: string | null
         }
         Relationships: [
@@ -3786,6 +3792,96 @@ export type Database = {
           },
           {
             foreignKeyName: "timetable_entries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timetable_overrides: {
+        Row: {
+          academic_year: string | null
+          class_id: string | null
+          created_at: string
+          created_by: string | null
+          end_time: string | null
+          id: string
+          is_cancelled: boolean
+          override_date: string
+          reason: string | null
+          room: string | null
+          start_time: string
+          subject_id: string | null
+          teacher_id: string | null
+          term: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          academic_year?: string | null
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          is_cancelled?: boolean
+          override_date: string
+          reason?: string | null
+          room?: string | null
+          start_time: string
+          subject_id?: string | null
+          teacher_id?: string | null
+          term?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          academic_year?: string | null
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          is_cancelled?: boolean
+          override_date?: string
+          reason?: string | null
+          room?: string | null
+          start_time?: string
+          subject_id?: string | null
+          teacher_id?: string | null
+          term?: string | null
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_overrides_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_overrides_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_overrides_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_overrides_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_overrides_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "teaching_venues"
