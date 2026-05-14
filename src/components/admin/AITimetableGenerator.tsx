@@ -327,6 +327,101 @@ export default function AITimetableGenerator() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Per-Date Overrides */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-heading">Per-Date Overrides</CardTitle>
+          <p className="text-xs text-muted-foreground">Replace or cancel a specific lesson on a specific date (e.g. exam day, sports day, public holiday). Auto-syncs to teacher, student and parent portals.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div>
+              <Label className="text-xs">Date *</Label>
+              <Input type="date" value={ovForm.override_date} onChange={(e) => setOvForm({ ...ovForm, override_date: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">Class (blank = whole school)</Label>
+              <Select value={ovForm.class_id || "all"} onValueChange={(v) => setOvForm({ ...ovForm, class_id: v === "all" ? "" : v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">— Whole school —</SelectItem>
+                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Start *</Label>
+              <Input type="time" value={ovForm.start_time} onChange={(e) => setOvForm({ ...ovForm, start_time: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">End</Label>
+              <Input type="time" value={ovForm.end_time} onChange={(e) => setOvForm({ ...ovForm, end_time: e.target.value })} />
+            </div>
+            <div className="col-span-2 sm:col-span-4 flex items-center gap-2">
+              <input type="checkbox" id="ov-cancel" checked={ovForm.is_cancelled} onChange={(e) => setOvForm({ ...ovForm, is_cancelled: e.target.checked })} />
+              <Label htmlFor="ov-cancel" className="text-xs">Cancel this slot (no replacement)</Label>
+            </div>
+            {!ovForm.is_cancelled && (
+              <>
+                <div>
+                  <Label className="text-xs">Subject</Label>
+                  <Select value={ovForm.subject_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, subject_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {subjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Teacher</Label>
+                  <Select value={ovForm.teacher_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, teacher_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {staff.map((t) => <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Venue</Label>
+                  <Select value={ovForm.venue_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, venue_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="col-span-2 sm:col-span-4">
+              <Label className="text-xs">Reason / Note</Label>
+              <Input value={ovForm.reason} onChange={(e) => setOvForm({ ...ovForm, reason: e.target.value })} placeholder="e.g. Mathematics Paper 2 exam, Sports Day, Public Holiday" />
+            </div>
+          </div>
+          <Button onClick={addOverride}><Plus className="mr-1 h-4 w-4" /> Add Override</Button>
+
+          <div className="space-y-1">
+            {overrides.length === 0 && <p className="text-xs text-muted-foreground">No overrides yet.</p>}
+            {overrides.map((o) => (
+              <div key={o.id} className="flex items-center justify-between rounded border p-2 text-xs">
+                <div>
+                  <span className="font-medium">{o.override_date}</span> · {o.start_time}{o.end_time ? `–${o.end_time}` : ""} ·
+                  {" "}
+                  {o.is_cancelled ? <Badge variant="destructive" className="text-[10px]">CANCELLED</Badge>
+                    : <>{subjects.find((s) => s.id === o.subject_id)?.name || "—"} · {staff.find((t) => t.id === o.teacher_id)?.full_name || "Teacher TBA"} · {venues.find((v) => v.id === o.venue_id)?.name || o.room || "Venue TBA"}</>
+                  }
+                  {o.class_id ? ` · ${classes.find((c) => c.id === o.class_id)?.name || "?"}` : " · Whole school"}
+                  {o.reason ? <span className="text-muted-foreground"> — {o.reason}</span> : null}
+                </div>
+                <button onClick={() => deleteOverride(o.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="h-3 w-3" /></button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
