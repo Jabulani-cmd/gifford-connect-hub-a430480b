@@ -190,6 +190,12 @@ export default function FullWeekTimetable({
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
+          {entries.length === 0 && (
+            <div className="mx-3 sm:mx-0 mb-3 rounded-md border border-dashed border-secondary/40 bg-secondary/5 p-3 text-center text-xs text-muted-foreground">
+              <Calendar className="mx-auto mb-1 h-5 w-5 text-secondary/60" />
+              No timetable has been published for this class yet. Ask the admin to enter the class timetable in the Admin Portal → Timetable Management.
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
