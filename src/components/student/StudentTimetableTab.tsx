@@ -17,6 +17,9 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
   const [entries, setEntries] = useState<any[]>([]);
   const [sportsSchedule, setSportsSchedule] = useState<any[]>([]);
   const [sportsActivities, setSportsActivities] = useState<string[]>([]);
+  const [overrides, setOverrides] = useState<any[]>([]);
+  const [termStart, setTermStart] = useState<string | null>(null);
+  const [termEnd, setTermEnd] = useState<string | null>(null);
   const [resolvedClassId, setResolvedClassId] = useState<string | null | undefined>(undefined);
 
   // Resolve class ID from studentClassId prop or from student's form/stream
