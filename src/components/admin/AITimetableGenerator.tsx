@@ -209,14 +209,42 @@ export default function AITimetableGenerator() {
           <div className="text-xs text-muted-foreground">
             Inputs: {classes.length} classes · {subjects.length} subjects · {venues.length} venues
           </div>
+
+          {/* Term picker */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-md border bg-muted/20 p-3">
+            <div>
+              <Label className="text-xs">Academic Year</Label>
+              <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="2026" />
+            </div>
+            <div>
+              <Label className="text-xs">Term</Label>
+              <Select value={term} onValueChange={setTerm}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Term 1">Term 1</SelectItem>
+                  <SelectItem value="Term 2">Term 2</SelectItem>
+                  <SelectItem value="Term 3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Term Start</Label>
+              <Input type="date" value={termStart} onChange={(e) => setTermStart(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Term End</Label>
+              <Input type="date" value={termEnd} onChange={(e) => setTermEnd(e.target.value)} />
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={generating || !classes.length || !venues.length}>
-              {generating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating…</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate Class Timetable</>}
+              {generating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating…</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate Term Timetable</>}
             </Button>
             {draft && (
               <>
                 <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-900 border-yellow-500/40">
-                  <AlertTriangle className="mr-1 h-3 w-3" /> DRAFT — not yet published
+                  <AlertTriangle className="mr-1 h-3 w-3" /> DRAFT — {(draft.meta as any)?.term} {(draft.meta as any)?.academic_year}
                 </Badge>
                 <Button variant="default" onClick={publish} disabled={publishing}>
                   {publishing ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Publishing…</> : <><CheckCircle2 className="mr-1 h-4 w-4" /> Publish to all portals</>}
