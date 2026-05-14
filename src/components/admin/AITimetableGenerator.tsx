@@ -17,28 +17,49 @@ export default function AITimetableGenerator() {
   const [venues, setVenues] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
+  const [overrides, setOverrides] = useState<any[]>([]);
   const [draft, setDraft] = useState<any | null>(null);
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [newVenue, setNewVenue] = useState({ name: "", venue_type: "classroom", capacity: 40 });
   const [reqForm, setReqForm] = useState("Form 1");
 
+  // Term picker (used at generate + publish time)
+  const yr = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
+  const defaultTerm = month <= 4 ? "Term 1" : month <= 8 ? "Term 2" : "Term 3";
+  const [academicYear, setAcademicYear] = useState(String(yr));
+  const [term, setTerm] = useState(defaultTerm);
+  const [termStart, setTermStart] = useState("");
+  const [termEnd, setTermEnd] = useState("");
+
+  // Override form
+  const [ovForm, setOvForm] = useState({
+    override_date: "", class_id: "", start_time: "07:30", end_time: "",
+    subject_id: "", teacher_id: "", venue_id: "", reason: "", is_cancelled: false,
+  });
+
   const formLevels = ["Form 1", "Form 2", "Form 3", "Form 4", "Form 5", "Form 6"];
 
   const loadAll = async () => {
-    const [{ data: v }, { data: s }, { data: c }, { data: r }, { data: d }] = await Promise.all([
+    const [{ data: v }, { data: s }, { data: c }, { data: st }, { data: r }, { data: d }, { data: ov }] = await Promise.all([
       supabase.from("teaching_venues").select("*").order("name"),
       supabase.from("subjects").select("id, name, form_levels").order("name"),
       supabase.from("classes").select("id, name, form_level").order("name"),
+      supabase.from("staff").select("id, full_name").eq("status", "active").order("full_name"),
       supabase.from("subject_period_requirements").select("*"),
       supabase.from("timetable_drafts").select("*").eq("draft_type", "class").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("timetable_overrides").select("*").order("override_date", { ascending: false }).limit(50),
     ]);
     setVenues(v || []);
     setSubjects(s || []);
     setClasses(c || []);
+    setStaff(st || []);
     setReqs(r || []);
     setDraft(d || null);
+    setOverrides(ov || []);
   };
 
   useEffect(() => { loadAll(); }, []);
@@ -70,9 +91,14 @@ export default function AITimetableGenerator() {
   const formSubjects = subjects.filter((s) => !s.form_levels?.length || s.form_levels.includes(reqForm));
 
   const generate = async () => {
+    if (!termStart || !termEnd) {
+      return toast({ title: "Set term dates", description: "Pick the term start and end dates first.", variant: "destructive" });
+    }
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-timetable");
+      const { data, error } = await supabase.functions.invoke("generate-timetable", {
+        body: { academic_year: academicYear, term, term_start_date: termStart, term_end_date: termEnd },
+      });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Draft generated", description: `${data.meta.cells_total} of ~${data.meta.target_total} cells. ${data.meta.dropped_clashes} clashes auto-resolved.` });
@@ -85,11 +111,16 @@ export default function AITimetableGenerator() {
 
   const publish = async () => {
     if (!draft) return;
-    if (!confirm(`Publish draft and replace existing timetable for all ${classes.length} classes? This will be visible immediately to teachers, students and parents.`)) return;
+    if (!confirm(`Publish draft for ${classes.length} classes — visible across all portals immediately?`)) return;
     setPublishing(true);
     try {
       const cells = draft.draft_json as any[];
-      const slots = (draft.meta as any).lesson_slots as { start: string; end: string }[];
+      const m = (draft.meta as any) || {};
+      const slots = m.lesson_slots as { start: string; end: string }[];
+      const ay = m.academic_year || academicYear;
+      const tm = m.term || term;
+      const ts = m.term_start_date || termStart || null;
+      const te = m.term_end_date || termEnd || null;
       const rows = cells.map((c) => ({
         class_id: c.class_id,
         day_of_week: c.day,
@@ -99,15 +130,23 @@ export default function AITimetableGenerator() {
         teacher_id: c.teacher_id,
         venue_id: c.venue_id,
         room: venues.find((v) => v.id === c.venue_id)?.name || null,
+        academic_year: ay,
+        term: tm,
+        term_start_date: ts,
+        term_end_date: te,
       }));
-      const { error: delErr } = await supabase.from("timetable_entries").delete().in("day_of_week", [0, 1, 2, 3, 4]);
+      const { error: delErr } = await supabase
+        .from("timetable_entries")
+        .delete()
+        .eq("academic_year", ay)
+        .eq("term", tm);
       if (delErr) throw delErr;
       if (rows.length) {
         const { error: insErr } = await supabase.from("timetable_entries").insert(rows);
         if (insErr) throw insErr;
       }
       await supabase.from("timetable_drafts").delete().eq("id", draft.id);
-      toast({ title: "Published", description: `${rows.length} entries are live across all portals.` });
+      toast({ title: "Published", description: `${rows.length} entries live for ${tm} ${ay}.` });
       setDraft(null);
     } catch (e: any) {
       toast({ title: "Publish failed", description: e.message, variant: "destructive" });
@@ -119,6 +158,37 @@ export default function AITimetableGenerator() {
     if (!draft || !confirm("Discard this draft?")) return;
     await supabase.from("timetable_drafts").delete().eq("id", draft.id);
     setDraft(null);
+  };
+
+  const addOverride = async () => {
+    if (!ovForm.override_date || !ovForm.start_time) {
+      return toast({ title: "Date & start time required", variant: "destructive" });
+    }
+    const payload: any = {
+      override_date: ovForm.override_date,
+      class_id: ovForm.class_id || null,
+      start_time: ovForm.start_time,
+      end_time: ovForm.end_time || null,
+      is_cancelled: ovForm.is_cancelled,
+      subject_id: ovForm.is_cancelled ? null : (ovForm.subject_id || null),
+      teacher_id: ovForm.is_cancelled ? null : (ovForm.teacher_id || null),
+      venue_id: ovForm.is_cancelled ? null : (ovForm.venue_id || null),
+      room: ovForm.is_cancelled ? null : (venues.find((v) => v.id === ovForm.venue_id)?.name || null),
+      reason: ovForm.reason || null,
+      academic_year: academicYear,
+      term,
+    };
+    const { error } = await supabase.from("timetable_overrides").insert(payload);
+    if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
+    toast({ title: "Override added", description: "Will appear on the chosen date in all portals." });
+    setOvForm({ override_date: "", class_id: "", start_time: "07:30", end_time: "", subject_id: "", teacher_id: "", venue_id: "", reason: "", is_cancelled: false });
+    loadAll();
+  };
+
+  const deleteOverride = async (id: string) => {
+    if (!confirm("Permanently delete this override?")) return;
+    await supabase.from("timetable_overrides").delete().eq("id", id);
+    loadAll();
   };
 
   // Group draft cells by class for preview
@@ -139,14 +209,42 @@ export default function AITimetableGenerator() {
           <div className="text-xs text-muted-foreground">
             Inputs: {classes.length} classes · {subjects.length} subjects · {venues.length} venues
           </div>
+
+          {/* Term picker */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-md border bg-muted/20 p-3">
+            <div>
+              <Label className="text-xs">Academic Year</Label>
+              <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="2026" />
+            </div>
+            <div>
+              <Label className="text-xs">Term</Label>
+              <Select value={term} onValueChange={setTerm}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Term 1">Term 1</SelectItem>
+                  <SelectItem value="Term 2">Term 2</SelectItem>
+                  <SelectItem value="Term 3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Term Start</Label>
+              <Input type="date" value={termStart} onChange={(e) => setTermStart(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Term End</Label>
+              <Input type="date" value={termEnd} onChange={(e) => setTermEnd(e.target.value)} />
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={generating || !classes.length || !venues.length}>
-              {generating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating…</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate Class Timetable</>}
+              {generating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Generating…</> : <><Sparkles className="mr-1 h-4 w-4" /> Generate Term Timetable</>}
             </Button>
             {draft && (
               <>
                 <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-900 border-yellow-500/40">
-                  <AlertTriangle className="mr-1 h-3 w-3" /> DRAFT — not yet published
+                  <AlertTriangle className="mr-1 h-3 w-3" /> DRAFT — {(draft.meta as any)?.term} {(draft.meta as any)?.academic_year}
                 </Badge>
                 <Button variant="default" onClick={publish} disabled={publishing}>
                   {publishing ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Publishing…</> : <><CheckCircle2 className="mr-1 h-4 w-4" /> Publish to all portals</>}
@@ -226,6 +324,101 @@ export default function AITimetableGenerator() {
                 </div>
               );
             })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Date Overrides */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-heading">Per-Date Overrides</CardTitle>
+          <p className="text-xs text-muted-foreground">Replace or cancel a specific lesson on a specific date (e.g. exam day, sports day, public holiday). Auto-syncs to teacher, student and parent portals.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div>
+              <Label className="text-xs">Date *</Label>
+              <Input type="date" value={ovForm.override_date} onChange={(e) => setOvForm({ ...ovForm, override_date: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">Class (blank = whole school)</Label>
+              <Select value={ovForm.class_id || "all"} onValueChange={(v) => setOvForm({ ...ovForm, class_id: v === "all" ? "" : v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">— Whole school —</SelectItem>
+                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Start *</Label>
+              <Input type="time" value={ovForm.start_time} onChange={(e) => setOvForm({ ...ovForm, start_time: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">End</Label>
+              <Input type="time" value={ovForm.end_time} onChange={(e) => setOvForm({ ...ovForm, end_time: e.target.value })} />
+            </div>
+            <div className="col-span-2 sm:col-span-4 flex items-center gap-2">
+              <input type="checkbox" id="ov-cancel" checked={ovForm.is_cancelled} onChange={(e) => setOvForm({ ...ovForm, is_cancelled: e.target.checked })} />
+              <Label htmlFor="ov-cancel" className="text-xs">Cancel this slot (no replacement)</Label>
+            </div>
+            {!ovForm.is_cancelled && (
+              <>
+                <div>
+                  <Label className="text-xs">Subject</Label>
+                  <Select value={ovForm.subject_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, subject_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {subjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Teacher</Label>
+                  <Select value={ovForm.teacher_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, teacher_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {staff.map((t) => <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Venue</Label>
+                  <Select value={ovForm.venue_id || "none"} onValueChange={(v) => setOvForm({ ...ovForm, venue_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="col-span-2 sm:col-span-4">
+              <Label className="text-xs">Reason / Note</Label>
+              <Input value={ovForm.reason} onChange={(e) => setOvForm({ ...ovForm, reason: e.target.value })} placeholder="e.g. Mathematics Paper 2 exam, Sports Day, Public Holiday" />
+            </div>
+          </div>
+          <Button onClick={addOverride}><Plus className="mr-1 h-4 w-4" /> Add Override</Button>
+
+          <div className="space-y-1">
+            {overrides.length === 0 && <p className="text-xs text-muted-foreground">No overrides yet.</p>}
+            {overrides.map((o) => (
+              <div key={o.id} className="flex items-center justify-between rounded border p-2 text-xs">
+                <div>
+                  <span className="font-medium">{o.override_date}</span> · {o.start_time}{o.end_time ? `–${o.end_time}` : ""} ·
+                  {" "}
+                  {o.is_cancelled ? <Badge variant="destructive" className="text-[10px]">CANCELLED</Badge>
+                    : <>{subjects.find((s) => s.id === o.subject_id)?.name || "—"} · {staff.find((t) => t.id === o.teacher_id)?.full_name || "Teacher TBA"} · {venues.find((v) => v.id === o.venue_id)?.name || o.room || "Venue TBA"}</>
+                  }
+                  {o.class_id ? ` · ${classes.find((c) => c.id === o.class_id)?.name || "?"}` : " · Whole school"}
+                  {o.reason ? <span className="text-muted-foreground"> — {o.reason}</span> : null}
+                </div>
+                <button onClick={() => deleteOverride(o.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="h-3 w-3" /></button>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

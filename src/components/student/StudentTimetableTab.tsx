@@ -17,6 +17,9 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
   const [entries, setEntries] = useState<any[]>([]);
   const [sportsSchedule, setSportsSchedule] = useState<any[]>([]);
   const [sportsActivities, setSportsActivities] = useState<string[]>([]);
+  const [overrides, setOverrides] = useState<any[]>([]);
+  const [termStart, setTermStart] = useState<string | null>(null);
+  const [termEnd, setTermEnd] = useState<string | null>(null);
   const [resolvedClassId, setResolvedClassId] = useState<string | null | undefined>(undefined);
 
   // Resolve class ID from studentClassId prop or from student's form/stream
@@ -95,7 +98,8 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         setSportsSchedule([]);
         return empty;
       }
-      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }] = await Promise.all([
+      const today = new Date().toISOString().slice(0, 10);
+      const [{ data: detailed }, { data: sports }, sportsAct, { data: classSubjects }, { data: ovs }] = await Promise.all([
         supabase
           .from("timetable_entries")
           .select("*, subjects(name), classes(name)")
@@ -113,6 +117,11 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
           .from("class_subjects")
           .select("subject_id, teacher_id")
           .eq("class_id", resolvedClassId),
+        supabase
+          .from("timetable_overrides")
+          .select("*, subjects(name), staff(full_name)")
+          .or(`class_id.eq.${resolvedClassId},class_id.is.null`)
+          .gte("override_date", today),
       ]);
 
       const staffIds = Array.from(new Set([
@@ -129,7 +138,6 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
           staffById.set(staff.id, { full_name: staff.full_name });
         }
       });
-      // Build subject -> teacher fallback map from class_subjects assignments
       const teacherBySubject = new Map<string, { full_name: string }>();
       (classSubjects || []).forEach((cs: any) => {
         const assignedTeacher = cs.teacher_id ? staffById.get(cs.teacher_id) : null;
@@ -148,20 +156,30 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         ...s,
         staff: s.coach_id ? staffById.get(s.coach_id) || null : null,
       }));
+      const first = (detailed || [])[0];
       const payload = {
         entries: enrichedEntries,
         sports: enrichedSports,
         sportsActivities: (sportsAct?.data?.sports_activities as string[]) || [],
+        overrides: ovs || [],
+        termStart: first?.term_start_date || null,
+        termEnd: first?.term_end_date || null,
       };
       setEntries(payload.entries);
       setSportsSchedule(payload.sports);
       setSportsActivities(payload.sportsActivities);
+      setOverrides(payload.overrides);
+      setTermStart(payload.termStart);
+      setTermEnd(payload.termEnd);
       return payload;
     },
     restore: (cached) => {
       setEntries(cached?.entries || []);
       setSportsSchedule(cached?.sports || []);
       setSportsActivities(cached?.sportsActivities || []);
+      setOverrides(cached?.overrides || []);
+      setTermStart(cached?.termStart || null);
+      setTermEnd(cached?.termEnd || null);
     },
   });
 
@@ -180,6 +198,11 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "sports_schedule" },
+        () => offline.refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "timetable_overrides" },
         () => offline.refresh(),
       )
       .subscribe();
@@ -213,8 +236,11 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         loading={offline.loading}
         hasClass={resolvedClassId !== null}
         noClassMessage="No class assignment found for this student yet."
-        title="Weekly Class Timetable"
-        printTitle={studentName ? `Weekly Timetable — ${studentName}` : "Weekly Class Timetable"}
+        title="Class Timetable"
+        printTitle={studentName ? `Timetable — ${studentName}` : "Class Timetable"}
+        termStartDate={termStart}
+        termEndDate={termEnd}
+        overrides={overrides}
       />
     </div>
   );

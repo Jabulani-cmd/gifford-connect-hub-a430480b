@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Trophy, Printer, Download } from "lucide-react";
 import {
   Table,
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTimeSlots, type TimeSlot } from "@/hooks/useTimeSlots";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { printBrandedHtml, downloadBrandedPdf } from "@/lib/export-pdf";
 import { normalizeTimetableTime, timetableDayMatches, timetableShortDayLabels, timetableUsesZeroBasedDays } from "@/lib/timetable";
 
@@ -29,6 +30,17 @@ interface TimetableEntry {
   venue?: string;
 }
 
+interface OverrideEntry {
+  override_date: string; // YYYY-MM-DD
+  class_id?: string | null;
+  start_time: string;
+  is_cancelled?: boolean;
+  subjects?: { name: string } | null;
+  staff?: { full_name: string } | null;
+  room?: string | null;
+  reason?: string | null;
+}
+
 interface Props {
   entries: TimetableEntry[];
   sportsSchedule?: TimetableEntry[];
@@ -39,6 +51,36 @@ interface Props {
   hasClass?: boolean;
   showPrintDownload?: boolean;
   printTitle?: string;
+  termStartDate?: string | null;
+  termEndDate?: string | null;
+  overrides?: OverrideEntry[];
+  defaultView?: "week" | "month" | "term";
+}
+
+// Helpers
+function ymd(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function mondayOf(d: Date) {
+  const x = new Date(d);
+  const dow = x.getDay(); // 0=Sun
+  const diff = dow === 0 ? -6 : 1 - dow;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function addDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function fmtRange(monday: Date) {
+  const fri = addDays(monday, 4);
+  const opt: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  return `${monday.toLocaleDateString(undefined, opt)} – ${fri.toLocaleDateString(undefined, opt)}`;
 }
 
 export default function FullWeekTimetable({
@@ -51,64 +93,113 @@ export default function FullWeekTimetable({
   hasClass = true,
   showPrintDownload = true,
   printTitle,
+  termStartDate = null,
+  termEndDate = null,
+  overrides = [],
+  defaultView = "week",
 }: Props) {
-  const today = new Date().getDay(); // 0=Sun, 1=Mon...
+  const today = new Date();
+  const todayDow = today.getDay();
   const { timeSlots, loading: slotsLoading } = useTimeSlots();
+  const [view, setView] = useState<"week" | "month" | "term">(defaultView);
+
   const zeroBasedDays = useMemo(
     () => timetableUsesZeroBasedDays([...entries, ...sportsSchedule]),
     [entries, sportsSchedule],
   );
 
+  const hasTerm = !!(termStartDate && termEndDate);
 
-  const getCell = useMemo(() => {
-    return (startTime: string, dayIndex: number) => {
-      const entry = entries.find(
-        (t) =>
-          normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
-          timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
-      );
-      return entry;
-    };
-  }, [entries, zeroBasedDays]);
+  // Build list of week-start Mondays for the chosen view
+  const weeks = useMemo<Date[]>(() => {
+    if (!hasTerm) return [mondayOf(today)];
+    const start = new Date(termStartDate!);
+    const end = new Date(termEndDate!);
+    const allMondays: Date[] = [];
+    let cur = mondayOf(start);
+    while (cur <= end) {
+      if (addDays(cur, 4) >= start) allMondays.push(new Date(cur));
+      cur = addDays(cur, 7);
+    }
+    if (allMondays.length === 0) allMondays.push(mondayOf(today));
 
-  const getSportsCell = useMemo(() => {
-    return (startTime: string, dayIndex: number) => {
-      const entry = sportsSchedule.find(
-        (t) =>
-          normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
-          timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays)
-      );
-      return entry;
-    };
-  }, [sportsSchedule, zeroBasedDays]);
+    if (view === "term") return allMondays;
+
+    // pick "current" week: closest to today, clamped to term
+    const todayMon = mondayOf(today).getTime();
+    let idx = allMondays.findIndex((m) => m.getTime() === todayMon);
+    if (idx === -1) {
+      idx = allMondays.findIndex((m) => m.getTime() > todayMon);
+      if (idx === -1) idx = allMondays.length - 1;
+    }
+    if (view === "week") return [allMondays[idx]];
+    // month view: current + next 3 (or last 4 of term)
+    const startIdx = Math.min(idx, Math.max(0, allMondays.length - 4));
+    return allMondays.slice(startIdx, startIdx + 4);
+  }, [hasTerm, termStartDate, termEndDate, view, today.toDateString()]);
+
+  const getCell = (startTime: string, dayIndex: number) =>
+    entries.find(
+      (t) =>
+        normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
+        timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays),
+    );
+
+  const getSportsCell = (startTime: string, dayIndex: number) =>
+    sportsSchedule.find(
+      (t) =>
+        normalizeTimetableTime(t.start_time) === normalizeTimetableTime(startTime) &&
+        timetableDayMatches(t.day_of_week, dayIndex, zeroBasedDays),
+    );
+
+  const getOverride = (dateStr: string, startTime: string) =>
+    overrides.find(
+      (o) =>
+        o.override_date === dateStr &&
+        normalizeTimetableTime(o.start_time) === normalizeTimetableTime(startTime),
+    );
 
   const buildTimetableHtml = () => {
-    let html = `<table style="font-size:11px"><thead><tr><th style="width:100px">Time</th>`;
-    days.forEach(d => { html += `<th style="text-align:center">${d}</th>`; });
-    html += `</tr></thead><tbody>`;
-    timeSlots.forEach(slot => {
-      const isBreak = slot.slot_type === "break";
-      const isSports = slot.slot_type === "sports";
-      html += `<tr${isBreak ? ' style="background:#f5f5f5"' : ''}>`;
-      html += `<td style="font-weight:600;white-space:nowrap">${slot.start_time}–${slot.end_time}${isBreak ? '<br><em style="font-size:9px;color:#888">' + (slot.label || 'Break') + '</em>' : ''}${isSports ? '<br><em style="font-size:9px;color:#888">Sports/Clubs</em>' : ''}</td>`;
-      if (isBreak) {
-        html += `<td colspan="5" style="text-align:center;font-style:italic;color:#888">${slot.label || "Break"}</td>`;
-      } else {
-        days.forEach((_, di) => {
-          const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
-          if (entry) {
-            html += `<td style="text-align:center"><strong>${entry.subjects?.name || entry.activity_name || "—"}</strong>`;
-            html += `<br><span style="font-size:9px;color:#666">${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}</span>`;
-            html += `<br><span style="font-size:8px;background:#f0f0f0;padding:1px 4px;border-radius:3px">${entry.room || entry.venue || "Venue TBA"}</span>`;
-            html += `</td>`;
-          } else {
-            html += `<td style="text-align:center;color:#ccc">—</td>`;
-          }
-        });
-      }
-      html += `</tr>`;
+    let html = "";
+    weeks.forEach((mon) => {
+      html += `<h3 style="margin:14px 0 4px;font-size:13px">Week of ${fmtRange(mon)}</h3>`;
+      html += `<table style="font-size:11px;width:100%;border-collapse:collapse"><thead><tr><th style="width:90px">Time</th>`;
+      days.forEach((d, i) => {
+        const dt = addDays(mon, i);
+        html += `<th style="text-align:center">${d}<br><span style="font-size:9px;color:#666">${dt.getDate()}/${dt.getMonth() + 1}</span></th>`;
+      });
+      html += `</tr></thead><tbody>`;
+      timeSlots.forEach((slot) => {
+        const isBreak = slot.slot_type === "break";
+        const isSports = slot.slot_type === "sports";
+        html += `<tr${isBreak ? ' style="background:#f5f5f5"' : ""}>`;
+        html += `<td style="font-weight:600;white-space:nowrap">${slot.start_time}–${slot.end_time}</td>`;
+        if (isBreak) {
+          html += `<td colspan="5" style="text-align:center;font-style:italic;color:#888">${slot.label || "Break"}</td>`;
+        } else {
+          days.forEach((_, di) => {
+            const dateStr = ymd(addDays(mon, di));
+            const ov = getOverride(dateStr, slot.start_time);
+            if (ov) {
+              if (ov.is_cancelled) {
+                html += `<td style="text-align:center;background:#fee">CANCELLED${ov.reason ? `<br><span style="font-size:9px">${ov.reason}</span>` : ""}</td>`;
+              } else {
+                html += `<td style="text-align:center;background:#fff8e6"><strong>${ov.subjects?.name || "—"}</strong><br><span style="font-size:9px;color:#666">${ov.staff?.full_name || ""}</span><br><span style="font-size:8px">${ov.room || ""}</span></td>`;
+              }
+            } else {
+              const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
+              if (entry) {
+                html += `<td style="text-align:center"><strong>${entry.subjects?.name || entry.activity_name || "—"}</strong><br><span style="font-size:9px;color:#666">${entry.staff?.full_name || ""}</span><br><span style="font-size:8px">${entry.room || entry.venue || ""}</span></td>`;
+              } else {
+                html += `<td style="text-align:center;color:#ccc">—</td>`;
+              }
+            }
+          });
+        }
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
     });
-    html += `</tbody></table>`;
     if (sportsActivities.length > 0) {
       html += `<div style="margin-top:16px"><strong>Sports & Activities:</strong> ${sportsActivities.join(", ")}</div>`;
     }
@@ -116,33 +207,33 @@ export default function FullWeekTimetable({
   };
 
   const handlePrint = () => {
-    const html = buildTimetableHtml();
-    printBrandedHtml(printTitle || title, html, { landscape: true });
+    printBrandedHtml(printTitle || title, buildTimetableHtml(), { landscape: true });
   };
 
   const handleDownload = async () => {
-    const headers = ["Time", ...days];
+    const headers = ["Week", "Time", ...days];
     const rows: string[][] = [];
-    timeSlots.forEach(slot => {
-      const isBreak = slot.slot_type === "break";
-      const isSports = slot.slot_type === "sports";
-      const row: string[] = [`${slot.start_time}–${slot.end_time}`];
-      if (isBreak) {
-        days.forEach(() => row.push(slot.label || "Break"));
-      } else {
-        days.forEach((_, di) => {
-          const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
-          if (entry) {
-            let cell = entry.subjects?.name || entry.activity_name || "—";
-            cell += ` (${entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")})`;
-            cell += ` [${entry.room || entry.venue || "Venue TBA"}]`;
-            row.push(cell);
-          } else {
-            row.push("—");
-          }
-        });
-      }
-      rows.push(row);
+    weeks.forEach((mon) => {
+      timeSlots.forEach((slot) => {
+        const isBreak = slot.slot_type === "break";
+        const isSports = slot.slot_type === "sports";
+        const row: string[] = [fmtRange(mon), `${slot.start_time}–${slot.end_time}`];
+        if (isBreak) {
+          days.forEach(() => row.push(slot.label || "Break"));
+        } else {
+          days.forEach((_, di) => {
+            const dateStr = ymd(addDays(mon, di));
+            const ov = getOverride(dateStr, slot.start_time);
+            if (ov) {
+              row.push(ov.is_cancelled ? `CANCELLED${ov.reason ? ` (${ov.reason})` : ""}` : `${ov.subjects?.name || "—"} (${ov.staff?.full_name || "—"}) [${ov.room || "—"}]`);
+            } else {
+              const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
+              row.push(entry ? `${entry.subjects?.name || entry.activity_name || "—"} (${entry.staff?.full_name || "—"}) [${entry.room || entry.venue || "—"}]` : "—");
+            }
+          });
+        }
+        rows.push(row);
+      });
     });
     await downloadBrandedPdf(printTitle || title, headers, rows, `${(printTitle || title).replace(/[^a-zA-Z0-9]/g, "_")}.pdf`);
   };
@@ -168,140 +259,88 @@ export default function FullWeekTimetable({
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="flex items-center gap-2 text-base font-heading">
-              <Calendar className="h-5 w-5" />
-              {title}
-            </CardTitle>
-            {showPrintDownload && entries.length > 0 && (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handlePrint}>
-                  <Printer className="mr-1 h-4 w-4" /> Print
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="mr-1 h-4 w-4" /> Download PDF
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
-          {entries.length === 0 && (
-            <div className="mx-3 sm:mx-0 mb-3 rounded-md border border-dashed border-secondary/40 bg-secondary/5 p-3 text-center text-xs text-muted-foreground">
-              <Calendar className="mx-auto mb-1 h-5 w-5 text-secondary/60" />
-              No timetable has been published for this class yet. Ask the admin to enter the class timetable in the Admin Portal → Timetable Management.
-            </div>
-          )}
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[100px] text-xs font-semibold">Time</TableHead>
-                {days.map((d, i) => (
+  const renderWeek = (monday: Date, key: any) => (
+    <Card key={key}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-heading">
+            <Calendar className="h-4 w-4" />
+            Week of {fmtRange(monday)}
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[100px] text-xs font-semibold">Time</TableHead>
+              {days.map((d, i) => {
+                const dt = addDays(monday, i);
+                const isToday = ymd(dt) === ymd(today);
+                return (
                   <TableHead
                     key={d}
-                    className={`text-center text-xs font-semibold ${
-                      today === i + 1 ? "bg-secondary/10 text-secondary" : ""
-                    }`}
+                    className={`text-center text-xs font-semibold ${isToday ? "bg-secondary/10 text-secondary" : ""}`}
                   >
                     {d}
-                    {today === i + 1 && (
-                      <span className="ml-1 text-[9px] font-normal">(Today)</span>
-                    )}
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {dt.getDate()}/{dt.getMonth() + 1}
+                    </span>
+                    {isToday && <span className="block text-[9px] font-normal">(Today)</span>}
                   </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {timeSlots.map((slot, si) => {
-                const isBreak = slot.slot_type === "break";
-                const isSports = slot.slot_type === "sports";
-                return (
+                );
+              })}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {timeSlots.map((slot, si) => {
+              const isBreak = slot.slot_type === "break";
+              const isSports = slot.slot_type === "sports";
+              return (
                 <TableRow
                   key={si}
-                  className={
-                    isBreak
-                      ? "bg-muted/40"
-                      : isSports
-                        ? "bg-accent/5"
-                        : ""
-                  }
+                  className={isBreak ? "bg-muted/40" : isSports ? "bg-accent/5" : ""}
                 >
                   <TableCell className="whitespace-nowrap py-2 text-xs font-medium">
                     {slot.start_time}–{slot.end_time}
-                    {isBreak && (
-                      <span className="block text-[10px] text-muted-foreground italic">
-                        {slot.label || "Break"}
-                      </span>
-                    )}
-                    {isSports && (
-                      <span className="block text-[10px] text-muted-foreground italic">
-                        Sports/Clubs
-                      </span>
-                    )}
+                    {isBreak && <span className="block text-[10px] text-muted-foreground italic">{slot.label || "Break"}</span>}
+                    {isSports && <span className="block text-[10px] text-muted-foreground italic">Sports/Clubs</span>}
                   </TableCell>
                   {isBreak ? (
-                    <TableCell
-                      colSpan={5}
-                      className="py-2 text-center text-xs italic text-muted-foreground"
-                    >
+                    <TableCell colSpan={5} className="py-2 text-center text-xs italic text-muted-foreground">
                       {slot.label || "Break"}
                     </TableCell>
                   ) : (
                     days.map((_, di) => {
-                      const entry = isSports
-                        ? getSportsCell(slot.start_time, di)
-                        : getCell(slot.start_time, di);
-
-                      // Detect double lesson: next teaching slot has same subject + teacher + room
-                      let isDoubleStart = false;
-                      let isDoubleCont = false;
-                      if (entry && !isSports && !isBreak) {
-                        const nextSlot = timeSlots
-                          .slice(si + 1)
-                          .find((s) => s.slot_type !== "break");
-                        const prevSlot = [...timeSlots.slice(0, si)]
-                          .reverse()
-                          .find((s) => s.slot_type !== "break");
-                        const nextEntry = nextSlot ? getCell(nextSlot.start_time, di) : null;
-                        const prevEntry = prevSlot ? getCell(prevSlot.start_time, di) : null;
-                        const sameAs = (a: any, b: any) =>
-                          a && b &&
-                          a.subjects?.name === b.subjects?.name &&
-                          (a.staff?.full_name || "") === (b.staff?.full_name || "") &&
-                          (a.room || "") === (b.room || "");
-                        if (sameAs(entry, nextEntry) && !sameAs(entry, prevEntry)) isDoubleStart = true;
-                        if (sameAs(entry, prevEntry)) isDoubleCont = true;
-                      }
-
+                      const dt = addDays(monday, di);
+                      const dateStr = ymd(dt);
+                      const isToday = dateStr === ymd(today);
+                      const ov = getOverride(dateStr, slot.start_time);
+                      const entry = isSports ? getSportsCell(slot.start_time, di) : getCell(slot.start_time, di);
+                      const effective = ov && !ov.is_cancelled
+                        ? { subjects: ov.subjects, staff: ov.staff, room: ov.room }
+                        : entry;
                       return (
                         <TableCell
                           key={di}
-                          className={`py-2 text-center text-xs ${
-                            today === di + 1 ? "bg-secondary/5" : ""
-                          } ${isDoubleStart || isDoubleCont ? "bg-primary/5" : ""}`}
+                          className={`py-2 text-center text-xs ${isToday ? "bg-secondary/5" : ""} ${ov ? (ov.is_cancelled ? "bg-destructive/10" : "bg-yellow-500/10") : ""}`}
                         >
-                          {entry ? (
+                          {ov?.is_cancelled ? (
+                            <div>
+                              <Badge variant="destructive" className="text-[9px]">Cancelled</Badge>
+                              {ov.reason && <span className="block text-[9px] text-muted-foreground">{ov.reason}</span>}
+                            </div>
+                          ) : effective ? (
                             <div>
                               <span className="font-medium">
-                                {entry.subjects?.name || entry.activity_name || "—"}
+                                {effective.subjects?.name || (effective as any).activity_name || "—"}
                               </span>
-                              {(isDoubleStart || isDoubleCont) && (
-                                <Badge className="ml-1 px-1 py-0 text-[8px]" variant="secondary">
-                                  Double
-                                </Badge>
-                              )}
+                              {ov && <Badge variant="outline" className="ml-1 px-1 py-0 text-[8px]">Override</Badge>}
                               <span className="block text-[10px] text-muted-foreground">
-                                {entry.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}
+                                {effective.staff?.full_name || (isSports ? "Coach TBA" : "Teacher TBA")}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className="mt-0.5 px-1 py-0 text-[8px]"
-                              >
-                                {entry.room || entry.venue || "Venue TBA"}
+                              <Badge variant="outline" className="mt-0.5 px-1 py-0 text-[8px]">
+                                {effective.room || (effective as any).venue || "Venue TBA"}
                               </Badge>
                             </div>
                           ) : (
@@ -312,12 +351,57 @@ export default function FullWeekTimetable({
                     })
                   )}
                 </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
+          <h2 className="font-heading text-base font-semibold">{title}</h2>
+          {hasTerm && (
+            <Badge variant="outline" className="text-[10px]">
+              Term: {termStartDate} → {termEndDate}
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasTerm && (
+            <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+              <TabsList>
+                <TabsTrigger value="week">Week</TabsTrigger>
+                <TabsTrigger value="month">Month</TabsTrigger>
+                <TabsTrigger value="term">Whole Term</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+          {showPrintDownload && entries.length > 0 && (
+            <>
+              <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Printer className="mr-1 h-4 w-4" /> Print
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="mr-1 h-4 w-4" /> PDF
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {entries.length === 0 && (
+        <div className="rounded-md border border-dashed border-secondary/40 bg-secondary/5 p-3 text-center text-xs text-muted-foreground">
+          <Calendar className="mx-auto mb-1 h-5 w-5 text-secondary/60" />
+          No timetable has been published yet. Ask the admin to use the AI Timetable Generator in the Admin Portal.
+        </div>
+      )}
+
+      {weeks.map((m, i) => renderWeek(m, i))}
 
       {sportsActivities.length > 0 && (
         <Card>
