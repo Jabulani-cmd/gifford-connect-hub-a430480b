@@ -17,28 +17,49 @@ export default function AITimetableGenerator() {
   const [venues, setVenues] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
+  const [overrides, setOverrides] = useState<any[]>([]);
   const [draft, setDraft] = useState<any | null>(null);
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [newVenue, setNewVenue] = useState({ name: "", venue_type: "classroom", capacity: 40 });
   const [reqForm, setReqForm] = useState("Form 1");
 
+  // Term picker (used at generate + publish time)
+  const yr = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
+  const defaultTerm = month <= 4 ? "Term 1" : month <= 8 ? "Term 2" : "Term 3";
+  const [academicYear, setAcademicYear] = useState(String(yr));
+  const [term, setTerm] = useState(defaultTerm);
+  const [termStart, setTermStart] = useState("");
+  const [termEnd, setTermEnd] = useState("");
+
+  // Override form
+  const [ovForm, setOvForm] = useState({
+    override_date: "", class_id: "", start_time: "07:30", end_time: "",
+    subject_id: "", teacher_id: "", venue_id: "", reason: "", is_cancelled: false,
+  });
+
   const formLevels = ["Form 1", "Form 2", "Form 3", "Form 4", "Form 5", "Form 6"];
 
   const loadAll = async () => {
-    const [{ data: v }, { data: s }, { data: c }, { data: r }, { data: d }] = await Promise.all([
+    const [{ data: v }, { data: s }, { data: c }, { data: st }, { data: r }, { data: d }, { data: ov }] = await Promise.all([
       supabase.from("teaching_venues").select("*").order("name"),
       supabase.from("subjects").select("id, name, form_levels").order("name"),
       supabase.from("classes").select("id, name, form_level").order("name"),
+      supabase.from("staff").select("id, full_name").eq("status", "active").order("full_name"),
       supabase.from("subject_period_requirements").select("*"),
       supabase.from("timetable_drafts").select("*").eq("draft_type", "class").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("timetable_overrides").select("*").order("override_date", { ascending: false }).limit(50),
     ]);
     setVenues(v || []);
     setSubjects(s || []);
     setClasses(c || []);
+    setStaff(st || []);
     setReqs(r || []);
     setDraft(d || null);
+    setOverrides(ov || []);
   };
 
   useEffect(() => { loadAll(); }, []);
@@ -70,9 +91,14 @@ export default function AITimetableGenerator() {
   const formSubjects = subjects.filter((s) => !s.form_levels?.length || s.form_levels.includes(reqForm));
 
   const generate = async () => {
+    if (!termStart || !termEnd) {
+      return toast({ title: "Set term dates", description: "Pick the term start and end dates first.", variant: "destructive" });
+    }
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-timetable");
+      const { data, error } = await supabase.functions.invoke("generate-timetable", {
+        body: { academic_year: academicYear, term, term_start_date: termStart, term_end_date: termEnd },
+      });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Draft generated", description: `${data.meta.cells_total} of ~${data.meta.target_total} cells. ${data.meta.dropped_clashes} clashes auto-resolved.` });
@@ -85,11 +111,16 @@ export default function AITimetableGenerator() {
 
   const publish = async () => {
     if (!draft) return;
-    if (!confirm(`Publish draft and replace existing timetable for all ${classes.length} classes? This will be visible immediately to teachers, students and parents.`)) return;
+    if (!confirm(`Publish draft for ${classes.length} classes — visible across all portals immediately?`)) return;
     setPublishing(true);
     try {
       const cells = draft.draft_json as any[];
-      const slots = (draft.meta as any).lesson_slots as { start: string; end: string }[];
+      const m = (draft.meta as any) || {};
+      const slots = m.lesson_slots as { start: string; end: string }[];
+      const ay = m.academic_year || academicYear;
+      const tm = m.term || term;
+      const ts = m.term_start_date || termStart || null;
+      const te = m.term_end_date || termEnd || null;
       const rows = cells.map((c) => ({
         class_id: c.class_id,
         day_of_week: c.day,
@@ -99,15 +130,23 @@ export default function AITimetableGenerator() {
         teacher_id: c.teacher_id,
         venue_id: c.venue_id,
         room: venues.find((v) => v.id === c.venue_id)?.name || null,
+        academic_year: ay,
+        term: tm,
+        term_start_date: ts,
+        term_end_date: te,
       }));
-      const { error: delErr } = await supabase.from("timetable_entries").delete().in("day_of_week", [0, 1, 2, 3, 4]);
+      const { error: delErr } = await supabase
+        .from("timetable_entries")
+        .delete()
+        .eq("academic_year", ay)
+        .eq("term", tm);
       if (delErr) throw delErr;
       if (rows.length) {
         const { error: insErr } = await supabase.from("timetable_entries").insert(rows);
         if (insErr) throw insErr;
       }
       await supabase.from("timetable_drafts").delete().eq("id", draft.id);
-      toast({ title: "Published", description: `${rows.length} entries are live across all portals.` });
+      toast({ title: "Published", description: `${rows.length} entries live for ${tm} ${ay}.` });
       setDraft(null);
     } catch (e: any) {
       toast({ title: "Publish failed", description: e.message, variant: "destructive" });
@@ -119,6 +158,37 @@ export default function AITimetableGenerator() {
     if (!draft || !confirm("Discard this draft?")) return;
     await supabase.from("timetable_drafts").delete().eq("id", draft.id);
     setDraft(null);
+  };
+
+  const addOverride = async () => {
+    if (!ovForm.override_date || !ovForm.start_time) {
+      return toast({ title: "Date & start time required", variant: "destructive" });
+    }
+    const payload: any = {
+      override_date: ovForm.override_date,
+      class_id: ovForm.class_id || null,
+      start_time: ovForm.start_time,
+      end_time: ovForm.end_time || null,
+      is_cancelled: ovForm.is_cancelled,
+      subject_id: ovForm.is_cancelled ? null : (ovForm.subject_id || null),
+      teacher_id: ovForm.is_cancelled ? null : (ovForm.teacher_id || null),
+      venue_id: ovForm.is_cancelled ? null : (ovForm.venue_id || null),
+      room: ovForm.is_cancelled ? null : (venues.find((v) => v.id === ovForm.venue_id)?.name || null),
+      reason: ovForm.reason || null,
+      academic_year: academicYear,
+      term,
+    };
+    const { error } = await supabase.from("timetable_overrides").insert(payload);
+    if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
+    toast({ title: "Override added", description: "Will appear on the chosen date in all portals." });
+    setOvForm({ override_date: "", class_id: "", start_time: "07:30", end_time: "", subject_id: "", teacher_id: "", venue_id: "", reason: "", is_cancelled: false });
+    loadAll();
+  };
+
+  const deleteOverride = async (id: string) => {
+    if (!confirm("Permanently delete this override?")) return;
+    await supabase.from("timetable_overrides").delete().eq("id", id);
+    loadAll();
   };
 
   // Group draft cells by class for preview
