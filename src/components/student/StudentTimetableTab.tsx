@@ -200,6 +200,11 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         { event: "*", schema: "public", table: "sports_schedule" },
         () => offline.refresh(),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "timetable_overrides" },
+        () => offline.refresh(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -231,8 +236,15 @@ export default function StudentTimetableTab({ studentClassId, studentId, student
         loading={offline.loading}
         hasClass={resolvedClassId !== null}
         noClassMessage="No class assignment found for this student yet."
-        title="Weekly Class Timetable"
-        printTitle={studentName ? `Weekly Timetable — ${studentName}` : "Weekly Class Timetable"}
+        title="Class Timetable"
+        printTitle={studentName ? `Timetable — ${studentName}` : "Class Timetable"}
+        termStartDate={termStart}
+        termEndDate={termEnd}
+        overrides={overrides}
+      />
+    </div>
+  );
+}
       />
     </div>
   );
