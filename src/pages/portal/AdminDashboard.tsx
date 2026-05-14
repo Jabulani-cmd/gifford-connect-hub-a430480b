@@ -46,6 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeTimetableTime } from "@/lib/timetable";
+import AITimetableGenerator from "@/components/admin/AITimetableGenerator";
 
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
@@ -1433,6 +1434,7 @@ export default function AdminDashboard({ portalTitle, portalRole }: AdminDashboa
 
           {/* Timetable Tab */}
           <TabsContent value="timetable">
+            <div className="mb-4"><AITimetableGenerator /></div>
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading">Manage Timetable</CardTitle>
