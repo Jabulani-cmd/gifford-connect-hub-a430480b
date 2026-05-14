@@ -14,6 +14,13 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
 
+    let body: any = {};
+    try { body = await req.json(); } catch { body = {}; }
+    const academic_year: string = body.academic_year || String(new Date().getFullYear());
+    const term: string = body.term || "Term 1";
+    const term_start_date: string | null = body.term_start_date || null;
+    const term_end_date: string | null = body.term_end_date || null;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -172,6 +179,10 @@ Return JSON ONLY through the tool. Empty cells should be omitted.`;
       cells_total: clean.length,
       target_total: classBriefs.reduce((acc, c) => acc + c.subjects.reduce((a, s) => a + s.periods_per_week, 0), 0),
       dropped_clashes: dropped.length,
+      academic_year,
+      term,
+      term_start_date,
+      term_end_date,
     };
 
     await supabase.from("timetable_drafts").delete().eq("draft_type", "class");
