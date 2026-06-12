@@ -24,6 +24,7 @@ export default function DemoSeedButton() {
       });
       setTimeout(() => window.location.reload(), 1200);
     } catch (e: any) {
+      console.error("[Reset Demo Data] Seed failed", e);
       toast({ title: "Seed failed", description: e?.message || String(e), variant: "destructive" });
     } finally {
       setBusy(false);
