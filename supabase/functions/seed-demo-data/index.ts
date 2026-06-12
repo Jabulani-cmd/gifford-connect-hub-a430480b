@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
           const subj = subjByCode[sc]; if (!subj) continue;
           const tDef = STAFF_DEFS.find(sd => sd.subs.includes(sc));
           if (!tDef) continue;
-          const teacherUserId = staffByName[tDef.name].user_id || null;
+          const teacherUserId = staffByName[tDef.name].user_id || demoUserIds["admin@giffordhigh.demo"] || callerId;
           const base = tier === "top" ? 80 : tier === "avg" ? 60 : 40;
           const mk = (t: string, type: string, drift = 0) => ({
             student_id: s.id, subject_id: subj.id, teacher_id: teacherUserId,
