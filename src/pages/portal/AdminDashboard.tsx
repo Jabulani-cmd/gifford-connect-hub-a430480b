@@ -47,6 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeTimetableTime } from "@/lib/timetable";
 import AITimetableGenerator from "@/components/admin/AITimetableGenerator";
+import DemoSeedButton from "@/components/admin/DemoSeedButton";
 
 const gradeOptions = ["Form 1", "Form 2", "Form 3", "Form 4", "Lower 6", "Upper 6"];
 const classOptions = ["A", "B", "C", "D"];
