@@ -37,6 +37,18 @@ const fullName = (gender: "M" | "F") => {
 };
 const zwPhone = () => `0${rand(["77","78","71","73"])} ${randInt(200,999)} ${randInt(1000,9999)}`;
 
+const tableError = (table: string, message: string) => {
+  const err = new Error(`${table}: ${message}`);
+  (err as any).table = table;
+  return err;
+};
+
+const assertDb = (table: string, error: any) => {
+  if (!error) return;
+  console.error(`[seed-demo-data] ${table} failed:`, error);
+  throw tableError(table, error.message || String(error));
+};
+
 // ===================== Subjects =====================
 const SUBJECT_DEFS = [
   { code: "ENG", name: "English Language", department: "Languages", forms: ["Form 1","Form 2","Form 3","Form 4"] },
@@ -164,51 +176,8 @@ Deno.serve(async (req) => {
 
     // ============== WIPE ==============
     push("Wiping demo-eligible tables…");
-    const wipeSql = `
-      TRUNCATE TABLE
-        public.notifications,
-        public.audit_logs,
-        public.parent_students,
-        public.portal_subscriptions,
-        public.payments,
-        public.invoice_items,
-        public.invoices,
-        public.fee_structures,
-        public.attendance,
-        public.assessment_results,
-        public.assessment_submissions,
-        public.assessment_attempts,
-        public.assessment_questions,
-        public.assessments,
-        public.homework,
-        public.lesson_plans,
-        public.marks,
-        public.exam_results,
-        public.exam_timetable_entries,
-        public.exams,
-        public.term_reports,
-        public.term_registrations,
-        public.timetable_overrides,
-        public.timetable_entries,
-        public.timetable_drafts,
-        public.personal_timetables,
-        public.class_subjects,
-        public.student_classes,
-        public.enrollments,
-        public.guardians,
-        public.health_visits,
-        public.bed_allocations,
-        public.student_restrictions,
-        public.student_verification_codes,
-        public.parent_communication_logs,
-        public.online_payments,
-        public.students,
-        public.announcements,
-        public.events
-      RESTART IDENTITY CASCADE;
-    `;
-    // Use a raw exec via PostgREST rpc isn't available — use multiple deletes.
-    // But TRUNCATE via service role works through `pg` only. We'll fall back to ordered DELETE via the admin client.
+    // Ordered child-before-parent reset. Every error is fatal so the function never
+    // continues into inserts with stale classes/subjects/staff still present.
     const wipeTables = [
       "notifications","audit_logs","parent_students","portal_subscriptions","payments","invoice_items","invoices","fee_structures",
       "attendance","assessment_results","assessment_submissions","assessment_attempts","assessment_questions","assessments",
@@ -216,25 +185,21 @@ Deno.serve(async (req) => {
       "timetable_overrides","timetable_entries","timetable_drafts","personal_timetables","class_subjects",
       "student_classes","enrollments","guardians","health_visits","bed_allocations","student_restrictions",
       "student_verification_codes","parent_communication_logs","online_payments","students",
-      "announcements","events"
+      "announcements","events","classes","subjects"
     ];
     for (const t of wipeTables) {
       const { error } = await admin.from(t).delete().not("id", "is", null);
-      if (error) push(`  ! ${t}: ${error.message}`);
+      assertDb(t, error);
     }
-    // Reset classes + subjects + staff + class teachers
-    await admin.from("classes").update({ class_teacher_id: null }).not("id", "is", null);
-    await admin.from("classes").delete().not("id", "is", null);
-    await admin.from("subjects").delete().not("id", "is", null);
 
     // Remove previous demo auth users & their staff rows
     const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const demoEmails = new Set(DEMO_USERS.map(u => u.email));
     for (const u of existing?.users || []) {
       if (u.email && demoEmails.has(u.email)) {
-        await admin.from("staff").delete().eq("user_id", u.id);
-        await admin.from("user_roles").delete().eq("user_id", u.id);
-        await admin.from("profiles").delete().eq("id", u.id);
+        assertDb("staff", (await admin.from("staff").delete().eq("user_id", u.id)).error);
+        assertDb("user_roles", (await admin.from("user_roles").delete().eq("user_id", u.id)).error);
+        assertDb("profiles", (await admin.from("profiles").delete().eq("id", u.id)).error);
         await admin.auth.admin.deleteUser(u.id);
       }
     }
@@ -246,7 +211,7 @@ Deno.serve(async (req) => {
         const { error: rpcErr } = await admin.rpc("delete_staff_cascade", { _staff_id: s.id });
         if (rpcErr) throw rpcErr;
       } catch (_) {
-        await admin.from("staff").delete().eq("id", s.id);
+        assertDb("staff", (await admin.from("staff").delete().eq("id", s.id)).error);
       }
     }
 
