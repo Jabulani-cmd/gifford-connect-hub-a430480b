@@ -49,6 +49,26 @@ const assertDb = (table: string, error: any) => {
   throw tableError(table, error.message || String(error));
 };
 
+const listAllAuthUsers = async (admin: any) => {
+  const users: any[] = [];
+  const perPage = 1000;
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw tableError("auth.users", error.message || String(error));
+    users.push(...(data?.users || []));
+    if (!data?.users || data.users.length < perPage) break;
+  }
+  return users;
+};
+
+const insertRows = async (admin: any, table: string, rows: any, select = false) => {
+  if (Array.isArray(rows) && rows.length === 0) return select ? [] : null;
+  const query = admin.from(table).insert(rows);
+  const { data, error } = select ? await query.select() : await query;
+  assertDb(table, error);
+  return data;
+};
+
 // ===================== Subjects =====================
 const SUBJECT_DEFS = [
   { code: "ENG", name: "English Language", department: "Languages", forms: ["Form 1","Form 2","Form 3","Form 4"] },
