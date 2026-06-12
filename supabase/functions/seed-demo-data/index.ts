@@ -521,13 +521,14 @@ Deno.serve(async (req) => {
     const examIdByForm: Record<string, string> = {};
     for (const cd of CLASS_DEFS) {
       const subjIds = cd.subs.map(c => subjByCode[c].id);
-      const { data: e } = await admin.from("exams").insert({
+      const { data: e, error: examError } = await admin.from("exams").insert({
         name: `${cd.form_level} End of Term 2 Exam`,
         exam_type: "end_of_term", form_level: cd.form_level,
         term: "Term 2", academic_year: "2025",
         start_date: isoDate(examStart), end_date: isoDate(examEnd),
         subject_ids: subjIds, is_published: true,
       }).select().single();
+      assertDb("exams", examError);
       if (e) examIdByForm[cd.form_level] = e.id;
 
       // Timetable entries: spread subjects across morning/afternoon
@@ -548,7 +549,7 @@ Deno.serve(async (req) => {
         });
         day++;
       }
-      await admin.from("exam_timetable_entries").insert(tRows);
+      await insertRows(admin, "exam_timetable_entries", tRows);
     }
 
     // ============== LESSON PLANS ==============
@@ -594,13 +595,12 @@ Deno.serve(async (req) => {
       });
     }
     if (lpRows.length) {
-      const { error } = await admin.from("lesson_plans").insert(lpRows);
-      if (error) push(`  ! lesson_plans: ${error.message}`);
+      await insertRows(admin, "lesson_plans", lpRows);
     }
 
     // ============== ANNOUNCEMENTS + EVENTS ==============
     push("Inserting announcements and events…");
-    await admin.from("announcements").insert([
+    await insertRows(admin, "announcements", [
       { title: "Term 2 Fees — Final Reminder", content: "All Term 2 fees are due by end of week. Please settle outstanding balances via EcoCash, Paynow or Bank Transfer.", is_public: true, target_type: "whole_school" },
       { title: "Mid-Term Exams Schedule Released", content: "End-of-term exam timetable is now available on your dashboard.", is_public: true, target_type: "whole_school" },
       { title: "Parent–Teacher Conference", content: "Scheduled for next Saturday in the school hall, 09:00 – 13:00.", is_public: true, target_type: "whole_school" },
@@ -617,7 +617,7 @@ Deno.serve(async (req) => {
     const ev = (d: number, title: string, type: string, desc: string) => ({
       title, description: desc, event_date: isoDate(new Date(evBase.getTime() + d * 86400000)), event_type: type,
     });
-    await admin.from("events").insert([
+    await insertRows(admin, "events", [
       ev(3,  "Inter-House Athletics", "sports", "Annual athletics meet — Sports Field"),
       ev(7,  "Parent–Teacher Conference", "meeting", "School Hall, 09:00 – 13:00"),
       ev(10, "Form 6 Career Guidance Day", "academic", "Hall — UZ & NUST presentations"),
@@ -655,8 +655,7 @@ Deno.serve(async (req) => {
         }
       }
       for (let i = 0; i < payRows.length; i += 500) {
-        const { error } = await admin.from("payments").insert(payRows.slice(i, i + 500));
-        if (error) push(`  ! payments batch: ${error.message}`);
+        await insertRows(admin, "payments", payRows.slice(i, i + 500));
       }
       push(`  recorded ${payRows.length} payments`);
     }
@@ -688,7 +687,7 @@ Deno.serve(async (req) => {
         },
       });
     }
-    await admin.from("audit_logs").insert(aiRows);
+    await insertRows(admin, "audit_logs", aiRows);
 
     push("✅ Seed complete.");
 
