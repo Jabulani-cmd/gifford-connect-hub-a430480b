@@ -425,13 +425,14 @@ Deno.serve(async (req) => {
       const pid = demoUserIds[pl.email]; if (!pid) continue;
       const kids = pick(studentsIns!, pl.childCount);
       for (const k of kids) {
-        await admin.from("parent_students").insert({ parent_id: pid, student_id: k.id });
+        await insertRows(admin, "parent_students", { parent_id: pid, student_id: k.id });
         // Update auto-created portal_subscription to demo status
-        await admin.from("portal_subscriptions").update({
+        const { error: subscriptionUpdateError } = await admin.from("portal_subscriptions").update({
           status: pl.status,
           plan_type: pl.plan,
           trial_end_date: pl.status === "expired" ? "2025-04-30" : isoDate(new Date(Date.now() + 30 * 86400000)),
         }).eq("parent_id", pid).eq("student_id", k.id);
+        assertDb("portal_subscriptions", subscriptionUpdateError);
       }
     }
 
@@ -474,8 +475,7 @@ Deno.serve(async (req) => {
     // Insert marks in batches
     for (let i = 0; i < marksRows.length; i += 500) {
       const slice = marksRows.slice(i, i + 500);
-      const { error } = await admin.from("marks").insert(slice);
-      if (error) push(`  ! marks batch ${i}: ${error.message}`);
+      await insertRows(admin, "marks", slice);
     }
     push(`  inserted ${marksRows.length} marks`);
 
@@ -510,8 +510,7 @@ Deno.serve(async (req) => {
       }
     }
     for (let i = 0; i < attRows.length; i += 1000) {
-      const { error } = await admin.from("attendance").insert(attRows.slice(i, i + 1000));
-      if (error) push(`  ! attendance batch: ${error.message}`);
+      await insertRows(admin, "attendance", attRows.slice(i, i + 1000));
     }
     push(`  inserted ${attRows.length} attendance rows`);
 
