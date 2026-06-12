@@ -202,13 +202,16 @@ Deno.serve(async (req) => {
     }
 
     // Remove previous demo auth users (staff already truncated above)
-    const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const existing = await listAllAuthUsers(admin);
     const demoEmails = new Set(DEMO_USERS.map(u => u.email));
-    for (const u of existing?.users || []) {
+    for (const u of existing) {
       if (u.email && demoEmails.has(u.email)) {
-        await admin.from("user_roles").delete().eq("user_id", u.id);
-        await admin.from("profiles").delete().eq("id", u.id);
-        await admin.auth.admin.deleteUser(u.id);
+        const { error: roleDeleteError } = await admin.from("user_roles").delete().eq("user_id", u.id);
+        assertDb("user_roles", roleDeleteError);
+        const { error: profileDeleteError } = await admin.from("profiles").delete().eq("id", u.id);
+        assertDb("profiles", profileDeleteError);
+        const { error: authDeleteError } = await admin.auth.admin.deleteUser(u.id);
+        if (authDeleteError) throw tableError("auth.users", authDeleteError.message || String(authDeleteError));
       }
     }
 
@@ -224,7 +227,7 @@ Deno.serve(async (req) => {
       });
       if (error) { push(`  ! ${du.email}: ${error.message}`); continue; }
       demoUserIds[du.email] = data.user!.id;
-      await admin.from("user_roles").insert({ user_id: data.user!.id, role: du.role });
+      await insertRows(admin, "user_roles", { user_id: data.user!.id, role: du.role });
     }
 
     // ============== SUBJECTS ==============
@@ -234,9 +237,9 @@ Deno.serve(async (req) => {
     }));
     const { data: subjectsIns, error: subErr } = await admin
       .from("subjects")
-      .upsert(subjectRows, { onConflict: "name" })
+      .insert(subjectRows)
       .select();
-    if (subErr) throw subErr;
+    assertDb("subjects", subErr);
     const subjByCode: Record<string, any> = {};
     for (const s of subjectsIns!) {
       const def = SUBJECT_DEFS.find(d => d.name === s.name)!;
