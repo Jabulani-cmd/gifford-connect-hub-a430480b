@@ -270,7 +270,10 @@ Deno.serve(async (req) => {
     const subjectRows = SUBJECT_DEFS.map(s => ({
       name: s.name, code: s.code, department: s.department, form_levels: s.forms, is_examinable: true,
     }));
-    const { data: subjectsIns, error: subErr } = await admin.from("subjects").insert(subjectRows).select();
+    const { data: subjectsIns, error: subErr } = await admin
+      .from("subjects")
+      .upsert(subjectRows, { onConflict: "name" })
+      .select();
     if (subErr) throw subErr;
     const subjByCode: Record<string, any> = {};
     for (const s of subjectsIns!) {
