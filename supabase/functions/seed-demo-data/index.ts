@@ -239,12 +239,15 @@ Deno.serve(async (req) => {
       }
     }
     // Wipe remaining staff rows so we re-seed cleanly
-    await admin.rpc("delete_staff_cascade", { _staff_id: "00000000-0000-0000-0000-000000000000" }).catch(() => {});
+    try { await admin.rpc("delete_staff_cascade", { _staff_id: "00000000-0000-0000-0000-000000000000" }); } catch (_) {}
     const { data: leftover } = await admin.from("staff").select("id");
     for (const s of leftover || []) {
-      await admin.rpc("delete_staff_cascade", { _staff_id: s.id }).catch(async () => {
+      try {
+        const { error: rpcErr } = await admin.rpc("delete_staff_cascade", { _staff_id: s.id });
+        if (rpcErr) throw rpcErr;
+      } catch (_) {
         await admin.from("staff").delete().eq("id", s.id);
-      });
+      }
     }
 
     // ============== AUTH USERS ==============
