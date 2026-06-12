@@ -142,13 +142,15 @@ Deno.serve(async (req) => {
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify caller is admin
+    // Verify caller is admin. getClaims is not available in this edge runtime,
+    // so validate the bearer token through the supported getUser API.
+    const token = authHeader.replace("Bearer ", "");
     const userClient = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
-    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (claimsErr || !claimsData?.claims) {
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const callerId = claimsData.claims.sub;
+    const callerId = userData.user.id;
 
     const admin = createClient(url, service);
     const { data: roleRows } = await admin.from("user_roles").select("role").eq("user_id", callerId);
