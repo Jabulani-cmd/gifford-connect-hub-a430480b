@@ -4108,6 +4108,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      wipe_demo_data: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
