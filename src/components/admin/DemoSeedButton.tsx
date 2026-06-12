@@ -13,7 +13,11 @@ export default function DemoSeedButton() {
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("seed-demo-data", { body: {} });
-      if (error) throw error;
+      if (error) {
+        const context = (error as any)?.context;
+        const payload = typeof context?.json === "function" ? await context.json().catch(() => null) : null;
+        throw new Error(payload?.error || error.message || "Demo seed failed");
+      }
       toast({
         title: "Demo data seeded",
         description: `Students: ${data?.summary?.students ?? "?"}, Staff: ${data?.summary?.staff ?? "?"}, Classes: ${data?.summary?.classes ?? "?"}`,
