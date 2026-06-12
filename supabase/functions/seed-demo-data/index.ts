@@ -279,8 +279,7 @@ Deno.serve(async (req) => {
         user_id: linkedEmail ? demoUserIds[linkedEmail] : null,
       };
     });
-    const { data: staffIns, error: staffErr } = await admin.from("staff").insert(staffRows).select();
-    if (staffErr) throw staffErr;
+    const staffIns = await insertRows(admin, "staff", staffRows, true);
     const staffByName: Record<string, any> = {};
     for (const s of staffIns!) staffByName[s.full_name] = s;
 
@@ -295,8 +294,7 @@ Deno.serve(async (req) => {
       class_teacher_id: staffByName[formTeacherNames[i]].id,
       room: `Room ${i + 1}`, capacity: 40,
     }));
-    const { data: classesIns, error: classErr } = await admin.from("classes").insert(classRows).select();
-    if (classErr) throw classErr;
+    const classesIns = await insertRows(admin, "classes", classRows, true);
     const classByName: Record<string, any> = {};
     for (const c of classesIns!) classByName[c.name] = c;
 
@@ -316,7 +314,7 @@ Deno.serve(async (req) => {
         });
       }
     }
-    await admin.from("class_subjects").insert(classSubjectRows);
+    await insertRows(admin, "class_subjects", classSubjectRows);
 
     // ============== TIMETABLE ==============
     push("Generating timetable…");
@@ -338,7 +336,7 @@ Deno.serve(async (req) => {
         }
       }
     }
-    await admin.from("timetable_entries").insert(ttRows);
+    await insertRows(admin, "timetable_entries", ttRows);
 
     // ============== FEE STRUCTURES ==============
     push("Inserting fee structures…");
@@ -353,7 +351,7 @@ Deno.serve(async (req) => {
         feeRows.push({ academic_year: "2025", term, form, boarding_status: "day", description: `${form} Levy (${term})`, amount_usd: 30, amount_zig: 810, is_active: true });
       }
     }
-    await admin.from("fee_structures").insert(feeRows);
+    await insertRows(admin, "fee_structures", feeRows);
 
     // ============== STUDENTS ==============
     push("Inserting 180 students…");
@@ -405,8 +403,7 @@ Deno.serve(async (req) => {
     overlay("student.normal@giffordhigh.demo", 0);
     overlay("student.atrisk@giffordhigh.demo", 0);
 
-    const { data: studentsIns, error: stErr } = await admin.from("students").insert(allStudents).select();
-    if (stErr) throw stErr;
+    const studentsIns = await insertRows(admin, "students", allStudents, true);
     push(`  inserted ${studentsIns!.length} students`);
 
     // Bucket students by class for downstream linking
