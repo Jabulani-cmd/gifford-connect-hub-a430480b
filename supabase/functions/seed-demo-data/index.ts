@@ -175,43 +175,20 @@ Deno.serve(async (req) => {
     const push = (s: string) => { log.push(s); console.log(s); };
 
     // ============== WIPE ==============
-    push("Wiping demo-eligible tables…");
-    // Ordered child-before-parent reset. Every error is fatal so the function never
-    // continues into inserts with stale classes/subjects/staff still present.
-    const wipeTables = [
-      "notifications","audit_logs","parent_students","portal_subscriptions","payments","invoice_items","invoices","fee_structures",
-      "attendance","assessment_results","assessment_submissions","assessment_attempts","assessment_questions","assessments",
-      "homework","lesson_plans","marks","exam_results","exam_timetable_entries","exams","term_reports","term_registrations",
-      "timetable_overrides","timetable_entries","timetable_drafts","personal_timetables","class_subjects",
-      "student_classes","enrollments","guardians","health_visits","bed_allocations","student_restrictions",
-      "student_verification_codes","parent_communication_logs","online_payments","students",
-      "announcements","events","classes","subjects"
-    ];
-    for (const t of wipeTables) {
-      const { error } = await admin.from(t).delete().not("id", "is", null);
-      assertDb(t, error);
+    push("Wiping demo-eligible tables via TRUNCATE CASCADE…");
+    {
+      const { error } = await admin.rpc("wipe_demo_data");
+      assertDb("wipe_demo_data", error);
     }
 
-    // Remove previous demo auth users & their staff rows
+    // Remove previous demo auth users (staff already truncated above)
     const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const demoEmails = new Set(DEMO_USERS.map(u => u.email));
     for (const u of existing?.users || []) {
       if (u.email && demoEmails.has(u.email)) {
-        assertDb("staff", (await admin.from("staff").delete().eq("user_id", u.id)).error);
-        assertDb("user_roles", (await admin.from("user_roles").delete().eq("user_id", u.id)).error);
-        assertDb("profiles", (await admin.from("profiles").delete().eq("id", u.id)).error);
+        await admin.from("user_roles").delete().eq("user_id", u.id);
+        await admin.from("profiles").delete().eq("id", u.id);
         await admin.auth.admin.deleteUser(u.id);
-      }
-    }
-    // Wipe remaining staff rows so we re-seed cleanly
-    try { await admin.rpc("delete_staff_cascade", { _staff_id: "00000000-0000-0000-0000-000000000000" }); } catch (_) {}
-    const { data: leftover } = await admin.from("staff").select("id");
-    for (const s of leftover || []) {
-      try {
-        const { error: rpcErr } = await admin.rpc("delete_staff_cascade", { _staff_id: s.id });
-        if (rpcErr) throw rpcErr;
-      } catch (_) {
-        assertDb("staff", (await admin.from("staff").delete().eq("id", s.id)).error);
       }
     }
 
