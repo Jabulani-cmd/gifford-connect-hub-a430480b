@@ -49,6 +49,26 @@ const assertDb = (table: string, error: any) => {
   throw tableError(table, error.message || String(error));
 };
 
+const listAllAuthUsers = async (admin: any) => {
+  const users: any[] = [];
+  const perPage = 1000;
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw tableError("auth.users", error.message || String(error));
+    users.push(...(data?.users || []));
+    if (!data?.users || data.users.length < perPage) break;
+  }
+  return users;
+};
+
+const insertRows = async (admin: any, table: string, rows: any, select = false) => {
+  if (Array.isArray(rows) && rows.length === 0) return select ? [] : null;
+  const query = admin.from(table).insert(rows);
+  const { data, error } = select ? await query.select() : await query;
+  assertDb(table, error);
+  return data;
+};
+
 // ===================== Subjects =====================
 const SUBJECT_DEFS = [
   { code: "ENG", name: "English Language", department: "Languages", forms: ["Form 1","Form 2","Form 3","Form 4"] },
@@ -182,13 +202,16 @@ Deno.serve(async (req) => {
     }
 
     // Remove previous demo auth users (staff already truncated above)
-    const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const existing = await listAllAuthUsers(admin);
     const demoEmails = new Set(DEMO_USERS.map(u => u.email));
-    for (const u of existing?.users || []) {
+    for (const u of existing) {
       if (u.email && demoEmails.has(u.email)) {
-        await admin.from("user_roles").delete().eq("user_id", u.id);
-        await admin.from("profiles").delete().eq("id", u.id);
-        await admin.auth.admin.deleteUser(u.id);
+        const { error: roleDeleteError } = await admin.from("user_roles").delete().eq("user_id", u.id);
+        assertDb("user_roles", roleDeleteError);
+        const { error: profileDeleteError } = await admin.from("profiles").delete().eq("id", u.id);
+        assertDb("profiles", profileDeleteError);
+        const { error: authDeleteError } = await admin.auth.admin.deleteUser(u.id);
+        if (authDeleteError) throw tableError("auth.users", authDeleteError.message || String(authDeleteError));
       }
     }
 
@@ -202,9 +225,9 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: { full_name: du.name },
       });
-      if (error) { push(`  ! ${du.email}: ${error.message}`); continue; }
+      if (error) throw tableError("auth.users", `${du.email}: ${error.message}`);
       demoUserIds[du.email] = data.user!.id;
-      await admin.from("user_roles").insert({ user_id: data.user!.id, role: du.role });
+      await insertRows(admin, "user_roles", { user_id: data.user!.id, role: du.role });
     }
 
     // ============== SUBJECTS ==============
@@ -214,9 +237,9 @@ Deno.serve(async (req) => {
     }));
     const { data: subjectsIns, error: subErr } = await admin
       .from("subjects")
-      .upsert(subjectRows, { onConflict: "name" })
+      .insert(subjectRows)
       .select();
-    if (subErr) throw subErr;
+    assertDb("subjects", subErr);
     const subjByCode: Record<string, any> = {};
     for (const s of subjectsIns!) {
       const def = SUBJECT_DEFS.find(d => d.name === s.name)!;
@@ -256,8 +279,7 @@ Deno.serve(async (req) => {
         user_id: linkedEmail ? demoUserIds[linkedEmail] : null,
       };
     });
-    const { data: staffIns, error: staffErr } = await admin.from("staff").insert(staffRows).select();
-    if (staffErr) throw staffErr;
+    const staffIns = await insertRows(admin, "staff", staffRows, true);
     const staffByName: Record<string, any> = {};
     for (const s of staffIns!) staffByName[s.full_name] = s;
 
@@ -272,8 +294,7 @@ Deno.serve(async (req) => {
       class_teacher_id: staffByName[formTeacherNames[i]].id,
       room: `Room ${i + 1}`, capacity: 40,
     }));
-    const { data: classesIns, error: classErr } = await admin.from("classes").insert(classRows).select();
-    if (classErr) throw classErr;
+    const classesIns = await insertRows(admin, "classes", classRows, true);
     const classByName: Record<string, any> = {};
     for (const c of classesIns!) classByName[c.name] = c;
 
@@ -293,7 +314,7 @@ Deno.serve(async (req) => {
         });
       }
     }
-    await admin.from("class_subjects").insert(classSubjectRows);
+    await insertRows(admin, "class_subjects", classSubjectRows);
 
     // ============== TIMETABLE ==============
     push("Generating timetable…");
@@ -315,7 +336,7 @@ Deno.serve(async (req) => {
         }
       }
     }
-    await admin.from("timetable_entries").insert(ttRows);
+    await insertRows(admin, "timetable_entries", ttRows);
 
     // ============== FEE STRUCTURES ==============
     push("Inserting fee structures…");
@@ -330,7 +351,7 @@ Deno.serve(async (req) => {
         feeRows.push({ academic_year: "2025", term, form, boarding_status: "day", description: `${form} Levy (${term})`, amount_usd: 30, amount_zig: 810, is_active: true });
       }
     }
-    await admin.from("fee_structures").insert(feeRows);
+    await insertRows(admin, "fee_structures", feeRows);
 
     // ============== STUDENTS ==============
     push("Inserting 180 students…");
@@ -382,8 +403,7 @@ Deno.serve(async (req) => {
     overlay("student.normal@giffordhigh.demo", 0);
     overlay("student.atrisk@giffordhigh.demo", 0);
 
-    const { data: studentsIns, error: stErr } = await admin.from("students").insert(allStudents).select();
-    if (stErr) throw stErr;
+    const studentsIns = await insertRows(admin, "students", allStudents, true);
     push(`  inserted ${studentsIns!.length} students`);
 
     // Bucket students by class for downstream linking
@@ -405,13 +425,14 @@ Deno.serve(async (req) => {
       const pid = demoUserIds[pl.email]; if (!pid) continue;
       const kids = pick(studentsIns!, pl.childCount);
       for (const k of kids) {
-        await admin.from("parent_students").insert({ parent_id: pid, student_id: k.id });
+        await insertRows(admin, "parent_students", { parent_id: pid, student_id: k.id });
         // Update auto-created portal_subscription to demo status
-        await admin.from("portal_subscriptions").update({
+        const { error: subscriptionUpdateError } = await admin.from("portal_subscriptions").update({
           status: pl.status,
           plan_type: pl.plan,
           trial_end_date: pl.status === "expired" ? "2025-04-30" : isoDate(new Date(Date.now() + 30 * 86400000)),
         }).eq("parent_id", pid).eq("student_id", k.id);
+        assertDb("portal_subscriptions", subscriptionUpdateError);
       }
     }
 
@@ -435,10 +456,10 @@ Deno.serve(async (req) => {
           const subj = subjByCode[sc]; if (!subj) continue;
           const tDef = STAFF_DEFS.find(sd => sd.subs.includes(sc));
           if (!tDef) continue;
-          const teacherStaffId = staffByName[tDef.name].id;
+          const teacherUserId = staffByName[tDef.name].user_id || demoUserIds["admin@giffordhigh.demo"] || callerId;
           const base = tier === "top" ? 80 : tier === "avg" ? 60 : 40;
           const mk = (t: string, type: string, drift = 0) => ({
-            student_id: s.id, subject_id: subj.id, teacher_id: teacherStaffId,
+            student_id: s.id, subject_id: subj.id, teacher_id: teacherUserId,
             mark: Math.max(20, Math.min(99, base + randInt(-8, 8) + drift)),
             assessment_type: type, term: t,
             description: type === "exam" ? "End of Term Exam" : type === "test" ? "Class Test" : "Assignment",
@@ -454,8 +475,7 @@ Deno.serve(async (req) => {
     // Insert marks in batches
     for (let i = 0; i < marksRows.length; i += 500) {
       const slice = marksRows.slice(i, i + 500);
-      const { error } = await admin.from("marks").insert(slice);
-      if (error) push(`  ! marks batch ${i}: ${error.message}`);
+      await insertRows(admin, "marks", slice);
     }
     push(`  inserted ${marksRows.length} marks`);
 
@@ -490,8 +510,7 @@ Deno.serve(async (req) => {
       }
     }
     for (let i = 0; i < attRows.length; i += 1000) {
-      const { error } = await admin.from("attendance").insert(attRows.slice(i, i + 1000));
-      if (error) push(`  ! attendance batch: ${error.message}`);
+      await insertRows(admin, "attendance", attRows.slice(i, i + 1000));
     }
     push(`  inserted ${attRows.length} attendance rows`);
 
@@ -502,13 +521,14 @@ Deno.serve(async (req) => {
     const examIdByForm: Record<string, string> = {};
     for (const cd of CLASS_DEFS) {
       const subjIds = cd.subs.map(c => subjByCode[c].id);
-      const { data: e } = await admin.from("exams").insert({
+      const { data: e, error: examError } = await admin.from("exams").insert({
         name: `${cd.form_level} End of Term 2 Exam`,
         exam_type: "end_of_term", form_level: cd.form_level,
         term: "Term 2", academic_year: "2025",
         start_date: isoDate(examStart), end_date: isoDate(examEnd),
         subject_ids: subjIds, is_published: true,
       }).select().single();
+      assertDb("exams", examError);
       if (e) examIdByForm[cd.form_level] = e.id;
 
       // Timetable entries: spread subjects across morning/afternoon
@@ -529,7 +549,7 @@ Deno.serve(async (req) => {
         });
         day++;
       }
-      await admin.from("exam_timetable_entries").insert(tRows);
+      await insertRows(admin, "exam_timetable_entries", tRows);
     }
 
     // ============== LESSON PLANS ==============
@@ -575,13 +595,12 @@ Deno.serve(async (req) => {
       });
     }
     if (lpRows.length) {
-      const { error } = await admin.from("lesson_plans").insert(lpRows);
-      if (error) push(`  ! lesson_plans: ${error.message}`);
+      await insertRows(admin, "lesson_plans", lpRows);
     }
 
     // ============== ANNOUNCEMENTS + EVENTS ==============
     push("Inserting announcements and events…");
-    await admin.from("announcements").insert([
+    await insertRows(admin, "announcements", [
       { title: "Term 2 Fees — Final Reminder", content: "All Term 2 fees are due by end of week. Please settle outstanding balances via EcoCash, Paynow or Bank Transfer.", is_public: true, target_type: "whole_school" },
       { title: "Mid-Term Exams Schedule Released", content: "End-of-term exam timetable is now available on your dashboard.", is_public: true, target_type: "whole_school" },
       { title: "Parent–Teacher Conference", content: "Scheduled for next Saturday in the school hall, 09:00 – 13:00.", is_public: true, target_type: "whole_school" },
@@ -598,7 +617,7 @@ Deno.serve(async (req) => {
     const ev = (d: number, title: string, type: string, desc: string) => ({
       title, description: desc, event_date: isoDate(new Date(evBase.getTime() + d * 86400000)), event_type: type,
     });
-    await admin.from("events").insert([
+    await insertRows(admin, "events", [
       ev(3,  "Inter-House Athletics", "sports", "Annual athletics meet — Sports Field"),
       ev(7,  "Parent–Teacher Conference", "meeting", "School Hall, 09:00 – 13:00"),
       ev(10, "Form 6 Career Guidance Day", "academic", "Hall — UZ & NUST presentations"),
@@ -636,8 +655,7 @@ Deno.serve(async (req) => {
         }
       }
       for (let i = 0; i < payRows.length; i += 500) {
-        const { error } = await admin.from("payments").insert(payRows.slice(i, i + 500));
-        if (error) push(`  ! payments batch: ${error.message}`);
+        await insertRows(admin, "payments", payRows.slice(i, i + 500));
       }
       push(`  recorded ${payRows.length} payments`);
     }
@@ -669,7 +687,7 @@ Deno.serve(async (req) => {
         },
       });
     }
-    await admin.from("audit_logs").insert(aiRows);
+    await insertRows(admin, "audit_logs", aiRows);
 
     push("✅ Seed complete.");
 

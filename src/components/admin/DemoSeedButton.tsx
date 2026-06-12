@@ -19,8 +19,8 @@ export default function DemoSeedButton() {
         throw new Error(payload?.error || error.message || "Demo seed failed");
       }
       toast({
-        title: "Demo data seeded",
-        description: `Students: ${data?.summary?.students ?? "?"}, Staff: ${data?.summary?.staff ?? "?"}, Classes: ${data?.summary?.classes ?? "?"}`,
+        title: "Demo data reseeded",
+        description: `Reseeded: ${data?.summary?.students ?? "?"} students, ${data?.summary?.staff ?? "?"} staff, ${data?.summary?.classes ?? "?"} classes, ${data?.summary?.subjects ?? "?"} subjects, ${data?.summary?.marks ?? "?"} marks.`,
       });
       setTimeout(() => window.location.reload(), 1200);
     } catch (e: any) {
@@ -42,7 +42,9 @@ export default function DemoSeedButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>Reset and re-seed demo data?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will <b>delete</b> all students, staff, classes, marks, attendance, fees, payments, lesson plans,
+            This will erase all current data and reseed demo data. Continue?
+            <br /><br />
+            This will <b>delete</b> operational demo/application records including students, staff, classes, marks, attendance, fees, payments, lesson plans,
             announcements, events, exams and timetable entries, then re-create a fresh demo dataset
             (~180 students across Form 1A–6A, 25 staff, full Term 2 marks &amp; attendance, fees, exam timetable, and 12 demo login accounts).
             <br /><br />
