@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: { full_name: du.name },
       });
-      if (error) { push(`  ! ${du.email}: ${error.message}`); continue; }
+      if (error) throw tableError("auth.users", `${du.email}: ${error.message}`);
       demoUserIds[du.email] = data.user!.id;
       await insertRows(admin, "user_roles", { user_id: data.user!.id, role: du.role });
     }
