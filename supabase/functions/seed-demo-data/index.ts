@@ -198,6 +198,11 @@ const parentEmail = (guardianName: string, familyIndex: number) => {
   const { first, last } = firstLast(guardianName);
   return `${first}.${last}${familyIndex}@gmail.com`;
 };
+const SPECIAL_PARENT_OVERRIDES: Record<number, { name: string; email: string; status: string; plan: string }> = {
+  0: { name: "Mr. Tendai Dube", email: "tendai.dube1@gmail.com", status: "active", plan: "termly" },
+  109: { name: "Mrs. Tinashe Gono", email: "tinashe.gono110@gmail.com", status: "expired", plan: "termly" },
+  324: { name: "Mr. Simba Gumbo", email: "simba.gumbo325@gmail.com", status: "free_trial", plan: "monthly" },
+};
 
 const buildTimetable = (classDefs: any[], classByName: Record<string, any>, subjByCode: Record<string, any>, classSubjectByKey: Record<string, any>, staffById: Record<string, any>, venueByName: Record<string, any>) => {
   const ttRows: any[] = [];
@@ -304,6 +309,10 @@ Deno.serve(async (req) => {
         seedAuthEmails.add(studentEmail(admission));
       }
       for (let i = 0; i < 325; i++) {
+        if (SPECIAL_PARENT_OVERRIDES[i]) {
+          seedAuthEmails.add(SPECIAL_PARENT_OVERRIDES[i].email);
+          continue;
+        }
         const counter = i * 2 + 1;
         const childName = counter === 1 ? "Takudzwa Dube" : counter === 220 ? "Anesu Sibanda" : counter === 650 ? "Tadiwanashe Mutasa" : studentName(counter);
         const surname = childName.split(" ").slice(-1)[0];
@@ -497,8 +506,9 @@ Deno.serve(async (req) => {
       for (let i = 0; i < familyStudents.length; i++) {
         const family = familyStudents[i];
         const surname = family[0].full_name.split(" ").slice(-1)[0];
-        const parentName = `${i % 3 === 0 ? "Mr." : "Mrs."} ${pick(MALE_FIRST, i)} ${surname}`;
-        const email = parentEmail(parentName, i + 1);
+        const override = SPECIAL_PARENT_OVERRIDES[i];
+        const parentName = override?.name || `${i % 3 === 0 ? "Mr." : "Mrs."} ${pick(MALE_FIRST, i)} ${surname}`;
+        const email = override?.email || parentEmail(parentName, i + 1);
         const parentId = await ensureAuthUser(ctx, email, PARENT_PASSWORD, parentName, "parent");
         parentUserIds[email] = parentId;
         parentsCreated++;
@@ -508,10 +518,10 @@ Deno.serve(async (req) => {
           subscriptionRows.push({
             parent_id: parentId,
             student_id: child.id,
-            status: i === 0 ? "active" : i === 1 ? "expired" : i === 2 ? "free_trial" : "active",
-            trial_end_date: i === 1 ? "2025-04-30" : "2025-12-31",
-            payment_due_date: i === 1 ? "2025-05-01" : "2025-12-31",
-            plan_type: i === 2 ? "monthly" : "termly",
+            status: override?.status || "active",
+            trial_end_date: override?.status === "expired" ? "2025-04-30" : "2025-12-31",
+            payment_due_date: override?.status === "expired" ? "2025-05-01" : "2025-12-31",
+            plan_type: override?.plan || "termly",
             amount_usd: 25,
           });
         }
