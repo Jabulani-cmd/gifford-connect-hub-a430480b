@@ -18,9 +18,12 @@ export default function DemoSeedButton() {
         const payload = typeof context?.json === "function" ? await context.json().catch(() => null) : null;
         throw new Error(payload?.error || error.message || "Demo seed failed");
       }
+      const verification = Array.isArray(data?.verification)
+        ? data.verification.map((v: any) => v.line).join(" • ")
+        : `Reseeded: ${data?.summary?.students ?? "?"} students, ${data?.summary?.staff ?? "?"} staff, ${data?.summary?.classes ?? "?"} classes, ${data?.summary?.subjects ?? "?"} subjects.`;
       toast({
         title: "Demo data reseeded",
-        description: `Reseeded: ${data?.summary?.students ?? "?"} students, ${data?.summary?.staff ?? "?"} staff, ${data?.summary?.classes ?? "?"} classes, ${data?.summary?.subjects ?? "?"} subjects, ${data?.summary?.marks ?? "?"} marks.`,
+        description: verification,
       });
       setTimeout(() => window.location.reload(), 1200);
     } catch (e: any) {
@@ -46,7 +49,7 @@ export default function DemoSeedButton() {
             <br /><br />
             This will <b>delete</b> operational demo/application records including students, staff, classes, marks, attendance, fees, payments, lesson plans,
             announcements, events, exams and timetable entries, then re-create a fresh demo dataset
-            (~180 students across Form 1A–6A, 25 staff, full Term 2 marks &amp; attendance, fees, exam timetable, and 12 demo login accounts).
+            (650 students across 18 classes, 28 teachers, linked parent accounts, full weekly timetables, marks, attendance and finance records).
             <br /><br />
             <b>Use only on demo environments.</b> Real data will be lost.
           </AlertDialogDescription>

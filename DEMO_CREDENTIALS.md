@@ -1,53 +1,58 @@
 # Gifford High School — Demo Credentials
 
-All demo accounts share the same password: **`Demo@2025!`**
-
-Run **Reset Demo Data** from the Admin dashboard header to (re-)create these
-accounts plus 180 students, 25 staff, 6 classes (Form 1A → 6A), full Term 2
-timetable, marks, attendance, fees, payments, exam timetable, lesson plans,
-announcements and AI usage logs.
+Run **Reset Demo Data** from the Admin dashboard header to re-create the full
+demo dataset: **650 students**, **325 linked parent accounts**, **28 teachers**,
+**18 classes** (Form 1A–C through Form 6A–C), full weekly timetables, marks,
+attendance, fees, payments, exams, lesson plans, announcements and AI logs.
 
 > Use **only** on demo environments — running the reset wipes existing
 > academic, finance, attendance, exam and timetable data.
 
 ## Administration
 
-| Role               | Email                              | Password     |
-|--------------------|------------------------------------|--------------|
-| Admin              | `admin@giffordhigh.demo`           | `Demo@2025!` |
-| Head of School     | `head@giffordhigh.demo`            | `Demo@2025!` |
-| Deputy (Supervisor)| `deputy@giffordhigh.demo`          | `Demo@2025!` |
-| Finance            | `finance@giffordhigh.demo`         | `Demo@2025!` |
+| Role  | Email | Password |
+|---|---|---|
+| Admin | `admin@giffordhigh.demo` | `Demo@2025!` |
 
 ## Teachers
 
-| Department     | Email                                   | Password     |
-|----------------|-----------------------------------------|--------------|
-| Mathematics    | `teacher.maths@giffordhigh.demo`        | `Demo@2025!` |
-| English/Lit    | `teacher.english@giffordhigh.demo`      | `Demo@2025!` |
-| Sciences       | `teacher.science@giffordhigh.demo`      | `Demo@2025!` |
+All seeded teacher accounts use password **`Teacher@123`**.
 
-## Parents (for paywall / subscription demo)
+| Profile | Email | Password | Notes |
+|---|---|---|---|
+| Mathematics | `brian.chikwanda@giffordhigh.co.zw` | `Teacher@123` | Mathematics / Pure Mathematics |
+| Languages HOD | `rumbidzai.moyo@giffordhigh.co.zw` | `Teacher@123` | HOD, English / Literature |
+| Sciences | `farai.ncube@giffordhigh.co.zw` | `Teacher@123` | HOD, Biology / Chemistry |
 
-| Status   | Email                                | Password     | Notes |
-|----------|--------------------------------------|--------------|-------|
-| Active   | `parent.active@giffordhigh.demo`     | `Demo@2025!` | 2 linked children, term plan |
-| Expired  | `parent.expired@giffordhigh.demo`    | `Demo@2025!` | Use for renewal/payment flow |
-| Pending  | `parent.pending@giffordhigh.demo`    | `Demo@2025!` | Free-trial → monthly plan    |
+## Parents
+
+All seeded parent accounts use password **`Parent@123`**.
+
+| Status | Email | Password | Linked child examples |
+|---|---|---|---|
+| Active | `tendai.dube1@gmail.com` | `Parent@123` | `Takudzwa Dube` plus sibling |
+| Expired | `tinashe.gono110@gmail.com` | `Parent@123` | Linked to the normal sample student |
+| Pending/free trial | `simba.gumbo325@gmail.com` | `Parent@123` | Linked to the top-performer sample student |
 
 ## Students
 
-| Profile        | Email                                  | Password     | Class    |
-|----------------|----------------------------------------|--------------|----------|
-| Top performer  | `student.top@giffordhigh.demo`         | `Demo@2025!` | Form 4A  |
-| Normal         | `student.normal@giffordhigh.demo`      | `Demo@2025!` | Form 3A  |
-| At-risk        | `student.atrisk@giffordhigh.demo`      | `Demo@2025!` | Form 2A  |
+All seeded student accounts use password **`Student@123`** and follow
+`ghs[studentnumber]@giffordhigh.ac.zw`.
 
-## AI-feature demo hooks
+| Profile | Email | Password | Class |
+|---|---|---|---|
+| At-risk | `ghs20250001@giffordhigh.ac.zw` | `Student@123` | Form 1A |
+| Normal | `ghs20250220@giffordhigh.ac.zw` | `Student@123` | Form 3A |
+| Top performer | `ghs20250650@giffordhigh.ac.zw` | `Student@123` | Form 6C |
 
-- **At-risk alerts**: first two students in every class have low marks +
-  declining attendance.
-- **Top performer**: last student in every class (plus `student.top`).
-- **Fee defaulters**: ~15 % of Term 2 invoices left unpaid + 20 % partial.
-- **Substitute / timetable conflicts**: covered by the AI Timetable Generator.
-- **AI usage logs**: 18 entries pre-populated in audit logs (`ai_*` actions).
+## Verification targets
+
+After reset, the seed report should show:
+
+- ✅ 650/650 students linked to classes
+- ✅ 650/650 students have portal accounts
+- ✅ 650/650 students have at least 1 linked parent
+- ✅ 650/650 parent links created
+- ✅ 28/28 teachers have portal accounts
+- ✅ 18/18 classes created with class teachers
+- ✅ 720/720 timetable slots created, 0 conflicts

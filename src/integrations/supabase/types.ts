@@ -624,6 +624,7 @@ export type Database = {
           class_id: string
           created_at: string
           id: string
+          periods_per_week: number | null
           subject_id: string
           teacher_id: string | null
         }
@@ -631,6 +632,7 @@ export type Database = {
           class_id: string
           created_at?: string
           id?: string
+          periods_per_week?: number | null
           subject_id: string
           teacher_id?: string | null
         }
@@ -638,6 +640,7 @@ export type Database = {
           class_id?: string
           created_at?: string
           id?: string
+          periods_per_week?: number | null
           subject_id?: string
           teacher_id?: string | null
         }
@@ -2840,6 +2843,7 @@ export type Database = {
           employment_date: string | null
           full_name: string
           id: string
+          max_periods_per_week: number | null
           national_id: string | null
           nssa_number: string | null
           paye_number: string | null
@@ -2866,6 +2870,7 @@ export type Database = {
           employment_date?: string | null
           full_name: string
           id?: string
+          max_periods_per_week?: number | null
           national_id?: string | null
           nssa_number?: string | null
           paye_number?: string | null
@@ -2892,6 +2897,7 @@ export type Database = {
           employment_date?: string | null
           full_name?: string
           id?: string
+          max_periods_per_week?: number | null
           national_id?: string | null
           nssa_number?: string | null
           paye_number?: string | null
@@ -3021,6 +3027,7 @@ export type Database = {
           address: string | null
           admission_number: string | null
           boarding_status: string | null
+          class_id: string | null
           created_at: string
           date_of_birth: string | null
           deleted_at: string | null
@@ -3047,6 +3054,7 @@ export type Database = {
           address?: string | null
           admission_number?: string | null
           boarding_status?: string | null
+          class_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
@@ -3073,6 +3081,7 @@ export type Database = {
           address?: string | null
           admission_number?: string | null
           boarding_status?: string | null
+          class_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           deleted_at?: string | null
@@ -3095,7 +3104,15 @@ export type Database = {
           subject_combination?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       study_materials: {
         Row: {
