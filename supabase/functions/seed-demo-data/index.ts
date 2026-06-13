@@ -357,15 +357,17 @@ Deno.serve(async (req) => {
         const parentName = `${i % 3 === 0 ? "Mr." : "Mrs."} ${pick(MALE_FIRST, i)} ${surname}`;
         seedAuthEmails.add(parentEmail(parentName, i + 1));
       }
-      const isSeedEmail = (email = "") => seedAuthEmails.has(email.toLowerCase());
+      ctx.existingAuthByEmail = {};
       for (const u of existing) {
-        if (u.email && isSeedEmail(u.email)) {
-          await admin.from("user_roles").delete().eq("user_id", u.id);
-          await admin.from("profiles").delete().eq("id", u.id);
-          const { error } = await admin.auth.admin.deleteUser(u.id);
-          if (error) throw tableError(ctx.phase, "auth.users", `${u.email}: ${error.message}`, error);
-        }
+        const email = (u.email || "").toLowerCase();
+        if (email && seedAuthEmails.has(email)) ctx.existingAuthByEmail[email] = u;
       }
+      const reusableSeedUserIds = Object.values(ctx.existingAuthByEmail).map((u: any) => u.id).filter(Boolean);
+      for (let i = 0; i < reusableSeedUserIds.length; i += 500) {
+        const { error } = await admin.from("user_roles").delete().in("user_id", reusableSeedUserIds.slice(i, i + 500));
+        assertDb(ctx, "user_roles", error);
+      }
+      push(ctx, `  found ${reusableSeedUserIds.length} existing seed login accounts to reuse`);
     });
 
     await runPhase(ctx, "PHASE 2: Insert subjects", async () => {
@@ -388,12 +390,16 @@ Deno.serve(async (req) => {
     }
 
     await runPhase(ctx, "PHASE 3: Insert teachers and teacher auth accounts", async () => {
-      for (const au of ADMIN_USERS) adminIds[au.email] = await ensureAuthUser(ctx, au.email, au.password, au.name, au.role);
-      for (const teacher of STAFF_DEFS) {
-        const role = teacher.role === "hod" ? "hod" : teacher.role === "principal" ? "principal" : teacher.role === "deputy_principal" ? "deputy_principal" : "teacher";
-        const email = emailSafe(teacher.name, "giffordhigh.co.zw");
-        teacherUserIds[teacher.name] = await ensureAuthUser(ctx, email, TEACHER_PASSWORD, teacher.name, role);
-      }
+      const adminAccounts = await ensureAuthUsers(ctx, ADMIN_USERS.map((au) => ({ ...au, ref: au.email })), 8);
+      for (const au of adminAccounts) adminIds[au.email] = au.userId;
+      const teacherAccounts = await ensureAuthUsers(ctx, STAFF_DEFS.map((teacher) => ({
+        ref: teacher.name,
+        email: emailSafe(teacher.name, "giffordhigh.co.zw"),
+        password: TEACHER_PASSWORD,
+        name: teacher.name,
+        role: teacher.role === "hod" ? "hod" : teacher.role === "principal" ? "principal" : teacher.role === "deputy_principal" ? "deputy_principal" : "teacher",
+      })), 12);
+      for (const teacher of teacherAccounts) teacherUserIds[teacher.ref!] = teacher.userId;
       const rows = STAFF_DEFS.map((sd, i) => ({
         user_id: teacherUserIds[sd.name],
         full_name: sd.name,
