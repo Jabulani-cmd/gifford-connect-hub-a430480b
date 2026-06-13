@@ -12,10 +12,10 @@ const corsHeaders = {
 
 const ACADEMIC_YEAR = "2025";
 const TERM = "Term 2";
-const STUDENT_PASSWORD = "Student@123";
-const PARENT_PASSWORD = "Parent@123";
-const TEACHER_PASSWORD = "Teacher@123";
-const ADMIN_PASSWORD = "Demo@2025!";
+const STUDENT_PASSWORD = "Gifford-Student-2026!Zim#";
+const PARENT_PASSWORD = "Gifford-Parent-2026!Zim#";
+const TEACHER_PASSWORD = "Gifford-Teacher-2026!Zim#";
+const ADMIN_PASSWORD = "Gifford-Admin-2026!Zim#";
 
 type SeedCtx = {
   admin: any;
