@@ -624,6 +624,7 @@ export type Database = {
           class_id: string
           created_at: string
           id: string
+          periods_per_week: number | null
           subject_id: string
           teacher_id: string | null
         }
@@ -631,6 +632,7 @@ export type Database = {
           class_id: string
           created_at?: string
           id?: string
+          periods_per_week?: number | null
           subject_id: string
           teacher_id?: string | null
         }
@@ -638,6 +640,7 @@ export type Database = {
           class_id?: string
           created_at?: string
           id?: string
+          periods_per_week?: number | null
           subject_id?: string
           teacher_id?: string | null
         }
@@ -2840,6 +2843,7 @@ export type Database = {
           employment_date: string | null
           full_name: string
           id: string
+          max_periods_per_week: number | null
           national_id: string | null
           nssa_number: string | null
           paye_number: string | null
@@ -2866,6 +2870,7 @@ export type Database = {
           employment_date?: string | null
           full_name: string
           id?: string
+          max_periods_per_week?: number | null
           national_id?: string | null
           nssa_number?: string | null
           paye_number?: string | null
@@ -2892,6 +2897,7 @@ export type Database = {
           employment_date?: string | null
           full_name?: string
           id?: string
+          max_periods_per_week?: number | null
           national_id?: string | null
           nssa_number?: string | null
           paye_number?: string | null
