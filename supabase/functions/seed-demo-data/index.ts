@@ -295,11 +295,22 @@ Deno.serve(async (req) => {
       const { error } = await admin.rpc("wipe_demo_data");
       assertDb(ctx, "wipe_demo_data", error);
       const existing = await listAllAuthUsers(admin);
-      const isSeedEmail = (email = "") =>
-        email.endsWith("@giffordhigh.demo") ||
-        email.endsWith("@giffordhigh.co.zw") ||
-        /^ghs\d+@giffordhigh\.ac\.zw$/.test(email) ||
-        /^[a-z]+\.[a-z]+\d+@gmail\.com$/.test(email);
+      const seedAuthEmails = new Set<string>([
+        ...ADMIN_USERS.map((u) => u.email),
+        ...STAFF_DEFS.map((s) => emailSafe(s.name, "giffordhigh.co.zw")),
+      ]);
+      for (let counter = 1; counter <= 650; counter++) {
+        const admission = `GHS-2025-${pad(counter, 4)}`;
+        seedAuthEmails.add(studentEmail(admission));
+      }
+      for (let i = 0; i < 325; i++) {
+        const counter = i * 2 + 1;
+        const childName = counter === 1 ? "Takudzwa Dube" : counter === 220 ? "Anesu Sibanda" : counter === 650 ? "Tadiwanashe Mutasa" : studentName(counter);
+        const surname = childName.split(" ").slice(-1)[0];
+        const parentName = `${i % 3 === 0 ? "Mr." : "Mrs."} ${pick(MALE_FIRST, i)} ${surname}`;
+        seedAuthEmails.add(parentEmail(parentName, i + 1));
+      }
+      const isSeedEmail = (email = "") => seedAuthEmails.has(email.toLowerCase());
       for (const u of existing) {
         if (u.email && isSeedEmail(u.email)) {
           await admin.from("user_roles").delete().eq("user_id", u.id);
