@@ -586,7 +586,7 @@ Deno.serve(async (req) => {
       }
       await insertRows(ctx, "parent_students", linkRows);
       await insertRows(ctx, "guardians", guardianRows);
-      await insertRows(ctx, "portal_subscriptions", subscriptionRows);
+      await upsertRows(ctx, "portal_subscriptions", subscriptionRows, "student_id,parent_id");
       parentLinksCount = linkRows.length;
       push(ctx, `  inserted ${parentsCreated} parent accounts and ${parentLinksCount} child links`);
     });
