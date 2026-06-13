@@ -388,10 +388,10 @@ Deno.serve(async (req) => {
     await runPhase(ctx, "PHASE 4: Insert classes", async () => {
       venuesIns = await insertRows(ctx, "teaching_venues", [
         ...Array.from({ length: 18 }, (_, i) => ({ name: `Room ${i + 1}`, venue_type: "classroom", capacity: 40, is_active: true })),
-        { name: "Science Lab 1", venue_type: "laboratory", capacity: 35, is_active: true },
-        { name: "Science Lab 2", venue_type: "laboratory", capacity: 35, is_active: true },
-        { name: "Computer Lab", venue_type: "computer_lab", capacity: 35, is_active: true },
-        { name: "Library", venue_type: "library", capacity: 60, is_active: true },
+        { name: "Science Lab 1", venue_type: "lab", capacity: 35, is_active: true },
+        { name: "Science Lab 2", venue_type: "lab", capacity: 35, is_active: true },
+        { name: "Computer Lab", venue_type: "lab", capacity: 35, is_active: true },
+        { name: "Library", venue_type: "other", capacity: 60, is_active: true },
         { name: "School Hall", venue_type: "hall", capacity: 650, is_active: true },
       ], true);
       const formTeachers = STAFF_DEFS.filter((s) => s.role === "teacher" || s.role === "hod");
