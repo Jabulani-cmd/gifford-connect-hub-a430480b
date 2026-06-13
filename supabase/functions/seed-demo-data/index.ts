@@ -436,6 +436,7 @@ Deno.serve(async (req) => {
           rows.push({
             admission_number: admission,
             full_name: name,
+            class_id: classByName[cd.name].id,
             date_of_birth: `${2025 - (12 + formNum)}-${pad((counter % 12) + 1, 2)}-${pad((counter % 27) + 1, 2)}`,
             form: cd.form_level,
             stream: cd.stream,
