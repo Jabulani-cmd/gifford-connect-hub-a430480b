@@ -22,6 +22,7 @@ type SeedCtx = {
   callerId: string;
   log: string[];
   phase: string;
+  existingAuthByEmail?: Record<string, any>;
 };
 
 const randInt = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
@@ -178,18 +179,55 @@ const listAllAuthUsers = async (admin: any) => {
   }
   return users;
 };
-const ensureAuthUser = async (ctx: SeedCtx, email: string, password: string, name: string, role: string) => {
-  const { data, error } = await ctx.admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name },
+type AuthSpec = { email: string; password: string; name: string; role: string; ref?: string };
+
+const mapLimit = async <T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>) => {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index], index);
+    }
   });
-  if (error) throw tableError(ctx.phase, "auth.users", `${email}: ${error.message}`, error);
+  await Promise.all(workers);
+  return results;
+};
+
+const createOrUpdateAuthUser = async (ctx: SeedCtx, spec: AuthSpec) => {
+  const email = spec.email.toLowerCase();
+  const existing = ctx.existingAuthByEmail?.[email];
+  if (existing?.id) {
+    const { data, error } = await ctx.admin.auth.admin.updateUserById(existing.id, {
+      password: spec.password,
+      email_confirm: true,
+      user_metadata: { full_name: spec.name },
+    });
+    if (error) throw tableError(ctx.phase, "auth.users", `${spec.email}: ${error.message}`, error);
+    return data?.user?.id || existing.id;
+  }
+
+  const { data, error } = await ctx.admin.auth.admin.createUser({
+    email: spec.email,
+    password: spec.password,
+    email_confirm: true,
+    user_metadata: { full_name: spec.name },
+  });
+  if (error) throw tableError(ctx.phase, "auth.users", `${spec.email}: ${error.message}`, error);
   const userId = data.user!.id;
-  await upsertRows(ctx, "profiles", { id: userId, full_name: name, email }, "id");
-  await upsertRows(ctx, "user_roles", { user_id: userId, role }, "user_id,role");
+  ctx.existingAuthByEmail ||= {};
+  ctx.existingAuthByEmail[email] = data.user;
   return userId;
+};
+
+const ensureAuthUsers = async (ctx: SeedCtx, specs: AuthSpec[], concurrency = 20) => {
+  const created = await mapLimit(specs, concurrency, async (spec) => ({
+    ...spec,
+    userId: await createOrUpdateAuthUser(ctx, spec),
+  }));
+  await upsertRows(ctx, "profiles", created.map((u) => ({ id: u.userId, full_name: u.name, email: u.email })), "id");
+  await upsertRows(ctx, "user_roles", created.map((u) => ({ user_id: u.userId, role: u.role })), "user_id,role");
+  return created;
 };
 
 const studentName = (n: number) => `${pick(MALE_FIRST, n)} ${pick(SURNAMES, Math.floor(n / 2) + n)}`;
