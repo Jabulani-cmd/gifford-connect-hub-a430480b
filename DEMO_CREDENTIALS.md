@@ -31,8 +31,8 @@ All seeded parent accounts use password **`Parent@123`**.
 | Status | Email | Password | Linked child examples |
 |---|---|---|---|
 | Active | `tendai.dube1@gmail.com` | `Parent@123` | `Takudzwa Dube` plus sibling |
-| Expired | `tinashe.sibanda2@gmail.com` | `Parent@123` | Form 1A child pair |
-| Pending/free trial | `tatenda.moyo3@gmail.com` | `Parent@123` | Form 1A child pair |
+| Expired | `tinashe.gono110@gmail.com` | `Parent@123` | Linked to the normal sample student |
+| Pending/free trial | `simba.gumbo325@gmail.com` | `Parent@123` | Linked to the top-performer sample student |
 
 ## Students
 
