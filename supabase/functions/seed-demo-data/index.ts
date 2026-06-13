@@ -486,6 +486,7 @@ Deno.serve(async (req) => {
     const studentsByClass: Record<string, any[]> = {};
     let studentsIns: any[] = [];
     await runPhase(ctx, "PHASE 6: Insert students and student auth accounts", async () => {
+      const studentSpecs: AuthSpec[] = [];
       const rows: any[] = [];
       let counter = 1;
       const classTargets = CLASS_DEFS.map((cd, i) => ({ cd, count: i < 2 ? 37 : 36 }));
@@ -495,8 +496,7 @@ Deno.serve(async (req) => {
           const admission = `GHS-2025-${pad(counter, 4)}`;
           const name = counter === 1 ? "Takudzwa Dube" : counter === 220 ? "Anesu Sibanda" : counter === 650 ? "Tadiwanashe Mutasa" : studentName(counter);
           const email = studentEmail(admission);
-          const userId = await ensureAuthUser(ctx, email, STUDENT_PASSWORD, name, "student");
-          studentUserIds[email] = userId;
+          studentSpecs.push({ ref: admission, email, password: STUDENT_PASSWORD, name, role: "student" });
           rows.push({
             admission_number: admission,
             full_name: name,
@@ -515,11 +515,17 @@ Deno.serve(async (req) => {
             status: "active",
             boarding_status: counter % 5 === 0 ? "boarding" : "day",
             email,
-            user_id: userId,
           });
           counter++;
         }
       }
+      const studentAccounts = await ensureAuthUsers(ctx, studentSpecs, 30);
+      const userIdByAdmission: Record<string, string> = {};
+      for (const account of studentAccounts) {
+        userIdByAdmission[account.ref!] = account.userId;
+        studentUserIds[account.email] = account.userId;
+      }
+      for (const row of rows) row.user_id = userIdByAdmission[row.admission_number];
       studentsIns = await insertRows(ctx, "students", rows, true);
       const scRows = studentsIns.map((s: any) => {
         const cd = CLASS_DEFS.find((c) => c.form_level === s.form && c.stream === s.stream)!;
@@ -544,16 +550,24 @@ Deno.serve(async (req) => {
     await runPhase(ctx, "PHASE 7: Insert parents and link children", async () => {
       const familyStudents: any[][] = [];
       for (let i = 0; i < studentsIns.length; i += 2) familyStudents.push(studentsIns.slice(i, i + 2));
-      const linkRows: any[] = [];
-      const guardianRows: any[] = [];
-      const subscriptionRows: any[] = [];
-      for (let i = 0; i < familyStudents.length; i++) {
-        const family = familyStudents[i];
+      const parentSpecs: AuthSpec[] = [];
+      const families = familyStudents.map((family, i) => {
         const surname = family[0].full_name.split(" ").slice(-1)[0];
         const override = SPECIAL_PARENT_OVERRIDES[i];
         const parentName = override?.name || `${i % 3 === 0 ? "Mr." : "Mrs."} ${pick(MALE_FIRST, i)} ${surname}`;
         const email = override?.email || parentEmail(parentName, i + 1);
-        const parentId = await ensureAuthUser(ctx, email, PARENT_PASSWORD, parentName, "parent");
+        parentSpecs.push({ ref: String(i), email, password: PARENT_PASSWORD, name: parentName, role: "parent" });
+        return { family, override, parentName, email };
+      });
+      const parentAccounts = await ensureAuthUsers(ctx, parentSpecs, 25);
+      const parentIdByEmail: Record<string, string> = {};
+      for (const account of parentAccounts) parentIdByEmail[account.email] = account.userId;
+      const linkRows: any[] = [];
+      const guardianRows: any[] = [];
+      const subscriptionRows: any[] = [];
+      for (let i = 0; i < families.length; i++) {
+        const { family, override, parentName, email } = families[i];
+        const parentId = parentIdByEmail[email];
         parentUserIds[email] = parentId;
         parentsCreated++;
         for (const child of family) {
